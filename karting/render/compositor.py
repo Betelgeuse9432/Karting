@@ -22,21 +22,20 @@ class SceneCompositor:
         cfg = camera.cfg
         # La voiture, les décors et les particules partagent un tri de profondeur.
         objects: list[tuple[float,str,object]] = [(camera.position(car.x,car.y)[0],"vehicle",None)]
-        if "render.trees" not in faults.disabled:
-            for tree in trees:
-                forward,right = camera.position(tree.x,tree.y)
-                if cfg.near < forward < cfg.far:
-                    objects.append((forward,"tree",(right,tree)))
-        if "render.garages" not in faults.disabled:
-            for garage in track.garages:
-                forward = camera.position(*track.center[garage.track_index])[0]+200
-                if cfg.near < forward < cfg.far+200:
-                    objects.append((forward,"garage",garage))
-        if "render.particles" not in faults.disabled:
-            for particle in effects.particles:
-                forward = camera.position(particle.x,particle.y)[0]
-                if forward > cfg.near:
-                    objects.append((forward,"particle",particle))
+        # Chaque effet est présenté à son superviseur, même après une panne :
+        # cela autorise de vrais réessais lorsque l'objet redevient visible.
+        for tree in trees:
+            forward,right = camera.position(tree.x,tree.y)
+            if cfg.near < forward < cfg.far:
+                objects.append((forward,"tree",(right,tree)))
+        for garage in track.garages:
+            forward = camera.position(*track.center[garage.track_index])[0]+200
+            if cfg.near < forward < cfg.far+200:
+                objects.append((forward,"garage",garage))
+        for particle in effects.particles:
+            forward = camera.position(particle.x,particle.y)[0]
+            if forward > cfg.near:
+                objects.append((forward,"particle",particle))
         objects.append((camera.position(*track.center[0])[0],"gantry",None))
         objects.sort(key=lambda obj:obj[0],reverse=True)
         for forward,kind,object_data in objects:
