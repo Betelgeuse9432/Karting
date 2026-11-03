@@ -88,12 +88,14 @@ class HudRenderer:
         if not faults.faults and not paused:
             return
         if paused:
-            self.draw_warning(screen,"SIMULATION EN PAUSE - R pour reinitialiser",(255,80,80),0)
-        for idx, fault in enumerate(faults.faults[-3:]):
-            msg=f"{fault.component} : {fault.message}"
-            if len(msg)>100:
-                msg=msg[:97]+"..."
-            self.draw_warning(screen,msg,(255,210,80),idx+1)
+            self.draw_warning(screen,"SIMULATION EN PAUSE - REPARATION AUTOMATIQUE",(255,80,80),0)
+        waiting = sorted(faults.pending.items(), key=lambda pair: pair[1].next_retry)
+        for idx, (component, status) in enumerate(waiting[:3]):
+            remaining = max(0.0, status.next_retry - faults.time)
+            msg = f"{component} : tentative {status.attempts+1} dans {remaining:.1f}s"
+            self.draw_warning(screen, msg, (255, 210, 80), idx+1)
+        if not waiting and faults.recoveries:
+            self.draw_warning(screen, faults.recoveries[-1], (110, 255, 170), 1)
 
     def draw_warning(self, screen: pygame.Surface, text: str, color, line: int) -> None:
         y=self.cfg.height-178-line*21
