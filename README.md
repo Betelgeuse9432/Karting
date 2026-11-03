@@ -2,14 +2,14 @@
 
 **Jeu de karting en Python/Pygame avec projection 3D, physique arcade et chronométrage.**
 
-> **Branche `dev` : refonte modulaire V4 expérimentale.** Le prototype V3 est conservé dans `karting_v3.py` pour référence. Le rendu visuel de la V4 doit encore être validé avec un vrai Pygame.
+> **Branche `test` : campagne expérimentale de pannes aléatoires.** Le sabotage est actif par défaut dans `python main.py` ; `--safe` permet de jouer sans injection. Les branches `dev` et `main` restent indépendantes.
 
 ## Installer et lancer
 
 Python 3.10+ recommandé.
 
 ```powershell
-git clone -b dev https://github.com/Betelgeuse9432/Karting.git
+git clone -b test https://github.com/Betelgeuse9432/Karting.git
 cd Karting
 python -m pip install -r requirements.txt
 python main.py
@@ -21,7 +21,21 @@ Pour jouer avec l'ancien prototype :
 python karting_v3.py
 ```
 
-Si le dépôt existe déjà en local : `git pull origin dev` avant de lancer le jeu.
+Si le dépôt existe déjà en local sur `dev` : `git fetch origin`, puis `git switch --track origin/test`. Ensuite : `git pull origin test`.
+
+## 🧪 Sabotage aléatoire sur `test`
+
+Le moteur choisit un composant au hasard toutes les **2 à 5 secondes** de simulation et y lève volontairement une exception. Les modules optionnels sont isolés ; une panne physique ou de chronométrage met la simulation en pause. Les événements sont enregistrés dans `karting.log`.
+
+```powershell
+python main.py --seed 42       # scénario reproductible
+python main.py --no-essential # ne touche pas à la physique ni au chrono
+python main.py --safe         # sans pannes injectées
+```
+
+**F9** active/désactive le sabotage ; **F10** déclenche une panne aléatoire dès le prochain appel du composant choisi ; **R** réinitialise le jeu et réactive les composants en panne. Un bandeau affiche les injections.
+
+Voir [docs/fault-testing.md](docs/fault-testing.md) pour le protocole complet, les cibles, les limites et les tests.
 
 ## Contrôles
 
@@ -63,6 +77,7 @@ Karting/
 │   ├── camera.py           # transformation et projection 3D sans Pygame
 │   ├── effects.py          # particules et traces sans Pygame
 │   ├── faults.py           # diagnostic et isolation des erreurs
+│   ├── fault_injection.py  # injection de pannes aléatoires sur test
 │   ├── game.py             # orchestration de tous les services
 │   └── render/
 │       ├── common.py       # primitives et mélange de couleurs
@@ -72,9 +87,11 @@ Karting/
 │       ├── hud.py          # interface et panneaux
 │       └── compositor.py   # ordre de profondeur des objets
 ├── tests/
-│   └── test_core.py        # tests sans fenêtre
+│   ├── test_core.py        # tests sans fenêtre
+│   └── test_fault_injection.py # tests du saboteur
 ├── docs/
-│   └── architecture.md     # contrats et décisions d'architecture
+│   ├── architecture.md     # contrats et décisions d'architecture
+│   └── fault-testing.md    # protocole de pannes aléatoires
 ├── requirements.txt
 └── .gitignore
 ```
