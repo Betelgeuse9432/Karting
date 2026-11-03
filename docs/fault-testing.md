@@ -25,15 +25,15 @@ python -m unittest discover -s tests -v
 | --- | --- |
 | `F9` | Suspendre ou reprendre les pannes aléatoires |
 | `F10` | Armer immédiatement un nouveau composant choisi au hasard |
-| `R` | Réinitialiser la partie et réactiver les composants désactivés |
+| `R` | Réinitialisation manuelle de la partie (facultative) |
 | `Échap` | Quitter le jeu |
 
 Un bandeau indique le nombre d'injections, la graine utilisée et l'état du sabotage. Le journal `karting.log` conserve l'identité de la cible, l'instant de simulation et la trace des exceptions.
 
 ## Cibles et réactions attendues
 
-- **Optionnelles** : `input`, `camera`, `effects.sim`, `render.background`, `render.track`, `render.marks`, `render.vehicle`, `render.gantry`, `render.hud`. Le système est désactivé pour le reste de la session, mais les autres doivent continuer à fonctionner. En cas de défaillance du HUD, le bandeau d'injection est indépendant et le titre de fenêtre signale la panne.
-- **Indispensables** : `physics`, `race`. Le moteur capture l'exception, restaure l'état concerné et met la simulation **en pause**. Appuyer sur `R` pour recommencer et autoriser d'autres pannes.
+- **Optionnelles** : `input`, `camera`, `effects.sim`, `render.background`, `render.track`, `render.marks`, `render.vehicle`, `render.gantry`, `render.hud`. Le composant reste isolé entre deux tentatives, puis son opération réelle est réessayée automatiquement, sans bloquer les autres. En cas de défaillance du HUD, le bandeau d'injection est indépendant et le titre de fenêtre signale la panne.
+- **Indispensables** : `physics`, `race`. Le moteur restaure l'état concerné et met la simulation **en pause temporaire**. Il rejoue ensuite le calcul interrompu jusqu'à la première réussite, puis reprend automatiquement sans `R`.
 
 Le choix des cibles privilégie les systèmes invoqués à chaque image pour éviter qu'une panne ne reste armée indéfiniment. Les cibles déjà désactivées sont exclues des tirages suivants ; un défaut sur un composant indispensable peut également être tiré, mais avec un poids plus faible pour permettre d'observer plusieurs dégradations avant un éventuel arrêt de la simulation.
 
@@ -49,6 +49,19 @@ Les résultats reproductibles nécessitent la même graine **et** la même progr
 2. Une panne physique ne laisse pas un état partiellement modifié et met la simulation en pause.
 3. Une panne de chronométrage restaure son état antérieur et met la simulation en pause.
 4. Les pannes sont identifiées et conservées dans `karting.log`, sans répétition chaque image.
-5. `R` remet les composants en service et de nouvelles pannes peuvent être tirées.
+5. Les services sont réintégrés uniquement après une exécution réussie ; `R` reste une commande de remise à zéro manuelle.
 
 **Attention :** une fenêtre Pygame et un clavier réels sont nécessaires à la validation graphique finale. Les tests unitaires et d'intégration utilisent un Pygame simulé pour la logique et ne prouvent pas le rendu.
+
+## 🔄 Réparation automatique
+
+Une panne ne se résout pas en remettant un indicateur sur « actif ». Le superviseur **réexécute l'opération qui a échoué**. Il peut reconstruire certains objets locaux avant de réessayer (caméra, HUD, effets, rendu). Une exception persistante laisse le module en défaut.
+
+Délais entre tentatives : **0,5 s → 1 s → 2 s → 4 s → 8 s**, puis 8 s tant que le problème existe. Le moteur peut retenter sans limite, sans lancer une exception à chaque image. Le délai est compté même lorsque la simulation physique est en pause.
+
+- **Physique et course :** l'état est préservé, le pas interrompu est réexécuté de façon contrôlée, puis la simulation reprend uniquement en cas de succès.
+- **Affichage et commandes :** le module fautif est isolé, puis réessayé à sa prochaine utilisation. Un élément non visible n'est pas réessayé avant d'être sollicité.
+- **Sauvegardes :** le meilleur temps non sauvegardé reste en mémoire et l'écriture est retentée jusqu'à réussite.
+- **Diagnostic :** `karting.log` enregistre les échecs, délais, tentatives et messages `REPRISE`. Le HUD présente le prochain délai.
+
+La récupération ne modifie pas arbitrairement le code source et ne garantit pas la résolution d'un bug logique permanent. Les pannes sont injectées avant les appels ; les corruptions silencieuses et arrêts brutaux du processus feront l'objet d'autres scénarios.
