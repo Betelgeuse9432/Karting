@@ -29,6 +29,7 @@ Si le dépôt existe déjà en local : `git pull origin dev` avant de lancer le 
 | --- | --- |
 | Accélération | `↑`, `Z`, `W` |
 | Frein et marche arrière | `↓`, `S` |
+| Frein à main / dérapage | `Espace` |
 | Tourner à gauche | `←`, `Q`, `A` |
 | Tourner à droite | `→`, `D` |
 | Réinitialiser le kart et réessayer les composants désactivés | `R` |
@@ -39,6 +40,7 @@ Si le dépôt existe déjà en local : `git pull origin dev` avant de lancer le 
 - Circuit fermé lissé, vibreurs, stands, garages, arbres.
 - Voiture constituée de surfaces 3D projetées en perspective, caméra suiveuse.
 - Accélération et freinage progressifs, perte d'adhérence avant/arrière, appui aérodynamique.
+- **Nouveau sur `dev` :** frein à main sur `Espace`, inertie latérale pendant les dérapages, traces de pneus et avertissement à l’écran.
 - Carrosserie animée, aileron mobile, roues et disques de frein.
 - Fumée, étincelles, flammes et traces de glisse.
 - Mini-carte, affichage des pédales, du chrono, des temps par tour et des records.
@@ -88,7 +90,7 @@ python -m unittest discover -s tests -v
 python -m compileall -q karting
 ```
 
-La suite couvre la géométrie, les stands, la physique, la course, les records, les projections, les effets et la gestion des défaillances. La parité numérique de la physique a également été vérifiée sur 120 pas contre la V3 originale. **Les tests ne remplacent pas une vérification graphique et des FPS sous Pygame.**
+La suite couvre la géométrie, les stands, la physique, la course, les records, les projections, les effets et la gestion des défaillances. La parité numérique V3 a été vérifiée avant cet ajout ; elle n’est plus attendue quand le frein à main est activé. **Les tests ne remplacent pas une vérification graphique et des FPS sous Pygame.**
 
 ## Résilience et limites
 
