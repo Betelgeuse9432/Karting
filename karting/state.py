@@ -8,6 +8,7 @@ class Controls:
     gas: bool = False
     brake: bool = False
     steering: int = 0  # -1 gauche, 0 neutre, +1 droite
+    handbrake: bool = False  # frein à main / dérive contrôlée
 
 
 @dataclass(slots=True)
@@ -24,6 +25,7 @@ class VehicleState:
     roll: float = 0.0
     wing: float = 0.1
     wheel_rotation: float = 0.0
+    lateral_speed: float = 0.0  # dérive dans l’axe transversal du châssis
 
     def local_to_world(self, lx: float, ly: float, z: float = 0) -> tuple[float, float, float]:
         ca, sa = math.cos(self.angle), math.sin(self.angle)
@@ -59,3 +61,4 @@ class Telemetry:
     hard_braking: bool
     downforce_factor: float
     previous_gas: float
+    drifting: bool = False
