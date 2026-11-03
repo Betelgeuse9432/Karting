@@ -22,6 +22,8 @@ class VehiclePhysics:
         v = car.v
         downforce = 1 + cfg.downforce*(abs(v)/cfg.max_speed)**2
         front_grip, rear_grip = cfg.front_grip*downforce, cfg.rear_grip*downforce
+        if controls.handbrake:
+            rear_grip *= cfg.handbrake_rear_grip
         max_turn = 0.55 / (1 + abs(v)/150)
         car.steering += (controls.steering*max_turn-car.steering)*min(1, 8*dt)
         rotation = v*math.tan(car.steering)/cfg.wheelbase
@@ -38,7 +40,7 @@ class VehiclePhysics:
         rear_slip = rear_use > rear_grip
         if rear_slip:
             excess = rear_use/rear_grip-1
-            rotation *= 1+2*excess
+            rotation *= 1 + (min(2*excess, 1.5) if controls.handbrake else 2*excess)
             motor_acc *= rear_grip/rear_use
 
         v += motor_acc*dt
@@ -47,15 +49,35 @@ class VehiclePhysics:
         elif controls.brake:
             v -= 250*dt
         v -= v*(0.3 if controls.gas else 0.6)*dt
+        if controls.handbrake:
+            v -= math.copysign(min(abs(v), cfg.handbrake_drag*dt), v)
         if info.on_grass:
             v -= v*2.5*dt
             v = min(v, 220)
         car.v = v = max(-150, min(cfg.max_speed, v))
 
-        car.angle += rotation*dt
+        # Le frein à main libère la dérive : la trajectoire n'est plus obligée de
+        # suivre immédiatement l'orientation du châssis. En sortie de dérapage,
+        # le grip fait revenir progressivement la vitesse latérale vers zéro.
+        delta_angle = rotation*dt
+        if controls.handbrake or abs(car.lateral_speed) > 0.01:
+            side = car.lateral_speed*math.cos(delta_angle) - v*math.sin(delta_angle)
+            grip = cfg.lateral_recovery * (cfg.handbrake_lateral_factor if controls.handbrake else 1.0)
+            side = math.copysign(max(0.0, abs(side)-grip*dt), side)
+            car.lateral_speed = side if abs(side) >= 0.01 else 0.0
+        else:
+            car.lateral_speed = 0.0
+
+        car.angle += delta_angle
+        ca, sa = math.cos(car.angle), math.sin(car.angle)
+        dx = (ca*v-sa*car.lateral_speed)*dt
+        dy = (sa*v+ca*car.lateral_speed)*dt
         world_w, world_h = cfg.world_size
-        car.x = max(0, min(world_w, car.x+math.cos(car.angle)*v*dt))
-        car.y = max(0, min(world_h, car.y+math.sin(car.angle)*v*dt))
+        next_x, next_y = car.x+dx, car.y+dy
+        car.x = max(0, min(world_w, next_x))
+        car.y = max(0, min(world_h, next_y))
+        if car.x != next_x or car.y != next_y:
+            car.lateral_speed = 0.0
 
         if car.brake > 0.05 and v > 0:
             car.heat += car.brake*(abs(v)/cfg.max_speed)*1.6*dt
@@ -75,4 +97,4 @@ class VehiclePhysics:
         hard_braking = car.brake > 0.9 and v > 350
         return Telemetry(info.index, info.distance, info.offset, info.in_pits,
                          info.on_grass, front_slip, rear_slip, hard_braking,
-                         downforce, previous_gas)
+                         downforce, previous_gas, abs(car.lateral_speed) > 12)
