@@ -8,6 +8,7 @@ from .camera import Camera
 from .config import GameConfig
 from .effects import Effects
 from .faults import FaultManager
+from .fault_injection import FaultInjector
 from .input import read_controls
 from .persistence import RecordStore
 from .physics import VehiclePhysics
@@ -25,10 +26,11 @@ logger=logging.getLogger("karting")
 
 
 class Game:
-    def __init__(self, config: GameConfig | None = None):
+    def __init__(self, config: GameConfig | None = None, injector: FaultInjector | None = None):
         self.config=config or GameConfig()
         self.config.validate()
-        self.faults=FaultManager()
+        self.injector=injector
+        self.faults=FaultManager(injector.before_call if injector else None)
         self.track=Track(self.config)
         self.physics=VehiclePhysics(self.config)
         self.storage=RecordStore(self.config.record_path)
@@ -63,6 +65,8 @@ class Game:
         self.telemetry=None
         self.paused=False
         self.faults.recover()  # réessai contrôlé de composants désactivés
+        if self.injector is not None:
+            self.injector.reset()
         # Rechargement des décors si leur création initiale avait échoué.
         if not self.trees:
             self.trees=self.faults.optional("scenery.trees",
@@ -74,6 +78,8 @@ class Game:
             return
         before=replace(self.car)
         try:
+            if self.injector is not None:
+                self.injector.before_call("physics")
             self.telemetry=self.physics.step(self.car,controls,self.track,dt)
         except Exception as exc:
             self.car=before  # invalide après une mise à jour partiellement effectuée
@@ -83,6 +89,8 @@ class Game:
         previous_best=self.race.state.best
         race_backup=deepcopy(self.race.state)
         try:
+            if self.injector is not None:
+                self.injector.before_call("race")
             finished=self.race.step(self.car,dt)
         except Exception as exc:
             self.race.state=race_backup
@@ -108,7 +116,27 @@ class Game:
         if "render.hud" in self.faults.disabled:
             # Minimum vital, même si l'affichage complet des alertes a planté.
             pygame.display.set_caption("Karting - ERREUR HUD (details : karting.log)")
+        if self.injector is not None:
+            self.draw_injection_status(screen)
         pygame.display.flip()
+
+    def draw_injection_status(self, screen: pygame.Surface) -> None:
+        """Bandeau minimal, indépendant du HUD pouvant lui-même être saboté."""
+        injector=self.injector
+        if injector is None:
+            return
+        try:
+            font=pygame.font.SysFont("monospace", 15, bold=True)
+            status="ACTIF" if injector.enabled else "OFF (F9)"
+            line=(f"TEST PANNES {status} | seed {injector.seed} | "
+                  f"{injector.count} injectee(s) | F10 force | R relance")
+            area=pygame.Surface((min(self.config.width-20, len(line)*10+16),26), pygame.SRCALPHA)
+            area.fill((10,10,20,220))
+            screen.blit(area,(10,108))
+            screen.blit(font.render(line,True,(255,210,80)),(15,112))
+        except Exception:
+            # Ce bandeau ne doit en aucun cas être critique pour le jeu.
+            logger.exception("Bandeau de test indisponible")
 
     def run(self) -> None:
         pygame.init()
@@ -129,8 +157,15 @@ class Game:
                             self.running=False
                         elif event.key==pygame.K_r:
                             self.reset()
+                        elif event.key==pygame.K_F9 and self.injector is not None:
+                            self.injector.toggle()
+                        elif event.key==pygame.K_F10 and self.injector is not None:
+                            component=self.injector.force_random(self.faults.disabled)
+                            logger.warning("F10 : panne immédiatement armée sur %s",component)
                 if not self.running:
                     break
+                if self.injector is not None and not self.paused:
+                    self.injector.advance(dt,self.faults.disabled)
                 controls=self.faults.optional("input",lambda:read_controls(pygame.key.get_pressed()),Controls())
                 self.step(controls,dt)
                 self.faults.optional("camera",lambda:self.camera.follow(self.car,dt))
