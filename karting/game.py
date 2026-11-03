@@ -45,6 +45,10 @@ class Game:
         self.telemetry: Telemetry | None = None
         self.running=True
         self.paused=False
+        self._failed_essential: str | None = None
+        self._failed_controls = Controls()
+        self._failed_dt = 0.016
+        self._pending_save: float | None = None
         self.screen: pygame.Surface | None = None
         self.world=WorldRenderer()
         self.vehicle_renderer=VehicleRenderer(self.config)
@@ -58,64 +62,171 @@ class Game:
 
     def reset(self) -> None:
         self.car=self.spawn_car()
-        self.race.reset()  # meilleur temps conservé en mémoire
+        self.race.reset()  # meilleur temps conservé
         self.effects.clear()
         self.camera=Camera(self.config,self.car.angle)
         self.camera.follow(self.car,0)
         self.telemetry=None
         self.paused=False
-        self.faults.recover()  # réessai contrôlé de composants désactivés
+        self._failed_essential=None
+        self.faults.recover()
         if self.injector is not None:
             self.injector.reset()
-        # Rechargement des décors si leur création initiale avait échoué.
         if not self.trees:
             self.trees=self.faults.optional("scenery.trees",
-                                            lambda:generate_trees(self.track,self.config.scenery_seed),[])
+                          lambda:generate_trees(self.track,self.config.scenery_seed),[])
+        # Les éventuelles sauvegardes en attente ne sont pas perdues au reset.
 
-    def step(self, controls: Controls, dt: float) -> None:
-        """Le moteur logique peut être exécuté sans fenêtre (sauf import du module game)."""
-        if self.paused:
-            return
-        before=replace(self.car)
-        try:
-            if self.injector is not None:
-                self.injector.before_call("physics")
-            self.telemetry=self.physics.step(self.car,controls,self.track,dt)
-        except Exception as exc:
-            self.car=before  # invalide après une mise à jour partiellement effectuée
-            self.paused=True
-            self.faults.record("physics",exc,essential=True)
-            return
+    def _record_new_best(self, finished: float | None, previous_best: float | None) -> None:
+        if finished is not None and (previous_best is None or finished < previous_best):
+            if self._pending_save is None or finished < self._pending_save:
+                self._pending_save=finished
+
+    def _advance_race(self, dt: float) -> bool:
         previous_best=self.race.state.best
-        race_backup=deepcopy(self.race.state)
+        backup=deepcopy(self.race.state)
         try:
             if self.injector is not None:
                 self.injector.before_call("race")
             finished=self.race.step(self.car,dt)
         except Exception as exc:
-            self.race.state=race_backup
+            self.race.state=backup
             self.paused=True
+            self._failed_essential="race"
+            self._failed_dt=dt
             self.faults.record("race",exc,essential=True)
+            return False
+        self._record_new_best(finished,previous_best)
+        return True
+
+    def step(self, controls: Controls, dt: float) -> None:
+        """Une image de simulation ; en pause, les réparations continuent."""
+        if self.paused:
+            self._repair_essential()
             return
-        if finished is not None and (previous_best is None or finished < previous_best):
-            self.faults.optional("record.save",lambda:self.storage.save(finished))
-        if self.telemetry:
-            self.faults.optional("effects.sim",lambda:self.effects.step(self.car,self.telemetry,dt))
+        before=replace(self.car)
+        try:
+            if self.injector is not None:
+                self.injector.before_call("physics")
+            telemetry=self.physics.step(self.car,controls,self.track,dt)
+            self.car.validate()
+            self.telemetry=telemetry
+        except Exception as exc:
+            self.car=before
+            self.paused=True
+            self._failed_essential="physics"
+            self._failed_controls=controls
+            self._failed_dt=dt
+            self.faults.record("physics",exc,essential=True)
+            return
+        if self._advance_race(dt):
+            self.faults.optional("effects.sim",
+                   lambda:self.effects.step(self.car,self.telemetry,dt),
+                   on_retry=self._rebuild_effects)
+
+    def _repair_essential(self) -> None:
+        component=self._failed_essential
+        if component is None or not self.faults.can_retry(component):
+            return
+        if component=="physics":
+            def attempt():
+                # Rejouer le pas interrompu sur une copie évite les mises à jour partielles.
+                candidate=VehiclePhysics(self.config)
+                candidate_car=replace(self.car)
+                candidate_telemetry=candidate.step(candidate_car,self._failed_controls,
+                                                   self.track,self._failed_dt)
+                candidate_car.validate()
+                self.physics=candidate
+                self.car=candidate_car
+                self.telemetry=candidate_telemetry
+            ok,_=self.faults.retry("physics",attempt,essential=True)
+            if ok:
+                self.paused=False
+                self._failed_essential=None
+                if self._advance_race(self._failed_dt):
+                    self.faults.optional("effects.sim",
+                      lambda:self.effects.step(self.car,self.telemetry,self._failed_dt),
+                      on_retry=self._rebuild_effects)
+        elif component=="race":
+            def attempt():
+                candidate=RaceTracker(self.track,self.race.state.best)
+                candidate.state=deepcopy(self.race.state)
+                finished=candidate.step(self.car,self._failed_dt)
+                previous_best=self.race.state.best
+                self.race=candidate
+                self._record_new_best(finished,previous_best)
+            ok,_=self.faults.retry("race",attempt,essential=True)
+            if ok:
+                self.paused=False
+                self._failed_essential=None
+
+    def _rebuild_effects(self) -> None:
+        self.effects=Effects(self.config.scenery_seed)
+
+    def _rebuild_camera(self) -> None:
+        self.camera=Camera(self.config,self.car.angle)
+        self.camera.follow(self.car,0)
+
+    def _rebuild_world(self) -> None:
+        self.world=WorldRenderer()
+        if self.compositor is not None:
+            self.compositor.world=self.world
+
+    def _rebuild_hud(self) -> None:
+        self.hud=HudRenderer(self.config,self.track)
+
+    def _rebuild_compositor(self) -> None:
+        self.compositor=SceneCompositor(self.world,self.vehicle_renderer,self.particle_renderer)
+
+    def _rebuild_particle_renderer(self) -> None:
+        self.particle_renderer=EffectsRenderer()
+        if self.compositor is not None:
+            self.compositor.effects_renderer=self.particle_renderer
+
+    def service_retries(self, dt: float) -> None:
+        """Les reprises et la persistance continuent même pendant la pause."""
+        self.faults.advance(dt)
+        if "record.load" in self.faults.disabled:
+            loaded=self.faults.optional("record.load",self.storage.load)
+            if "record.load" not in self.faults.disabled and loaded is not None:
+                best=self.race.state.best
+                if best is None or loaded < best:
+                    self.race.state.best=loaded
+        if "scenery.trees" in self.faults.disabled:
+            trees=self.faults.optional("scenery.trees",
+                    lambda:generate_trees(self.track,self.config.scenery_seed),[])
+            if "scenery.trees" not in self.faults.disabled:
+                self.trees=trees
+        if self._pending_save is not None:
+            value=self._pending_save
+            def save():
+                self.storage.save(value)
+                return True
+            if self.faults.optional("record.save",save,False):
+                self._pending_save=None
 
     def draw(self) -> None:
         assert self.screen is not None and self.compositor is not None and self.hud is not None
         screen=self.screen
         screen.fill((40,70,80))
-        self.faults.optional("render.background",lambda:self.world.draw_background(screen,self.camera))
-        self.faults.optional("render.track",lambda:self.world.draw_track(screen,self.camera,self.track))
-        self.faults.optional("render.marks",lambda:self.particle_renderer.draw_marks(screen,self.camera,self.effects))
-        self.faults.optional("render.scene",lambda:self.compositor.draw(screen,self.camera,self.car,
-                                                                         self.track,self.trees,self.effects,self.faults))
-        self.faults.optional("render.hud",lambda:self.hud.draw(screen,self.car,self.race,
-                                                                self.telemetry,self.faults,self.paused))
+        self.faults.optional("render.background",
+             lambda:self.world.draw_background(screen,self.camera),on_retry=self._rebuild_world)
+        self.faults.optional("render.track",
+             lambda:self.world.draw_track(screen,self.camera,self.track),on_retry=self._rebuild_world)
+        self.faults.optional("render.marks",
+             lambda:self.particle_renderer.draw_marks(screen,self.camera,self.effects),
+             on_retry=self._rebuild_particle_renderer)
+        self.faults.optional("render.scene",
+             lambda:self.compositor.draw(screen,self.camera,self.car,self.track,self.trees,
+                                         self.effects,self.faults),
+             on_retry=self._rebuild_compositor)
+        self.faults.optional("render.hud",
+             lambda:self.hud.draw(screen,self.car,self.race,self.telemetry,self.faults,self.paused),
+             on_retry=self._rebuild_hud)
         if "render.hud" in self.faults.disabled:
-            # Minimum vital, même si l'affichage complet des alertes a planté.
-            pygame.display.set_caption("Karting - ERREUR HUD (details : karting.log)")
+            pygame.display.set_caption("Karting - HUD en cours de réparation (karting.log)")
+        else:
+            pygame.display.set_caption("Karting - refonte modulaire")
         if self.injector is not None:
             self.draw_injection_status(screen)
         pygame.display.flip()
@@ -129,7 +240,8 @@ class Game:
             font=pygame.font.SysFont("monospace", 15, bold=True)
             status="ACTIF" if injector.enabled else "OFF (F9)"
             line=(f"TEST PANNES {status} | seed {injector.seed} | "
-                  f"{injector.count} injectee(s) | F10 force | R relance")
+                  f"{injector.count} injectee(s) | {len(self.faults.disabled)} en panne | "
+                  f"{self.faults.total_recoveries} reprises | F10 force")
             area=pygame.Surface((min(self.config.width-20, len(line)*10+16),26), pygame.SRCALPHA)
             area.fill((10,10,20,220))
             screen.blit(area,(10,108))
@@ -164,11 +276,13 @@ class Game:
                             logger.warning("F10 : panne immédiatement armée sur %s",component)
                 if not self.running:
                     break
+                self.service_retries(dt)
                 if self.injector is not None and not self.paused:
                     self.injector.advance(dt,self.faults.disabled)
                 controls=self.faults.optional("input",lambda:read_controls(pygame.key.get_pressed()),Controls())
                 self.step(controls,dt)
-                self.faults.optional("camera",lambda:self.camera.follow(self.car,dt))
+                self.faults.optional("camera",lambda:self.camera.follow(self.car,dt),
+                                     on_retry=self._rebuild_camera)
                 self.draw()
         finally:
             pygame.quit()
