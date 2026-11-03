@@ -1,94 +1,101 @@
 # 🏎️ Karting
 
-Un prototype de jeu de karting en **Python avec Pygame**, avec une vue 3D simulée, un circuit, une conduite influencée par l'adhérence et plusieurs effets visuels.
+**Jeu de karting en Python/Pygame avec projection 3D, physique arcade et chronométrage.**
 
-> **État du projet :** prototype V3 disponible. Une architecture modulaire et plus robuste est en préparation sur la branche `dev`. La refonte n'est pas encore implémentée.
+> **Branche `dev` : refonte modulaire V4 expérimentale.** Le prototype V3 est conservé dans `karting_v3.py` pour référence. Le rendu visuel de la V4 doit encore être validé avec un vrai Pygame.
 
-## Fonctionnalités du prototype V3
+## Installer et lancer
 
-- Circuit fermé, avec bordures, herbe et voie des stands.
-- Voiture représentée par des volumes 3D projetés à l'écran.
-- Accélération, freinage, marche arrière et direction progressive.
-- Perte d'adhérence à l'avant ou à l'arrière selon le freinage, l'accélération et les virages.
-- Appui aérodynamique variant avec la vitesse et aileron mobile au freinage.
-- Fumée, étincelles, flammes d'échappement et traces de pneus.
-- Chronométrage des tours, meilleur temps sauvegardé localement et tableau des scores dans les stands.
-- Affichage de la vitesse, des pédales, de la température des disques et d'une mini-carte.
-
-Les réglages physiques actuels sont des paramètres de jeu, pas une simulation certifiée de dynamique automobile.
-
-## Installation
-
-**Prérequis :** Python et `pip` installés.
-
-Récupérer la branche de développement :
+Python 3.10+ recommandé.
 
 ```powershell
 git clone -b dev https://github.com/Betelgeuse9432/Karting.git
 cd Karting
-```
-
-Installer la dépendance :
-
-```powershell
 python -m pip install -r requirements.txt
+python main.py
 ```
 
-Lancer le prototype :
+Pour jouer avec l'ancien prototype :
 
 ```powershell
 python karting_v3.py
 ```
 
-## Commandes
+Si le dépôt existe déjà en local : `git pull origin dev` avant de lancer le jeu.
+
+## Contrôles
 
 | Action | Touches |
 | --- | --- |
-| Accélérer | `↑`, `Z` ou `W` |
-| Freiner / marche arrière | `↓` ou `S` |
-| Tourner à gauche | `←`, `Q` ou `A` |
-| Tourner à droite | `→` ou `D` |
-| Recommencer | `R` |
+| Accélération | `↑`, `Z`, `W` |
+| Frein et marche arrière | `↓`, `S` |
+| Tourner à gauche | `←`, `Q`, `A` |
+| Tourner à droite | `→`, `D` |
+| Réinitialiser le kart et réessayer les composants désactivés | `R` |
 | Quitter | `Échap` |
 
-Les pédales réagissent progressivement au maintien des touches.
+## Fonctionnalités conservées depuis la V3
 
-## Organisation actuelle
+- Circuit fermé lissé, vibreurs, stands, garages, arbres.
+- Voiture constituée de surfaces 3D projetées en perspective, caméra suiveuse.
+- Accélération et freinage progressifs, perte d'adhérence avant/arrière, appui aérodynamique.
+- Carrosserie animée, aileron mobile, roues et disques de frein.
+- Fumée, étincelles, flammes et traces de glisse.
+- Mini-carte, affichage des pédales, du chrono, des temps par tour et des records.
+
+Ces paramètres représentent une **physique de jeu**, pas un modèle certifié de conduite réelle.
+
+## Structure de la refonte
 
 ```text
 Karting/
-├── karting_v3.py          # Prototype jouable, actuellement monolithique
+├── main.py                 # point d'entrée V4
+├── karting_v3.py           # prototype original conservé
+├── karting/
+│   ├── config.py           # configuration validée et immuable
+│   ├── state.py            # état du kart et commandes
+│   ├── track.py            # piste, normales, stands et garages
+│   ├── scenery.py          # arbres générés indépendamment
+│   ├── input.py            # adaptation clavier Pygame
+│   ├── physics.py          # physique sans Pygame
+│   ├── race.py             # secteurs et temps au tour
+│   ├── persistence.py      # records et sauvegarde atomique
+│   ├── camera.py           # transformation et projection 3D sans Pygame
+│   ├── effects.py          # particules et traces sans Pygame
+│   ├── faults.py           # diagnostic et isolation des erreurs
+│   ├── game.py             # orchestration de tous les services
+│   └── render/
+│       ├── common.py       # primitives et mélange de couleurs
+│       ├── world.py        # ciel, piste, végétation, stands
+│       ├── vehicle.py      # dessin de la voiture
+│       ├── particles.py    # dessin des effets
+│       ├── hud.py          # interface et panneaux
+│       └── compositor.py   # ordre de profondeur des objets
+├── tests/
+│   └── test_core.py        # tests sans fenêtre
 ├── docs/
-│   └── architecture.md    # Architecture cible et plan de migration
-├── requirements.txt       # Dépendance Python
-├── .gitignore             # Exclusions Git
-└── README.md
+│   └── architecture.md     # contrats et décisions d'architecture
+├── requirements.txt
+└── .gitignore
 ```
 
-## Architecture prévue
+**Règle :** la physique ne connaît ni l'écran, ni Pygame, ni les particules. Chaque composant reçoit explicitement les objets dont il a besoin. Un défaut du rendu optionnel ne doit pas interrompre la simulation.
 
-La migration cherchera à séparer :
+## Tests
 
-- **Simulation :** véhicule, physique, adhérence, circuit et chronométrage.
-- **Affichage :** caméra, rendu 3D, décors, effets et interface.
-- **Orchestration :** boucle de jeu, entrées, état et configuration.
-- **Fiabilité :** tests, diagnostics, persistance et dégradation contrôlée des composants facultatifs.
+```powershell
+python -m unittest discover -s tests -v
+python -m compileall -q karting
+```
 
-L'objectif est notamment de pouvoir **tester la physique sans lancer Pygame**, puis de détecter et isoler les erreurs qui ne doivent pas interrompre le jeu. Un composant indispensable défaillant doit, lui, provoquer une réaction contrôlée plutôt qu'une poursuite dans un état incohérent.
+La suite couvre la géométrie, les stands, la physique, la course, les records, les projections, les effets et la gestion des défaillances. La parité numérique de la physique a également été vérifiée sur 120 pas contre la V3 originale. **Les tests ne remplacent pas une vérification graphique et des FPS sous Pygame.**
 
-📐 **Voir le document de conception :** [docs/architecture.md](docs/architecture.md).
+## Résilience et limites
 
-## Branches
+- Les erreurs des éléments optionnels sont journalisées dans `karting.log` : décors, particules, HUD, sauvegarde et autres rendus.
+- Un élément en défaut est temporairement désactivé. Le jeu continue tant que la simulation reste valide.
+- Une erreur physique ou de chronométrage provoque une pause contrôlée. `R` réinitialise et autorise une nouvelle tentative.
+- Les records sont sauvegardés atomiquement dans `record_karting.txt`. Ce fichier local n'est pas versionné.
+- La refonte n'est **pas** un moteur d'auto-réparation du code source : elle détecte, isole et permet de relancer les services après une panne.
 
-- `main` : référence du prototype V3 d'origine.
-- `dev` : évolution de l'architecture et du jeu.
-
-Pendant la migration, `karting_v3.py` reste notre référence fonctionnelle. Les futurs modules et le nouveau point d'entrée seront ajoutés progressivement, puis validés avant leur remplacement.
-
-## Prochaines étapes
-
-1. Extraire les paramètres, l'état et les données du circuit.
-2. Isoler la physique et le suivi des tours, avec des tests unitaires.
-3. Séparer la caméra, les graphismes, les effets et l'interface.
-4. Construire une boucle de jeu capable de signaler les défaillances et de désactiver les éléments non essentiels.
-5. Vérifier que le comportement reste cohérent avec la V3.
+La prochaine étape est la validation visuelle sur Windows avec Pygame, puis l'optimisation des calculs et l'amélioration du modèle de conduite.
