@@ -27,6 +27,10 @@ class GameConfig:
     rear_grip: float = 1100.0
     downforce: float = 0.5
     wheelbase: float = 44.0
+    handbrake_drag: float = 370.0  # ralentissement longitudinal (unités/s²)
+    handbrake_rear_grip: float = 0.35
+    lateral_recovery: float = 950.0  # adhérence latérale lors de la reprise
+    handbrake_lateral_factor: float = 0.055
     half_track_width: float = 95.0
     circuit_scale: float = 0.8
     kerb: float = 16.0
@@ -59,6 +63,10 @@ class GameConfig:
             value = getattr(self, name)
             if not isinstance(value, (float, int)) or not math.isfinite(value) or value <= 0:
                 raise ValueError(f"Configuration invalide : {name}={value!r}")
+        if self.handbrake_drag <= 0 or self.lateral_recovery <= 0:
+            raise ValueError("Paramètres de frein à main invalides")
+        if not 0 < self.handbrake_rear_grip <= 1 or not 0 < self.handbrake_lateral_factor <= 1:
+            raise ValueError("Facteurs d’adhérence du frein à main invalides")
         if self.near >= self.far:
             raise ValueError("La distance near doit être inférieure à far")
         if self.kerb < 0 or self.downforce < 0 or self.gas_pedal_rate <= 0 or self.brake_pedal_rate <= 0:
