@@ -16,7 +16,9 @@ class Fault:
 
 
 class FaultManager:
-    def __init__(self):
+    def __init__(self, before_call: Callable[[str], None] | None = None):
+        # Crochet de test optionnel : aucun sabotage en fonctionnement normal.
+        self.before_call = before_call
         self.disabled: set[str] = set()
         self.faults: list[Fault] = []
 
@@ -32,6 +34,8 @@ class FaultManager:
         if component in self.disabled:
             return default
         try:
+            if self.before_call is not None:
+                self.before_call(component)
             return action()
         except Exception as exc:
             self.record(component, exc)
