@@ -87,3 +87,9 @@ python main.py
 - Tests automatiques : circuit, gaz, frein, marche arrière, limites de vitesse, état non fini, chronométrage, record, caméra, particules, défaillances.
 - Tests manuels nécessaires sous Windows : rendu réel Pygame, contrôle clavier, fluidité, visibilité de la piste, décors, voie des stands, HUD, particules et sauvegarde.
 - Optimisations ultérieures : recherche géométrique des segments les plus proches, pré-culling par secteur et séparation simulation à pas fixe/rendu interpolé. Ne pas optimiser sans profiler.
+
+## Campagne d'injection sur la branche `test`
+
+Le module `fault_injection` est branché sur les frontières d'appel des composants. `FaultManager` accepte un crochet `before_call` facultatif ; sans injection, la gestion des erreurs reste identique. Les opérations critiques (`physics`, `race`) ont leur point d'injection dans `Game.step`, à l'intérieur des protections déjà existantes. Le calendrier des pannes est indépendant de la physique et des effets visuels.
+
+Les exceptions artificielles se produisent **avant** les effets de bord et vérifient donc l'isolation en cas de panne d'entrée de composant. La corruption interne après mise à jour partielle n'est pas testée par ce dispositif. Voir [fault-testing.md](fault-testing.md).
