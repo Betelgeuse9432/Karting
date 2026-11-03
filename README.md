@@ -25,7 +25,7 @@ Si le dépôt existe déjà en local sur `dev` : `git fetch origin`, puis `git s
 
 ## 🧪 Sabotage aléatoire sur `test`
 
-Le moteur choisit un composant au hasard toutes les **2 à 5 secondes** de simulation et y lève volontairement une exception. Les modules optionnels sont isolés ; une panne physique ou de chronométrage met la simulation en pause. Les événements sont enregistrés dans `karting.log`.
+Le moteur choisit un composant au hasard toutes les **2 à 5 secondes** de simulation et y lève volontairement une exception. Les modules optionnels sont isolés puis réessayés automatiquement. Une panne physique ou de chronométrage met temporairement la simulation en pause, puis le calcul interrompu est rejoué jusqu'à réussir. Les événements sont enregistrés dans `karting.log`.
 
 ```powershell
 python main.py --seed 42       # scénario reproductible
@@ -33,7 +33,7 @@ python main.py --no-essential # ne touche pas à la physique ni au chrono
 python main.py --safe         # sans pannes injectées
 ```
 
-**F9** active/désactive le sabotage ; **F10** déclenche une panne aléatoire dès le prochain appel du composant choisi ; **R** réinitialise le jeu et réactive les composants en panne. Un bandeau affiche les injections.
+**F9** active/désactive le sabotage ; **F10** déclenche une panne aléatoire dès le prochain appel du composant choisi ; **R** réinitialise volontairement le jeu. Les réparations sont désormais automatiques, sans besoin d'appuyer sur R. Un bandeau affiche les injections.
 
 Voir [docs/fault-testing.md](docs/fault-testing.md) pour le protocole complet, les cibles, les limites et les tests.
 
@@ -45,7 +45,7 @@ Voir [docs/fault-testing.md](docs/fault-testing.md) pour le protocole complet, l
 | Frein et marche arrière | `↓`, `S` |
 | Tourner à gauche | `←`, `Q`, `A` |
 | Tourner à droite | `→`, `D` |
-| Réinitialiser le kart et réessayer les composants désactivés | `R` |
+| Réinitialisation manuelle de la partie (facultative) | `R` |
 | Quitter | `Échap` |
 
 ## Fonctionnalités conservées depuis la V3
@@ -88,7 +88,8 @@ Karting/
 │       └── compositor.py   # ordre de profondeur des objets
 ├── tests/
 │   ├── test_core.py        # tests sans fenêtre
-│   └── test_fault_injection.py # tests du saboteur
+│   ├── test_fault_injection.py # tests du saboteur
+│   └── test_recovery.py      # vrais retries et pannes permanentes
 ├── docs/
 │   ├── architecture.md     # contrats et décisions d'architecture
 │   └── fault-testing.md    # protocole de pannes aléatoires
@@ -110,9 +111,9 @@ La suite couvre la géométrie, les stands, la physique, la course, les records,
 ## Résilience et limites
 
 - Les erreurs des éléments optionnels sont journalisées dans `karting.log` : décors, particules, HUD, sauvegarde et autres rendus.
-- Un élément en défaut est temporairement désactivé. Le jeu continue tant que la simulation reste valide.
-- Une erreur physique ou de chronométrage provoque une pause contrôlée. `R` réinitialise et autorise une nouvelle tentative.
+- Un élément en défaut est isolé, puis sa fonction réelle est réessayée avec délai croissant (0,5, 1, 2, 4 et 8 secondes). Il n'est déclaré réparé qu'après réussite.
+- Une erreur physique ou de chronométrage provoque une pause contrôlée ; l'opération interrompue est rejouée automatiquement depuis un état conservé avant reprise.
 - Les records sont sauvegardés atomiquement dans `record_karting.txt`. Ce fichier local n'est pas versionné.
-- La refonte n'est **pas** un moteur d'auto-réparation du code source : elle détecte, isole et permet de relancer les services après une panne.
+- La refonte n'est **pas** un moteur d'auto-réparation du code source : elle détecte, isole, réessaie et reconstruit certains objets défectueux. Une panne permanente reste diagnostiquée.
 
 La prochaine étape est la validation visuelle sur Windows avec Pygame, puis l'optimisation des calculs et l'amélioration du modèle de conduite.
