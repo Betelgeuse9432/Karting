@@ -53,6 +53,8 @@ class HudRenderer:
             if telemetry.rear_slip:
                 screen.blit(self.font.render("ARRIERE QUI PATINE : trop de gaz !",True,(255,160,40)),
                             (cfg.width//2-190,80))
+        if telemetry and telemetry.drifting:
+            screen.blit(self.font.render("DERAPAGE !",True,(255,210,30)),(cfg.width//2-70,110))
         screen.blit(self.minimap,(cfg.width-self.minimap.get_width()-10,10))
         pygame.draw.circle(screen,(255,60,60),
                            (cfg.width-self.minimap.get_width()-10+car.x*self.scale+5,
