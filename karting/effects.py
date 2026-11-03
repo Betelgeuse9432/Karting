@@ -60,13 +60,13 @@ class Effects:
                     self.emit(car, "flamme", -40, side*9, 7,
                               -r.uniform(60, 180), r.uniform(-20, 20), r.uniform(-10, 30),
                               r.uniform(0.12, 0.28), r.uniform(5, 9))
-        if (info.rear_slip or info.front_slip or info.hard_braking) and not info.on_grass and self.frame % 2 == 0:
-            axles = ([-22] if info.rear_slip else []) + ([22] if (info.front_slip or info.hard_braking) else [])
+        if (info.rear_slip or info.front_slip or info.hard_braking or info.drifting) and not info.on_grass and self.frame % 2 == 0:
+            axles = ([-22] if (info.rear_slip or info.drifting) else []) + ([22] if (info.front_slip or info.hard_braking) else [])
             for lx in axles:
                 for side in (-1, 1):
                     self.emit(car, "fumee", lx, side*21, 3, -r.uniform(0, 30), r.uniform(-20, 20),
                               r.uniform(15, 40), r.uniform(0.6, 1.2), r.uniform(7, 11))
-        slipping = (info.rear_slip or info.front_slip or info.hard_braking) and not info.on_grass
+        slipping = (info.rear_slip or info.front_slip or info.hard_braking or info.drifting) and not info.on_grass
         for k, (lx, ly) in enumerate(((-22,-21), (-22,21), (22,-21), (22,21))):
             wx, wy, _ = car.local_to_world(lx, ly)
             if slipping:
