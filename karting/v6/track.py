@@ -46,6 +46,44 @@ class V6Track(Track):
                 self.position(i0, self.pit_d2+150), self.position(i1, self.pit_d2+150),
                 self.DOOR_COLORS[g % len(self.DOOR_COLORS)], self.pit_indices[m+depth//2]))
 
+        # Les hauteurs du relief sur la piste sont fixes : les calculer une fois
+        # évite des milliers d'appels à sin() lors de chaque image.
+        self.line_heights = [[height(x, y) for x, y in line] for line in self.lines]
+        self.pit_line_heights = [[height(x, y) for x, y in line] for line in self.pit_lines]
+
+        # Recherche spatiale exacte de la portion de piste la plus proche.
+        # Le balayage annulaire s'arrête seulement quand aucune cellule non
+        # explorée ne peut contenir un point plus proche.
+        self._cell_size = 320.0
+        self._cells = {}
+        for index, (x, y) in enumerate(self.center):
+            cell = (math.floor(x/self._cell_size), math.floor(y/self._cell_size))
+            self._cells.setdefault(cell, []).append(index)
+
+    def nearest(self, x: float, y: float) -> tuple[int, float]:
+        if not math.isfinite(x) or not math.isfinite(y):
+            raise ValueError("Coordonnées de piste non finies")
+        side = self._cell_size
+        gx, gy = math.floor(x/side), math.floor(y/side)
+        best_index, best_squared = -1, math.inf
+        ring = 0
+        while True:
+            for ix in range(gx-ring, gx+ring+1):
+                for iy in range(gy-ring, gy+ring+1):
+                    if max(abs(ix-gx), abs(iy-gy)) != ring:
+                        continue
+                    for index in self._cells.get((ix, iy), ()):
+                        px, py = self.center[index]
+                        squared = (px-x)**2 + (py-y)**2
+                        if squared < best_squared:
+                            best_index, best_squared = index, squared
+            if best_index >= 0:
+                border = min(x-(gx-ring)*side, (gx+ring+1)*side-x,
+                             y-(gy-ring)*side, (gy+ring+1)*side-y)
+                if best_squared <= border*border:
+                    return best_index, math.sqrt(best_squared)
+            ring += 1
+
     def wheel_is_outside(self, x: float, y: float, center_index: int) -> bool:
         i = min(((center_index + delta) % self.count for delta in range(-30, 31)),
                 key=lambda k: (self.center[k][0]-x)**2 + (self.center[k][1]-y)**2)
@@ -56,9 +94,10 @@ class V6Track(Track):
         off = (x-self.center[i][0])*self.normals[i][0] + (y-self.center[i][1])*self.normals[i][1]
         return not (i in self.pit_set and half < off < self.pit_end)
 
-    def wheels_on_grass(self, car, wheel_positions) -> int:
-        nearest, _ = self.nearest(car.x, car.y)
-        return sum(self.wheel_is_outside(*car.local_to_world(lx, ly)[:2], nearest)
+    def wheels_on_grass(self, car, wheel_positions, center_index=None) -> int:
+        if center_index is None:
+            center_index, _ = self.nearest(car.x, car.y)
+        return sum(self.wheel_is_outside(*car.local_to_world(lx, ly)[:2], center_index)
                    for lx, ly in wheel_positions)
 
     def barrier(self, car, dt: float) -> BarrierCollision:
