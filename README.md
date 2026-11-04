@@ -1,103 +1,75 @@
 # 🏎️ Karting
 
-**Jeu de karting en Python/Pygame avec projection 3D, physique arcade et chronométrage.**
+Projet Python/Pygame. **Sur la branche `dev`, `python main.py` lance désormais la V6 complète.**
+La V6 provient du fichier `v6` de la branche `main`, sans modification de cet original.
 
-> **Branche `dev` : refonte modulaire V4 expérimentale.** Le prototype V3 est conservé dans `karting_v3.py` pour référence. Le rendu visuel de la V4 doit encore être validé avec un vrai Pygame.
-
-## Installer et lancer
-
-Python 3.10+ recommandé.
+## Installation et démarrage
 
 ```powershell
-git clone -b dev https://github.com/Betelgeuse9432/Karting.git
-cd Karting
+git switch dev
+git pull origin dev
 python -m pip install -r requirements.txt
 python main.py
 ```
 
-Pour jouer avec l'ancien prototype :
+Pour continuer à tester l'ancien moteur modulaire V4 (conservé dans le dossier `karting/`) :
 
 ```powershell
-python karting_v3.py
+python main.py --modular
 ```
 
-Si le dépôt existe déjà en local : `git pull origin dev` avant de lancer le jeu.
+`python karting_v6.py` lance directement la nouvelle version. `python main.py --help` explique les modes.
 
-## Contrôles
+## Nouveautés V6 intégrées et jouables
+
+- **Sélection de quatre véhicules** : kart, 4×4, GT3 et WEC, chacun avec ses réglages de physique et sa carrosserie 3D, ainsi que plusieurs coloris.
+- **Nouveau grand circuit** avec relief, montées, descentes, rails de sécurité et collisions, vibreurs et stands.
+- **Graphismes** : tribunes, publicités, lampadaires, végétation, ciel, nuages, soleil, lune, étoiles, éclairages, phares et brume.
+- **Météo** : jour, crépuscule, nuit et pluie, avec influence sur l'adhérence.
+- **Optimisation graphique** : trois niveaux de qualité et distance de rendu ajustable.
+- **Course** : compte-tours, chronométrage, records, mini-carte, compteurs, pénalité de piste lorsque les quatre roues sortent.
+- **Effets** : fumée, étincelles, flammes, traces de pneus, secousses de caméra et effets de freinage.
+- **Ajout conservé depuis `dev`** : frein à main sur Espace avec dérive latérale et récupération progressive de l'adhérence.
+
+Le fichier de records de la V6 est `record_karting_v6.txt`, distinct de celui de la V4 puisque les circuits sont différents.
+
+## Contrôles V6
 
 | Action | Touches |
 | --- | --- |
-| Accélération | `↑`, `Z`, `W` |
-| Frein et marche arrière | `↓`, `S` |
-| Frein à main / dérapage | `Espace` |
-| Tourner à gauche | `←`, `Q`, `A` |
-| Tourner à droite | `→`, `D` |
-| Réinitialiser le kart et réessayer les composants désactivés | `R` |
+| Accélérer | `↑`, `Z`, `W` |
+| Freiner / marche arrière | `↓`, `S` |
+| Direction | `←`, `→`, `Q`, `A`, `D` |
+| **Frein à main / dérapage (en course)** | **`Espace`** |
+| Choisir véhicule / couleur | Flèches au menu |
+| Démarrer la course | `Entrée` ou `Espace` au menu |
+| Cycle jour / crépuscule / nuit | `N` |
+| Activer / désactiver pluie | `P` |
+| Qualité graphique | `G` |
+| Réinitialiser | `R` |
+| Retour au menu | `M` |
 | Quitter | `Échap` |
 
-## Fonctionnalités conservées depuis la V3
-
-- Circuit fermé lissé, vibreurs, stands, garages, arbres.
-- Voiture constituée de surfaces 3D projetées en perspective, caméra suiveuse.
-- Accélération et freinage progressifs, perte d'adhérence avant/arrière, appui aérodynamique.
-- **Nouveau sur `dev` :** frein à main sur `Espace`, inertie latérale pendant les dérapages, traces de pneus et avertissement à l’écran.
-- Carrosserie animée, aileron mobile, roues et disques de frein.
-- Fumée, étincelles, flammes et traces de glisse.
-- Mini-carte, affichage des pédales, du chrono, des temps par tour et des records.
-
-Ces paramètres représentent une **physique de jeu**, pas un modèle certifié de conduite réelle.
-
-## Structure de la refonte
+## Architecture et état de migration
 
 ```text
-Karting/
-├── main.py                 # point d'entrée V4
-├── karting_v3.py           # prototype original conservé
-├── karting/
-│   ├── config.py           # configuration validée et immuable
-│   ├── state.py            # état du kart et commandes
-│   ├── track.py            # piste, normales, stands et garages
-│   ├── scenery.py          # arbres générés indépendamment
-│   ├── input.py            # adaptation clavier Pygame
-│   ├── physics.py          # physique sans Pygame
-│   ├── race.py             # secteurs et temps au tour
-│   ├── persistence.py      # records et sauvegarde atomique
-│   ├── camera.py           # transformation et projection 3D sans Pygame
-│   ├── effects.py          # particules et traces sans Pygame
-│   ├── faults.py           # diagnostic et isolation des erreurs
-│   ├── game.py             # orchestration de tous les services
-│   └── render/
-│       ├── common.py       # primitives et mélange de couleurs
-│       ├── world.py        # ciel, piste, végétation, stands
-│       ├── vehicle.py      # dessin de la voiture
-│       ├── particles.py    # dessin des effets
-│       ├── hud.py          # interface et panneaux
-│       └── compositor.py   # ordre de profondeur des objets
-├── tests/
-│   └── test_core.py        # tests sans fenêtre
-├── docs/
-│   └── architecture.md     # contrats et décisions d'architecture
-├── requirements.txt
-└── .gitignore
+main.py              lance la V6 par défaut, ou la V4 avec --modular
+karting_v6.py        V6 complète, préservant son fonctionnement d'origine
+karting_v3.py        prototype V3 historique
+karting/             moteur V4 modulaire (physique, piste, caméra, rendu...)
+tests/               tests du moteur et vérification de l'intégration V6
+docs/                notes d'architecture et de conception
 ```
 
-**Règle :** la physique ne connaît ni l'écran, ni Pygame, ni les particules. Chaque composant reçoit explicitement les objets dont il a besoin. Un défaut du rendu optionnel ne doit pas interrompre la simulation.
+**Important :** toutes les fonctionnalités V6 sont présentes dans `dev` et accessibles depuis l'entrée principale, mais **le moteur interne V6 reste pour l'instant monolithique**. Il n'a pas encore été refactorisé dans les classes et services de `karting/`. On conserve ce dernier comme base de la migration ultérieure, sans prétendre qu'un simple lancement constitue une vraie refonte modulaire.
 
-## Tests
+La branche `test` reste le laboratoire séparé d'injection de pannes. La V6 ne bénéficie pas automatiquement de son système d'auto-réparation tant que ses composants n'ont pas été isolés.
+
+## Vérifications
 
 ```powershell
 python -m unittest discover -s tests -v
-python -m compileall -q karting
+python -m compileall -q karting main.py karting_v6.py
 ```
 
-La suite couvre la géométrie, les stands, la physique, la course, les records, les projections, les effets et la gestion des défaillances. La parité numérique V3 a été vérifiée avant cet ajout ; elle n’est plus attendue quand le frein à main est activé. **Les tests ne remplacent pas une vérification graphique et des FPS sous Pygame.**
-
-## Résilience et limites
-
-- Les erreurs des éléments optionnels sont journalisées dans `karting.log` : décors, particules, HUD, sauvegarde et autres rendus.
-- Un élément en défaut est temporairement désactivé. Le jeu continue tant que la simulation reste valide.
-- Une erreur physique ou de chronométrage provoque une pause contrôlée. `R` réinitialise et autorise une nouvelle tentative.
-- Les records sont sauvegardés atomiquement dans `record_karting.txt`. Ce fichier local n'est pas versionné.
-- La refonte n'est **pas** un moteur d'auto-réparation du code source : elle détecte, isole et permet de relancer les services après une panne.
-
-La prochaine étape est la validation visuelle sur Windows avec Pygame, puis l'optimisation des calculs et l'amélioration du modèle de conduite.
+Les tests statiques vérifient la présence de la V6 et la syntaxe, mais le rendu et les FPS doivent être validés sous Pygame, notamment pour chaque véhicule, en pluie et de nuit.
