@@ -61,28 +61,28 @@ class V6AtmosphereRenderer:
             transformed=camera.project(points)
             if transformed:pygame.draw.polygon(target or screen,colour,transformed)
         nuit=night
-            """Faisceaux des phares + feux arrière + lampadaires (ajoutés par-dessus l'image sombre)"""
-            M = MODELE
-            nez, py = M["nez"], M["phare_y"]
-            LUMIERE.fill((0, 0, 0))
-            for longueur, ouverture, couleur in [(720, 0.62, (20, 19, 13)), (600, 0.5, (32, 30, 20)), (470, 0.38, (46, 43, 29)),
-                                                 (350, 0.28, (64, 60, 40)), (240, 0.19, (88, 82, 54)), (140, 0.11, (118, 110, 72))]:
-                for s in (-1, 1):
-                    pts = [loc2mon(nez + 40, s * py - 3, 0), loc2mon(nez + longueur, s * py - longueur * ouverture * 0.35, 0),
-                           loc2mon(nez + longueur, s * py + longueur * ouverture * 0.35, 0), loc2mon(nez + 40, s * py + 3, 0)]
-                    poly(tuple(int(c * min(1, nuit * 1.4)) for c in couleur), [sol(p[0], p[1]) for p in pts], LUMIERE)
-            for (lx, ly, lz) in M["feux_pos"]:
-                wx, wy, wz = loc2mon(lx, ly, lz)
-                f, r = cam(wx, wy)
-                if f > NEAR:
-                    sc = FOCAL / f
-                    force = 0.5 + 0.5 * etat["frein"]
-                    pygame.draw.circle(LUMIERE, (int(150 * force), 10, 10), (W / 2 + r * sc, HORIZON + (CAMZ - wz) * sc), (5 + 9 * etat["frein"]) * sc)
-            for (lx, ly) in LAMPES:                          # lampadaires
-                f, r = cam(lx, ly)
-                if NEAR < f < FAR:
-                    sc = FOCAL / f
-                    z = hauteur(lx, ly) + 234
-                    pygame.draw.circle(LUMIERE, (110, 98, 62), (W / 2 + r * sc, HORIZON + (CAMZ - z) * sc), max(2, 34 * sc))
-                    pygame.draw.circle(LUMIERE, (190, 170, 110), (W / 2 + r * sc, HORIZON + (CAMZ - z) * sc), max(1, 10 * sc))
-            ecran.blit(LUMIERE, (0, 0), special_flags=pygame.BLEND_RGB_ADD)
+        """Faisceaux des phares + feux arrière + lampadaires (ajoutés par-dessus l'image sombre)"""
+        M = MODELE
+        nez, py = M["nez"], M["phare_y"]
+        LUMIERE.fill((0, 0, 0))
+        for longueur, ouverture, couleur in [(720, 0.62, (20, 19, 13)), (600, 0.5, (32, 30, 20)), (470, 0.38, (46, 43, 29)),
+                                             (350, 0.28, (64, 60, 40)), (240, 0.19, (88, 82, 54)), (140, 0.11, (118, 110, 72))]:
+            for s in (-1, 1):
+                pts = [loc2mon(nez + 40, s * py - 3, 0), loc2mon(nez + longueur, s * py - longueur * ouverture * 0.35, 0),
+                       loc2mon(nez + longueur, s * py + longueur * ouverture * 0.35, 0), loc2mon(nez + 40, s * py + 3, 0)]
+                poly(tuple(int(c * min(1, nuit * 1.4)) for c in couleur), [sol(p[0], p[1]) for p in pts], LUMIERE)
+        for (lx, ly, lz) in M["feux_pos"]:
+            wx, wy, wz = loc2mon(lx, ly, lz)
+            f, r = cam(wx, wy)
+            if f > NEAR:
+                sc = FOCAL / f
+                force = 0.5 + 0.5 * etat["frein"]
+                pygame.draw.circle(LUMIERE, (int(150 * force), 10, 10), (W / 2 + r * sc, HORIZON + (CAMZ - wz) * sc), (5 + 9 * etat["frein"]) * sc)
+        for (lx, ly) in LAMPES:                          # lampadaires
+            f, r = cam(lx, ly)
+            if NEAR < f < FAR:
+                sc = FOCAL / f
+                z = hauteur(lx, ly) + 234
+                pygame.draw.circle(LUMIERE, (110, 98, 62), (W / 2 + r * sc, HORIZON + (CAMZ - z) * sc), max(2, 34 * sc))
+                pygame.draw.circle(LUMIERE, (190, 170, 110), (W / 2 + r * sc, HORIZON + (CAMZ - z) * sc), max(1, 10 * sc))
+        ecran.blit(LUMIERE, (0, 0), special_flags=pygame.BLEND_RGB_ADD)
