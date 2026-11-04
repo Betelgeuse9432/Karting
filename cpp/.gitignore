@@ -1,0 +1,10 @@
+# C++/CMake
+cpp/build/
+cpp/build-*/
+cpp/cmake-build-*/
+cpp/.cache/
+*.obj
+*.o
+*.pdb
+*.exe
+record_karting_cpp.txt
