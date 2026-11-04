@@ -31,7 +31,7 @@ python main.py --modular
 - **Effets** : fumée, étincelles, flammes, traces de pneus, secousses de caméra et effets de freinage.
 - **Ajout conservé depuis `dev`** : frein à main sur Espace avec dérive latérale et récupération progressive de l'adhérence.
 
-Le fichier de records de la V6 est `record_karting_v6.txt`, distinct de celui de la V4 puisque les circuits sont différents.
+La V6 réutilise l'adaptateur de clavier du moteur modulaire V4. Le fichier de records de la V6 est `record_karting_v6.txt`, distinct de celui de la V4 puisque les circuits sont différents.
 
 ## Contrôles V6
 
@@ -57,6 +57,7 @@ main.py              lance la V6 par défaut, ou la V4 avec --modular
 karting_v6.py        V6 complète, préservant son fonctionnement d'origine
 karting_v3.py        prototype V3 historique
 karting/             moteur V4 modulaire (physique, piste, caméra, rendu...)
+karting/v6/          modules V6 : véhicules, tracé et transitions météo
 tests/               tests du moteur et vérification de l'intégration V6
 docs/                notes d'architecture et de conception
 ```
@@ -72,4 +73,4 @@ python -m unittest discover -s tests -v
 python -m compileall -q karting main.py karting_v6.py
 ```
 
-Les tests statiques vérifient la présence de la V6 et la syntaxe, mais le rendu et les FPS doivent être validés sous Pygame, notamment pour chaque véhicule, en pluie et de nuit.
+Un smoke test ouvre la V6 sous le pilote graphique SDL factice, simule le lancement de course puis teste les touches jour/nuit, pluie et qualité. Il se lance dans la suite standard si Pygame est installé. GitHub Actions exécute la suite automatiquement sur les mises à jour de `dev` (workflow `.github/workflows/dev-tests.yml`). Le rendu réel, les FPS et la conduite doivent encore être validés sur une machine avec fenêtre Pygame.
