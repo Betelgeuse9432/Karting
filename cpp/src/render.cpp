@@ -1,5 +1,6 @@
 #include "karting/game.hpp"
 #include "rlgl.h"
+#include "raymath.h"
 #include <algorithm>
 #include <cmath>
 #include <random>
