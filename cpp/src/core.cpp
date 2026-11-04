@@ -204,6 +204,10 @@ void Simulation::reset(bool preserveRecord) {
     telemetry_=Telemetry{};
 }
 
+void Simulation::setBestLap(double seconds) {
+    if (seconds>0 && std::isfinite(seconds)) race_.bestLap=seconds;
+}
+
 void Simulation::update(const Controls& controls,double dt) {
     if (!(dt>0 && dt<=.05 && std::isfinite(dt)))
         throw std::invalid_argument("Invalid simulation timestep");
