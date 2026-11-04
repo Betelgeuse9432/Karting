@@ -6,7 +6,15 @@ Cette branche **cpp-raylib** dérive de **dev**. Le jeu natif est dans cpp/, et 
 
 Pré-requis : **Git, CMake >= 3.21**, un compilateur C++20 (Visual Studio avec « Développement Desktop en C++ » ou MinGW-w64) et une connexion Internet au premier configure. CMake télécharge automatiquement **raylib 5.5** si elle n'est pas déjà installée.
 
-Depuis la racine du dépôt :
+Le plus simple est d'exécuter le script de compilation et de lancement :
+
+```powershell
+powershell -ExecutionPolicy Bypass -File cpp/build_windows.ps1
+```
+
+Il conserve les messages d'erreur de CMake et du compilateur, ce qui facilite le diagnostic.
+
+Depuis la racine du dépôt, la méthode manuelle équivalente :
 
 ```powershell
 git fetch origin
