@@ -1,5 +1,8 @@
 """Intégration V6 : tests de structure et du point d'entrée sans lancer Pygame."""
 import ast
+import sys
+from types import SimpleNamespace
+from unittest.mock import MagicMock
 from pathlib import Path
 import unittest
 from unittest.mock import patch
@@ -40,12 +43,19 @@ class V6IntegrationTests(unittest.TestCase):
             with self.subTest(token=token):
                 self.assertIn(token, self.source)
 
-    def test_main_entry_defaults_to_v6(self):
-        with patch.object(main.runpy, "run_path") as launch:
+    def test_main_entry_defaults_to_modular_v6(self):
+        engine=MagicMock()
+        fake_module=SimpleNamespace(V6Game=engine)
+        with patch.dict(sys.modules, {"karting.v6.app":fake_module}), patch.object(main.runpy, "run_path") as legacy:
             main.main([])
-        self.assertEqual(launch.call_count, 1)
-        self.assertEqual(Path(launch.call_args.args[0]).name, "karting_v6.py")
-        self.assertEqual(launch.call_args.kwargs["run_name"], "__main__")
+        engine.assert_called_once()
+        engine.return_value.run.assert_called_once()
+        legacy.assert_not_called()
+
+    def test_legacy_v6_still_available(self):
+        with patch.object(main.runpy,"run_path") as launch:
+            main.main(["--legacy-v6"])
+        self.assertEqual(Path(launch.call_args.args[0]).name,"karting_v6.py")
 
     def test_main_rejects_unknown_modes(self):
         with self.assertRaises(SystemExit):
