@@ -54,7 +54,7 @@ FOCAL = FOCAL_BASE
 NEAR = 50
 FAR_Q = [1500, 2100, 2600]
 FAR = FAR_Q[QUALITE]
-FICHIER_RECORD = "record_karting.txt"
+FICHIER_RECORD = "record_karting_v6.txt"  # piste différente de la V4 : records séparés
 
 HERBE, HERBE2, HERBE3 = (44, 156, 46), (36, 136, 40), (88, 160, 52)
 ASPHALTE, ASPHALTE2 = (80, 80, 85), (72, 72, 77)
