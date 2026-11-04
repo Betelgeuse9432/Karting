@@ -96,4 +96,4 @@ class SkyRenderer:
                 b = etat["cam"] + math.atan((x - W / 2) / FOCAL)
                 pts.append((x, HORIZON - base - amp * (0.55 + 0.3 * math.sin(b * fr[0] + 1.3) + 0.2 * math.sin(b * fr[1] + 0.4) + 0.12 * math.sin(b * fr[2]))))
             pygame.draw.polygon(ecran, c, pts)
-            return haut,bas
+        return haut,bas
