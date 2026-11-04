@@ -1,3 +1,20 @@
+# 🚗 Portage natif C++20 / raylib
+
+**Cette branche `cpp-raylib` lance Karting depuis `cpp/`, pas depuis `python main.py`.**
+La branche est issue de `dev` ; les fichiers Python restent présents uniquement comme référence pour les comparaisons et les tests de parité.
+
+Pour compiler sous Windows avec CMake et Visual Studio C++ :
+
+```powershell
+cmake -S cpp -B cpp/build
+cmake --build cpp/build --config Release --parallel
+.\cpp\build\Release\karting_cpp.exe
+```
+
+Pour les commandes complètes, la structure et les limites du portage, consulte [le guide C++](cpp/README.md).
+
+---
+
 # 🏎️ Karting V6, moteur modulaire
 
 **La branche `dev` utilise la V6 dans un moteur réellement modulaire.** La V6 originale de Nathan reste conservée dans `karting_v6.py` pour comparaison, mais **n'est plus exécutée par défaut**.
