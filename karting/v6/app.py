@@ -14,6 +14,7 @@ from .menu import V6MenuRenderer
 from .particles_render import V6ParticleRenderer
 from .session import V6Session
 from .sky import SkyRenderer
+from .timing import FixedStepClock
 from .vehicle_render import V6VehicleRenderer
 from .vehicles import PALETTE, VOITURES
 from .world_render import V6WorldRenderer
@@ -28,7 +29,7 @@ class V6Game:
         self.running=True
         self.mode="menu"
         self.menu_time=0.0
-        self._simulation_accumulator=0.0
+        self.stepper=FixedStepClock(hz=60,max_steps=8)
         self.session=None
         self.camera=None
         self.screen=None
@@ -89,7 +90,7 @@ class V6Game:
                             (self.session.selected_color+direction)%len(PALETTE))
             elif key in (pygame.K_RETURN,pygame.K_SPACE):
                 self.mode="race"
-                self._simulation_accumulator=0.0
+                self.stepper.reset()
                 self.session.reset()
                 self.camera=V6Camera(self.config,self.session.profile,self.session.car.angle)
                 self.camera.follow(self.session.car,0)
@@ -100,7 +101,7 @@ class V6Game:
                 self.camera.follow(self.session.car,0)
             elif key==pygame.K_m:
                 self.mode="menu"
-                self._simulation_accumulator=0.0
+                self.stepper.reset()
                 self.session.reset()
         if key==pygame.K_n:
             self.session.weather["phase"]=(self.session.weather["phase"]+1)%3
@@ -154,18 +155,9 @@ class V6Game:
                 else:
                     controls=self.session.faults.optional(
                         "input",lambda:read_controls(pygame.key.get_pressed()),Controls())
-                    self._simulation_accumulator+=frame_dt
-                    fixed_dt=1.0/self.config.frame_rate
-                    steps=0
-                    # Physique à cadence constante, affichage à fréquence libre.
-                    # Le plafond protège contre la "spirale de la mort" si le
-                    # PC ne peut plus suivre pendant plusieurs images.
-                    while self._simulation_accumulator+1e-10>=fixed_dt and steps<6:
-                        self.session.step(controls,fixed_dt)
-                        self._simulation_accumulator-=fixed_dt
-                        steps+=1
-                    if steps==6:
-                        self._simulation_accumulator=min(self._simulation_accumulator,fixed_dt)
+                    # Plusieurs pas physiques peuvent rattraper une image lente.
+                    for _ in range(self.stepper.consume(frame_dt)):
+                        self.session.step(controls,self.stepper.dt)
                     self.session.faults.optional("camera",
                         lambda:self.camera.follow(self.session.car,frame_dt,
                             quality=self.session.quality,
