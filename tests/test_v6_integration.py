@@ -21,13 +21,10 @@ class V6IntegrationTests(unittest.TestCase):
         compile(self.tree, str(V6), "exec")
 
     def test_four_car_presets(self):
-        definitions = [node for node in self.tree.body
-                       if isinstance(node, ast.Assign)
-                       and any(isinstance(target, ast.Name) and target.id == "VOITURES"
-                               for target in node.targets)]
-        self.assertEqual(len(definitions), 1)
-        self.assertIsInstance(definitions[0].value, ast.List)
-        self.assertEqual(len(definitions[0].value.elts), 4)
+        from karting.v6.vehicles import PALETTE, VOITURES
+        self.assertEqual(len(VOITURES), 4)
+        self.assertEqual([car["nom"] for car in VOITURES], ["KART", "4x4", "GT3", "WEC"])
+        self.assertGreaterEqual(len(PALETTE), 4)
 
     def test_v6_core_functions_are_available(self):
         functions = {node.name for node in self.tree.body if isinstance(node, ast.FunctionDef)}
@@ -38,7 +35,7 @@ class V6IntegrationTests(unittest.TestCase):
 
     def test_v6_weather_and_handbrake_present(self):
         for token in ('meteo["pluie"]', 'meteo["nuit"]',
-                      'main_frein = bool(t[pygame.K_SPACE])', 'v_laterale',
+                      'commandes.handbrake', 'v_laterale',
                       'record_karting_v6.txt', 'DERAPAGE'):
             with self.subTest(token=token):
                 self.assertIn(token, self.source)
