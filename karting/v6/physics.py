@@ -28,7 +28,7 @@ class V6Physics:
         car.validate()
         cfg = self.track.config
         info = self.track.info(car.x, car.y)
-        outside = self.track.wheels_on_grass(car, wheel_positions)
+        outside = self.track.wheels_on_grass(car, wheel_positions, info.index)
         prev_gas = car.gas
         car.gas = min(1, car.gas + vehicle["pedale_gaz"]*dt) if controls.gas else max(0, car.gas-5*dt)
         car.brake = min(1, car.brake + vehicle["pedale_frein"]*dt) if controls.brake else max(0, car.brake-3*dt)
@@ -61,7 +61,9 @@ class V6Physics:
             v -= brake_acc*dt
         elif controls.brake:
             v -= 250*dt
-        v -= v*(0.3 if controls.gas else 0.6)*dt
+        # Résistance à l’avancement plus faible sous accélération : conserve
+        # un bon rythme même sur les longues lignes droites de la V6.
+        v -= v*(0.18 if controls.gas else 0.5)*dt
         if controls.handbrake:
             v -= math.copysign(min(abs(v), 370*dt),v)
         v -= v*vehicle["herbe_frein"]*outside*dt
