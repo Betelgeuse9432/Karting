@@ -36,8 +36,11 @@ private:
 
 class WorldRenderer {
 public:
+    void initialize(const Track& track);
     void draw(const Track& track, const Weather& weather, int quality,
               Vector3 cameraPosition, double time) const;
+private:
+    std::vector<Vec2> trees_;
 };
 
 class VehicleRenderer {
