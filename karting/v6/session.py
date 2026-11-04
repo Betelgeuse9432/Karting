@@ -2,7 +2,7 @@
 from copy import deepcopy
 from dataclasses import replace
 
-from ..effects import Effects
+from .effects import V6Effects
 from ..faults import FaultManager
 from ..persistence import RecordStore
 from ..race import RaceTracker
@@ -22,7 +22,7 @@ class V6Session:
         self.faults=FaultManager()
         self.track=V6Track(self.config)
         self.physics=V6Physics(self.track)
-        self.effects=Effects(self.config.scenery_seed)
+        self.effects=V6Effects(self.config.scenery_seed)
         self.scenery=V6Scenery(self.track,self.config.scenery_seed)
         self.storage=RecordStore(self.config.record_path)
         best=self.faults.optional("record.load",self.storage.load)
