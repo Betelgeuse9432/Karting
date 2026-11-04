@@ -133,6 +133,49 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
         }
     }
 
+    // Grandstands reproduce the V6 crowd zones, without sprite processing.
+    if (quality>0) {
+        for (std::size_t i=95;i<330 && i<count;i+=20) {
+            for (int row=0;row<4;++row) {
+                const auto p=track.point(i,-Track::wall-85-row*36);
+                const auto ground=worldPoint(p);
+                if (Vector3Distance(ground,cameraPosition)>53) continue;
+                const float high=.3f+row*.28f;
+                DrawCubeV({ground.x,ground.y+high,ground.z},
+                          {1.35f,.16f,1.25f},
+                          shaded({120,125,134,255},1-.45f*night));
+                for (int seat=0;seat<3;++seat) {
+                    const Color crowdColor=palette((int(i/20)+row+seat)%6);
+                    DrawCubeV({ground.x+seat*.3f-.4f,
+                               ground.y+high+.22f,ground.z},
+                              {.17f,.26f,.17f},
+                              shaded(crowdColor,1-.4f*night));
+                }
+            }
+        }
+        // Advertising panels on selected outside barriers.
+        for (std::size_t i=115;i<count;i+=145) {
+            const auto p=track.point(i,(i/145)%2?Track::wall+35:-Track::wall-35);
+            const auto ground=worldPoint(p);
+            if (Vector3Distance(ground,cameraPosition)>59) continue;
+            const Color ad=palette(int(i/145)%6);
+            DrawCubeV({ground.x,ground.y+1.25f,ground.z},
+                      {2.8f,1.0f,.16f},shaded(ad,1-.42f*night));
+            DrawCubeV({ground.x,ground.y+1.25f,ground.z+.10f},
+                      {2.0f,.17f,.09f},shaded(WHITE,1-.42f*night));
+        }
+        // Pit-lane lighting: lamps become brighter at night.
+        for (std::size_t i=0;i<count;i+=90) {
+            if (!track.isPitIndex(i)) continue;
+            const auto base=worldPoint(track.point(i,Track::wall+40));
+            if (Vector3Distance(base,cameraPosition)>48) continue;
+            const Vector3 tip{base.x,base.y+4.0f,base.z};
+            DrawCylinderEx(base,tip,.035f,.025f,6,
+                           shaded(LIGHTGRAY,1-.45f*night));
+            DrawSphere(tip,.16f,night>.3?Color{255,235,150,255}:LIGHTGRAY);
+        }
+    }
+
     // Tree positions were generated once, instead of walking the circuit
     // and calling nearest-point search on every rendered frame.
     for (const auto& p:trees_) {
