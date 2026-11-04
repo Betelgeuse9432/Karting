@@ -1,7 +1,8 @@
 # 🏎️ MINI KARTING V6 - nouveau circuit, graphismes améliorés, rails, tribunes, brume, ciel, compteur
 # Lancer :  python karting_v6.py
 # Commandes : ⬆️ ou Z/W = gaz | ⬇️ ou S = frein / marche arrière | ⬅️ ➡️ ou Q/A D = tourner
-#             N = jour / crépuscule / nuit | P = pluie ON/OFF | R = recommencer | M = retour au menu | G = qualité graphique | Échap = quitter
+#             Espace = frein à main (pendant la course) | N = jour / crépuscule / nuit | P = pluie ON/OFF
+#             R = recommencer | M = retour au menu | G = qualité graphique | Échap = quitter
 #
 # 🎓 À APPRENDRE :
 #  - GAZ progressif mais puissants : trop de gaz en virage = l'ARRIÈRE patine (fumée + traces).
@@ -241,7 +242,7 @@ def reset():
     return dict(x=centre[0][0], y=centre[0][1], z=z0, cz=z0, angle=angle, cam=angle, v=0.0, volant=0.0,
                 gaz=0.0, frein=0.0, chaleur=0.0, tangage=0.0, roulis=0.0, aile=0.1, roue=0.0,
                 suivant=1, tours=0, chrono=0.0, meilleur=lire_record(), dernier=None, liste=[], vmax=0.0,
-                dehors4=False, msg=0.0, secousse=0.0)
+                dehors4=False, msg=0.0, secousse=0.0, v_laterale=0.0)
 
 etat = reset()
 meteo = dict(phase=0, nuit=0.0, pluie_on=False, pluie=0.0)
@@ -928,6 +929,7 @@ while en_marche:
     t = pygame.key.get_pressed()
     gaz = t[pygame.K_UP] or t[pygame.K_z] or t[pygame.K_w]
     frein = t[pygame.K_DOWN] or t[pygame.K_s]
+    main_frein = bool(t[pygame.K_SPACE])
     droite = (1 if (t[pygame.K_RIGHT] or t[pygame.K_d]) else 0) - (1 if (t[pygame.K_LEFT] or t[pygame.K_q] or t[pygame.K_a]) else 0)
 
     # --- Météo ---
@@ -955,6 +957,8 @@ while en_marche:
     appui = 1 + APPUI * (abs(v) / VITESSE_MAX) ** 2
     adherence = appui * (1 - 0.3 * pluie) * (1 - HERBE_GRIP * nb_herbe / 4)
     grip_av, grip_ar = GRIP_AV * adherence, GRIP_AR * adherence
+    if main_frein:
+        grip_ar *= 0.35  # l’essieu arrière décroche plus facilement
 
     # --- Direction ---
     braquage_max = BRAQUAGE / (1 + abs(v) / VSENS)
@@ -973,7 +977,7 @@ while en_marche:
     arriere_patine = usage_ar > grip_ar
     if arriere_patine:
         exces = usage_ar / grip_ar - 1
-        rotation *= 1 + 2 * exces
+        rotation *= 1 + (min(2 * exces, 1.5) if main_frein else 2 * exces)
         a_moteur *= grip_ar / usage_ar
 
     # --- Relief : ça monte, ça descend ---
@@ -987,14 +991,31 @@ while en_marche:
     elif frein:
         v -= 250 * dt
     v -= v * (0.3 if gaz else 0.6) * dt
+    if main_frein:
+        v -= math.copysign(min(abs(v), 370 * dt), v)
     v -= v * HERBE_FREIN * nb_herbe * dt               # herbe : progressif, roue par roue
     v -= pente * PENTE_FORCE * dt
     etat["v"] = v = max(-150, min(VITESSE_MAX, v))
     etat["vmax"] = max(etat["vmax"], abs(v))
 
-    etat["angle"] += rotation * dt
-    etat["x"] = max(0, min(MONDE[0], etat["x"] + math.cos(etat["angle"]) * v * dt))
-    etat["y"] = max(0, min(MONDE[1], etat["y"] + math.sin(etat["angle"]) * v * dt))
+    # Inertie latérale issue de dev : un kart en dérive ne change pas
+    # instantanément de trajectoire lorsque son châssis tourne.
+    delta_angle = rotation * dt
+    if main_frein or abs(etat["v_laterale"]) > 0.01:
+        laterale = etat["v_laterale"] * math.cos(delta_angle) - v * math.sin(delta_angle)
+        grip_retour = 950 * (0.055 if main_frein else 1.0)
+        laterale = math.copysign(max(0.0, abs(laterale) - grip_retour * dt), laterale)
+        etat["v_laterale"] = laterale if abs(laterale) >= 0.01 else 0.0
+    else:
+        etat["v_laterale"] = 0.0
+    etat["angle"] += delta_angle
+    ca, sa = math.cos(etat["angle"]), math.sin(etat["angle"])
+    nouveau_x = etat["x"] + (ca * v - sa * etat["v_laterale"]) * dt
+    nouveau_y = etat["y"] + (sa * v + ca * etat["v_laterale"]) * dt
+    etat["x"] = max(0, min(MONDE[0], nouveau_x))
+    etat["y"] = max(0, min(MONDE[1], nouveau_y))
+    if etat["x"] != nouveau_x or etat["y"] != nouveau_y:
+        etat["v_laterale"] = 0.0
     # --- Rails de sécurité : on ne les traverse pas ! ---
     cote_stands = numero in PITSET and dec > 0
     limite = (PIT_D2 + 25) if cote_stands else (MUR - 18)
@@ -1051,10 +1072,11 @@ while en_marche:
                 emettre("flamme", ex - 2, ey, ez, -random.uniform(60, 180), random.uniform(-20, 20),
                         random.uniform(-10, 30), random.uniform(0.12, 0.28), random.uniform(5, 9))
     gros_freinage = etat["frein"] > 0.9 and v > 350
-    glisse = (arriere_patine or avant_glisse or gros_freinage) and nb_herbe < 2
+    derapage = abs(etat["v_laterale"]) > 12
+    glisse = (arriere_patine or avant_glisse or gros_freinage or derapage) and nb_herbe < 2
     if glisse and img % 2 == 0:
         for (cx, cy, avant, rayon, _) in MODELE["roues"]:      # FUMÉE des pneus qui glissent
-            if (avant and (avant_glisse or gros_freinage)) or (not avant and arriere_patine):
+            if (avant and (avant_glisse or gros_freinage)) or (not avant and (arriere_patine or derapage)):
                 emettre("fumee", cx, cy, 3, -random.uniform(0, 30), random.uniform(-20, 20),
                         random.uniform(15, 40), random.uniform(0.6, 1.2), random.uniform(7, 11))
     for k, (lx, ly) in enumerate(ROUES):
@@ -1278,6 +1300,8 @@ while en_marche:
         ecran.blit(police.render("AVANT QUI GLISSE : trop de frein en virage !", True, (255, 160, 40)), (W // 2 - 230, 50))
     if arriere_patine:
         ecran.blit(police.render("ARRIERE QUI PATINE : trop de gaz !", True, (255, 160, 40)), (W // 2 - 190, 80))
+    if derapage:
+        ecran.blit(police.render("DERAPAGE !", True, (255, 210, 30)), (W // 2 - 70, 110))
     mx, my = W - mini.get_width() - 10, 10
     ecran.blit(mini, (mx, my))
     px, py = mx + 10 + etat["x"] * ECH, my + 10 + etat["y"] * ECH
@@ -1286,7 +1310,7 @@ while en_marche:
     nom_meteo = ["JOUR", "CREPUSCULE", "NUIT"][meteo["phase"]] + (" + PLUIE" if meteo["pluie_on"] else "")
     ecran.blit(petite.render(nom_meteo, True, blanc), (mx, my + mini.get_height() + 6))
     dessiner_compteur(v)
-    ecran.blit(petite.render("N = jour/nuit  P = pluie  G = qualite  M = menu", True, (200, 200, 200)), (W // 2 - 210, H - 52))
+    ecran.blit(petite.render("ESPACE = frein a main  N = ciel  P = pluie  G = qualite  M = menu", True, (200, 200, 200)), (W // 2 - 255, H - 52))
     if en_stand:
         afficher_stands()
 
