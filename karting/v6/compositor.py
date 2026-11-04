@@ -14,35 +14,44 @@ class V6Compositor:
         quality=session.quality
         faults=session.faults
         objects=[(camera.position(session.car.x,session.car.y)[0],"vehicle",None)]
+        half_width=camera.cfg.width/(2*camera.focal)
+
+        def visible(x,y,margin=150,extra_far=0):
+            forward,right=camera.position(x,y)
+            if not camera.cfg.near<forward<camera.far+extra_far:
+                return None
+            if abs(right)>max(forward,camera.cfg.near)*half_width+margin:
+                return None
+            return forward
         if "render.trees" not in faults.disabled:
             for tree in session.scenery.trees:
-                f=camera.position(tree.x,tree.y)[0]
-                if camera.cfg.near<f<camera.far:objects.append((f,"tree",tree))
+                f=visible(tree.x,tree.y,200)
+                if f is not None:objects.append((f,"tree",tree))
         if "render.garages" not in faults.disabled:
             for garage in track.garages:
-                f=camera.position(*track.center[garage.track_index])[0]
-                if camera.cfg.near<f<camera.far+300:objects.append((f,"garage",garage))
+                f=visible(*track.center[garage.track_index],margin=450,extra_far=300)
+                if f is not None:objects.append((f,"garage",garage))
         if quality>=1:
             if "render.stands" not in faults.disabled:
                 for stand in session.scenery.stands:
                     i=(stand[0]+stand[1])//2%track.count
-                    f=camera.position(*track.center[i])[0]
-                    if camera.cfg.near<f<camera.far:objects.append((f,"stand",stand))
+                    f=visible(*track.center[i],margin=400)
+                    if f is not None:objects.append((f,"stand",stand))
             if "render.ads" not in faults.disabled:
                 for ad in session.scenery.ads:
                     i=(ad[0]+ad[1])//2%track.count
-                    f=camera.position(*track.center[i])[0]
-                    if camera.cfg.near<f<camera.far:objects.append((f,"ad",ad))
+                    f=visible(*track.center[i],margin=350)
+                    if f is not None:objects.append((f,"ad",ad))
             if "render.lamps" not in faults.disabled:
                 for x,y in session.scenery.lamps:
-                    f=camera.position(x,y)[0]
-                    if camera.cfg.near<f<camera.far:objects.append((f,"lamp",(x,y)))
+                    f=visible(x,y,200)
+                    if f is not None:objects.append((f,"lamp",(x,y)))
         if "render.particles" not in faults.disabled:
             for particle in session.effects.particles:
-                f=camera.position(particle.x,particle.y)[0]
-                if camera.cfg.near<f<camera.far:objects.append((f,"particle",particle))
-        f=camera.position(*track.center[0])[0]
-        if camera.cfg.near<f<camera.far:objects.append((f,"gantry",None))
+                f=visible(particle.x,particle.y,150)
+                if f is not None:objects.append((f,"particle",particle))
+        f=visible(*track.center[0],margin=350)
+        if f is not None:objects.append((f,"gantry",None))
         objects.sort(key=lambda row:row[0],reverse=True)
         def decor(method,*args):
             return method(screen,camera,track,weather,quality,*args)
