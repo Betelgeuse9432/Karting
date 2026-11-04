@@ -1,76 +1,98 @@
-# 🏎️ Karting
+# 🏎️ Karting V6, moteur modulaire
 
-Projet Python/Pygame. **Sur la branche `dev`, `python main.py` lance désormais la V6 complète.**
-La V6 provient du fichier `v6` de la branche `main`, sans modification de cet original.
+**La branche `dev` utilise la V6 dans un moteur réellement modulaire.** La V6 originale de Nathan reste conservée dans `karting_v6.py` pour comparaison, mais **n'est plus exécutée par défaut**.
 
-## Installation et démarrage
+## Lancer
 
 ```powershell
 git switch dev
 git pull origin dev
 python -m pip install -r requirements.txt
+python -m unittest discover -s tests -v
 python main.py
 ```
 
-Pour continuer à tester l'ancien moteur modulaire V4 (conservé dans le dossier `karting/`) :
+Options :
 
-```powershell
-python main.py --modular
-```
+- `python main.py` : nouvelle **V6 modulaire** (jeu normal).
+- `python main.py --modular` : ancien moteur V4 modulaire pour comparaison.
+- `python main.py --legacy-v6` : V6 monolithique archivée, avec le frein à main ajouté.
+- `python karting_v6.py` : lancement direct de la V6 archivée.
 
-`python karting_v6.py` lance directement la nouvelle version. `python main.py --help` explique les modes.
+## Fonctionnalités de la V6 modulaire
 
-## Nouveautés V6 intégrées et jouables
+- Quatre voitures avec géométries 3D distinctes, paramètres de conduite et couleurs : **KART, 4×4, GT3, WEC**.
+- Grand circuit V6, relief, vibreurs, rails de sécurité, stands, garages et pénalités lorsque les quatre roues sont hors piste.
+- Physique propre à chaque voiture, adhérence différente sur herbe et sous la pluie, frein à main `Espace` et dérapages avec inertie latérale.
+- Menu 3D de sélection de véhicule et de couleur, statuts des voitures et caractéristiques affichées.
+- Cycle jour/crépuscule/nuit, pluie, étoiles, soleil, lune, nuages, brume, lampadaires, phares et feux.
+- Décors : arbres, tribunes, publicités, garages, portique ; tri visuel selon la profondeur.
+- Trois niveaux graphiques, mini-carte, compteur, tours, records et tableau des stands.
+- Particules, traces de pneus, flammes, fumée, étincelles et effets météorologiques.
 
-- **Sélection de quatre véhicules** : kart, 4×4, GT3 et WEC, chacun avec ses réglages de physique et sa carrosserie 3D, ainsi que plusieurs coloris.
-- **Nouveau grand circuit** avec relief, montées, descentes, rails de sécurité et collisions, vibreurs et stands.
-- **Graphismes** : tribunes, publicités, lampadaires, végétation, ciel, nuages, soleil, lune, étoiles, éclairages, phares et brume.
-- **Météo** : jour, crépuscule, nuit et pluie, avec influence sur l'adhérence.
-- **Optimisation graphique** : trois niveaux de qualité et distance de rendu ajustable.
-- **Course** : compte-tours, chronométrage, records, mini-carte, compteurs, pénalité de piste lorsque les quatre roues sortent.
-- **Effets** : fumée, étincelles, flammes, traces de pneus, secousses de caméra et effets de freinage.
-- **Ajout conservé depuis `dev`** : frein à main sur Espace avec dérive latérale et récupération progressive de l'adhérence.
+### Commandes
 
-La V6 réutilise l'adaptateur de clavier du moteur modulaire V4. Le fichier de records de la V6 est `record_karting_v6.txt`, distinct de celui de la V4 puisque les circuits sont différents.
-
-## Contrôles V6
-
-| Action | Touches |
+| Action | Touche |
 | --- | --- |
 | Accélérer | `↑`, `Z`, `W` |
 | Freiner / marche arrière | `↓`, `S` |
-| Direction | `←`, `→`, `Q`, `A`, `D` |
-| **Frein à main / dérapage (en course)** | **`Espace`** |
-| Choisir véhicule / couleur | Flèches au menu |
-| Démarrer la course | `Entrée` ou `Espace` au menu |
-| Cycle jour / crépuscule / nuit | `N` |
-| Activer / désactiver pluie | `P` |
+| Direction | `←` / `→`, `Q` / `D` |
+| Frein à main / dérapage en course | **`Espace`** |
+| Choisir voiture / couleur au menu | Flèches |
+| Lancer la course | `Entrée` ou `Espace` au menu |
+| Jour / crépuscule / nuit | `N` |
+| Pluie | `P` |
 | Qualité graphique | `G` |
-| Réinitialiser | `R` |
-| Retour au menu | `M` |
+| Recommencer | `R` |
+| Menu principal | `M` |
 | Quitter | `Échap` |
 
-## Architecture et état de migration
+## Architecture
 
 ```text
-main.py              lance la V6 par défaut, ou la V4 avec --modular
-karting_v6.py        V6 complète, préservant son fonctionnement d'origine
-karting_v3.py        prototype V3 historique
-karting/             moteur V4 modulaire (physique, piste, caméra, rendu...)
-karting/v6/          modules V6 : véhicules, tracé et transitions météo
-tests/               tests du moteur et vérification de l'intégration V6
-docs/                notes d'architecture et de conception
+main.py                      lance la V6 modulaire
+karting/
+├── v6/
+│   ├── app.py               seule boucle Pygame, événements et orchestration des rendus
+│   ├── session.py           moteur de course, état, chronomètre, effets et sauvegarde
+│   ├── physics.py           conduite, dérapage, appui, pluie, herbe, pentes, collisions
+│   ├── track.py             piste, stands, rails, relief, limites des quatre roues
+│   ├── track_layout.py      points du circuit, sans affichage
+│   ├── vehicles.py          profils de voitures et palette
+│   ├── config.py            paramètres immuables du jeu
+│   ├── weather.py           transitions météo déterministes
+│   ├── camera.py            caméra 3D, relief et projection perspective
+│   ├── mesh.py              géométrie exacte des quatre modèles 3D V6
+│   ├── vehicle_render.py    carrosseries 3D et animations
+│   ├── world_render.py      terrain, piste, stands, rails
+│   ├── scenery.py           arbres, tribunes, pubs, lampadaires
+│   ├── decor_render.py      rendu des décors indépendants
+│   ├── sky.py               soleil, lune, nuages, étoiles et montagnes
+│   ├── atmosphere_render.py pluie, nuit et lumières
+│   ├── effects.py           effets du relief
+│   ├── particles_render.py  particules et traces en profondeur
+│   ├── hud.py               compteurs, mini-carte et tableaux des stands
+│   ├── menu.py              sélection de véhicule et de couleur
+│   └── compositor.py        tri de profondeur, isolation des rendus
+├── config.py, track.py, state.py, physics.py, ...
+│                           bibliothèque du moteur V4, toujours disponible
+└── render/                  composants graphiques réutilisés du moteur précédent
+karting_v6.py                archive jouable de la V6 monolithique
+karting_v3.py                prototype d'origine
+tests/                       validation du moteur V4 et V6
 ```
 
-**Important :** toutes les fonctionnalités V6 sont présentes dans `dev` et accessibles depuis l'entrée principale, mais **le moteur interne V6 reste pour l'instant monolithique**. Il n'a pas encore été refactorisé dans les classes et services de `karting/`. On conserve ce dernier comme base de la migration ultérieure, sans prétendre qu'un simple lancement constitue une vraie refonte modulaire.
+**Contrats :** les modules `track`, `physics`, `weather`, `session`, `mesh` et `scenery` n'importent pas Pygame. La boucle de jeu ne calcule ni trajectoire ni géométrie. Les rendus reçoivent explicitement l'écran, la caméra et l'état nécessaire.
 
-La branche `test` reste le laboratoire séparé d'injection de pannes. La V6 ne bénéficie pas automatiquement de son système d'auto-réparation tant que ses composants n'ont pas été isolés.
+Le mécanisme de gestion des fautes existant est réutilisé pour isoler les rendus facultatifs, la sauvegarde et la lecture des commandes. La branche `test` reste le laboratoire distinct d'injection de pannes ; la V6 modulaire de `dev` ne déclenche pas de pannes artificielles.
 
-## Vérifications
+## Tests
 
 ```powershell
+python -m compileall -q main.py karting_v6.py karting tests
 python -m unittest discover -s tests -v
-python -m compileall -q karting main.py karting_v6.py
 ```
 
-Un smoke test ouvre la V6 sous le pilote graphique SDL factice, simule le lancement de course puis teste les touches jour/nuit, pluie et qualité. Il se lance dans la suite standard si Pygame est installé. GitHub Actions exécute la suite automatiquement sur les mises à jour de `dev` (workflow `.github/workflows/dev-tests.yml`). Le rendu réel, les FPS et la conduite doivent encore être validés sur une machine avec fenêtre Pygame.
+Le workflow GitHub Actions `.github/workflows/dev-tests.yml` est prévu pour exécuter la suite à chaque push sur `dev`, sous SDL fictif pour la fenêtre Pygame.
+
+**Limite :** l'architecture a été refactorisée, mais il faut confirmer sur un PC réel que tous les véhicules, éclairages, effets météo et FPS restent conformes à la V6 monolithique. L'ancienne version reste disponible pour comparer, et tout écart pourra être corrigé dans le composant concerné plutôt que dans un fichier unique.
