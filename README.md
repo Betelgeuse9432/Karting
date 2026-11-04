@@ -2,6 +2,23 @@
 
 **La branche `dev` utilise la V6 dans un moteur réellement modulaire.** La V6 originale de Nathan reste conservée dans `karting_v6.py` pour comparaison, mais **n'est plus exécutée par défaut**.
 
+## Conduite plus rapide et optimisations
+
+Les quatre véhicules ont été recalibrés sur `dev` pour accélérer plus fort et atteindre une vitesse plus élevée :
+
+| Véhicule | Vitesse max. configurée avant → après | Puissance avant → après |
+| --- | --- | --- |
+| Kart | 520 → 650 | 900 → 1 300 |
+| 4×4 | 560 → 680 | 600 → 1 050 |
+| GT3 | 700 → 860 | 800 → 1 400 |
+| WEC | 820 → 1 020 | 950 → 1 700 |
+
+Ces valeurs sont des unités internes à la simulation, **pas des km/h réellement mesurés sur piste**. La résistance à l'avancement en accélération est aussi réduite. Les temps au tour et l'équilibrage sont à revoir après essai.
+
+Le jeu demande moins de travail par image : relief du circuit pré-calculé, terrain mis en cache, recherche de piste par index spatial exact, décor hors champ ignoré, niveau de détail selon la distance. L'horloge physique reste à **60 pas/s** et peut exécuter jusqu'à huit pas par image si le rendu ralentit, afin que la course ne passe pas au ralenti lors d'une baisse de FPS. Une surcharge prolongée peut encore ralentir le temps simulé pour éviter d'aggraver le problème.
+
+Pour alléger encore les graphismes en cours de partie, appuyer sur **`G`** jusqu'au mode **ECO**. Le compteur FPS est visible dans le HUD.
+
 ## Lancer
 
 ```powershell
