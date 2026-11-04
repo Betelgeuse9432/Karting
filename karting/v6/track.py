@@ -75,7 +75,7 @@ class V6Track(Track):
                     for index in self._cells.get((ix, iy), ()):
                         px, py = self.center[index]
                         squared = (px-x)**2 + (py-y)**2
-                        if squared < best_squared:
+                        if squared < best_squared or (squared == best_squared and index < best_index):
                             best_index, best_squared = index, squared
             if best_index >= 0:
                 border = min(x-(gx-ring)*side, (gx+ring+1)*side-x,
