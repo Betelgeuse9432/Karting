@@ -61,9 +61,11 @@ void testGripRainAndDrift() {
     braking.selectVehicle(2);
     rain.toggleRain();
     // Weather gradually converges; no instantaneous rain switch.
-    for (int i=0;i<120;++i) {
-        dry.update({true,false,1,false},1./60);
-        rain.update({true,false,1,false},1./60);
+    // Keep the comparison near the starting straight, before wall impacts
+    // can skew vehicle speed or aerodynamic grip.
+    for (int i=0;i<45;++i) {
+        dry.update({true,false,0,false},1./60);
+        rain.update({true,false,0,false},1./60);
         braking.update({true,false,1,true},1./60);
     }
     require(rain.weather().rainLevel>0.3,"Weather transition");
