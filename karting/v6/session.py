@@ -8,6 +8,7 @@ from ..persistence import RecordStore
 from ..race import RaceTracker
 from ..state import Controls, VehicleState
 from .config import V6Config
+from .mesh import construire
 from .physics import V6Physics
 from .scenery import V6Scenery
 from .track import V6Track
@@ -29,6 +30,7 @@ class V6Session:
         self.race=RaceTracker(self.track,best)
         self.selected_index=selection
         self.selected_color=VOITURES[selection]["defaut"]
+        self.model=construire(selection,PALETTE[self.selected_color])
         self.weather={"phase":0,"nuit":0.0,"pluie_on":False,"pluie":0.0}
         self.quality=1
         self.elapsed=0.0
@@ -64,6 +66,7 @@ class V6Session:
             raise ValueError("Couleur invalide")
         self.selected_index=index
         self.selected_color=color
+        self.model=construire(index,PALETTE[color])
         self.reset()
 
     def step(self,controls:Controls,dt:float):
@@ -97,16 +100,8 @@ class V6Session:
             return
         if finished is not None and (previous_best is None or finished<previous_best):
             self.faults.optional("record.save",lambda:self.storage.save(finished))
-        self.faults.optional("effects.sim",lambda:self.effects.step(self.car,self.motion.telemetry,dt))
+        self.faults.optional("effects.sim",lambda:self.effects.step(self.car,self.motion.telemetry,dt,self.model))
 
     @property
     def wheels(self):
-        # Remplies par la vue 3D construite au changement de véhicule ;
-        # propriété par défaut indépendante du moteur graphique.
-        defaults={
-            0:[(-15,-18),(-15,18),(17,-16),(17,16)],
-            1:[(-30,-26),(-30,26),(30,-26),(30,26)],
-            2:[(-22,-21),(-22,21),(22,-21),(22,21)],
-            3:[(-30,-22),(-30,22),(30,-22),(30,22)],
-        }
-        return [(x,y,i>=2,10,6) for i,(x,y) in enumerate(defaults[self.selected_index])]
+        return self.model["roues"]
