@@ -1,0 +1,100 @@
+#include "karting/game.hpp"
+#include <algorithm>
+#include <cmath>
+
+namespace karting {
+
+void Effects::clear() {
+    marks_.clear();
+    particles_.clear();
+    lastSkidding_=false;
+    emitTime_=0;
+    for (auto& p:previous_) p={};
+}
+
+void Effects::update(const Simulation& sim, double dt) {
+    const auto& car=sim.car();
+    const auto& p=sim.profile();
+    const auto& telemetry=sim.telemetry();
+    const bool skid=telemetry.drifting || telemetry.rearSlip ||
+                    telemetry.frontSlip || car.brake>.9;
+    const Vec2 forward{std::cos(car.heading),std::sin(car.heading)};
+    const Vec2 side{-forward.y,forward.x};
+    const auto wheelPosition=[&](int k) {
+        return car.position + forward * (k<2?p.rearAxle:p.frontAxle) +
+               side*((k%2==0?-1:1)*p.halfWheelTrack);
+    };
+    for (int k=0;k<4;++k) {
+        const auto wheel=wheelPosition(k);
+        if (skid && lastSkidding_ && telemetry.wheelsOutside<2) {
+            marks_.push_back({previous_[k],wheel,0});
+            if (marks_.size()>1400) marks_.pop_front();
+        }
+        previous_[k]=wheel;
+    }
+    lastSkidding_=skid;
+
+    emitTime_+=dt;
+    std::uniform_real_distribution<double> velocity(-1.0,1.0);
+    if (skid && emitTime_>=.035 && telemetry.wheelsOutside<2) {
+        emitTime_=0;
+        for (int rearWheel:{0,1}) {
+            const auto pos=wheelPosition(rearWheel);
+            particles_.push_back({pos,elevation(pos)+13,
+                        velocity(generator_)*28,velocity(generator_)*28,
+                        17+std::abs(velocity(generator_))*27,
+                        .65, .65, 0});
+        }
+    }
+    if (car.brake>.5 && car.brakeHeat>.35 && car.speed>150 &&
+        std::uniform_int_distribution<int>(0,12)(generator_)==0) {
+        const auto pos=car.position+forward*p.frontAxle;
+        particles_.push_back({pos,elevation(pos)+12,
+                    velocity(generator_)*65,velocity(generator_)*65,
+                    40+std::abs(velocity(generator_))*55,
+                    .34,.34,2});
+    }
+    if (!car.throttle && car.speed>260 &&
+        std::uniform_int_distribution<int>(0,25)(generator_)==0) {
+        const auto pos=car.position+forward*(p.rearAxle-8);
+        particles_.push_back({pos,elevation(pos)+16,
+                    -forward.x*90,-forward.y*90,0,.17,.17,1});
+    }
+    for (auto& particle:particles_) {
+        particle.location=particle.location+Vec2{particle.dx,particle.dy}*dt;
+        particle.height+=particle.dz*dt;
+        if (particle.kind==2) particle.dz-=500*dt;
+        particle.life-=dt;
+    }
+    particles_.erase(std::remove_if(particles_.begin(),particles_.end(),
+                        [](const Particle& p){return p.life<=0;}),particles_.end());
+    if (particles_.size()>350)
+        particles_.erase(particles_.begin(),particles_.begin()+std::ptrdiff_t(particles_.size()-350));
+    for (auto& m:marks_) m.age+=dt;
+    while(!marks_.empty() && marks_.front().age>30) marks_.pop_front();
+}
+
+void Effects::draw3D(const Camera3D& camera) const {
+    const auto position=camera.position;
+    for (const auto& mark:marks_) {
+        const auto a=worldPoint(mark.start,2),b=worldPoint(mark.end,2);
+        const float dx=a.x-position.x,dz=a.z-position.z;
+        if (dx*dx+dz*dz>50*50) continue;
+        DrawLine3D(a,b,{30,30,32,255});
+    }
+    for (const auto& p:particles_) {
+        const auto pos=Vector3{float(p.location.x*kWorldScale),
+                               float(p.height*kWorldScale),
+                               float(p.location.y*kWorldScale)};
+        const float age=float(std::max(0.0,p.life/p.maxLife));
+        if (p.kind==0)
+            DrawSphere(pos,(1.0f-age)*.24f+.09f,
+                       Fade(LIGHTGRAY,age*.55f));
+        else if (p.kind==1)
+            DrawSphere(pos,.16f*age,Fade(ORANGE,age));
+        else
+            DrawSphere(pos,.08f*age,Fade(YELLOW,age));
+    }
+}
+
+} // namespace karting
