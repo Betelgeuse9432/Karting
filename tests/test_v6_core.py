@@ -6,6 +6,8 @@ from unittest.mock import patch
 from karting.state import Controls, VehicleState
 from karting.v6.config import V6Config
 from karting.v6.physics import V6Physics
+from karting.v6.mesh import construire
+from karting.v6.vehicles import PALETTE
 from karting.v6.session import V6Session
 from karting.v6.track import V6Track, height
 from karting.v6.vehicles import VOITURES
@@ -32,6 +34,15 @@ class V6CoreTests(unittest.TestCase):
     def test_relief_is_finite(self):
         for pt in ((0,0),(3200,1700),(8000,6700)):
             self.assertTrue(math.isfinite(height(*pt)))
+
+    def test_all_four_3d_models_compile(self):
+        for i,profile in enumerate(VOITURES):
+            with self.subTest(vehicle=profile["nom"]):
+                model=construire(i,PALETTE[profile["defaut"]])
+                self.assertTrue(model["statique"])
+                self.assertEqual(len(model["roues"]),4)
+                self.assertTrue(model["echap"])
+                self.assertTrue(model["phares"])
 
     def test_four_vehicle_physics_are_stable(self):
         simulator=V6Physics(self.track)
