@@ -5,6 +5,7 @@
 #include <deque>
 #include <random>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 namespace karting {
@@ -81,6 +82,7 @@ private:
     double followAngle_ = 0;
     double cameraHeight_ = 0;
     std::string faultMessage_;
+    std::unordered_set<std::string> disabled_;
 };
 
 } // namespace karting
