@@ -299,17 +299,22 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
     const Vec2 forward{std::cos(car.heading),std::sin(car.heading)};
     const Vec2 lateral{-forward.y,forward.x};
     for(float x:{rear,front}) for(float side:{-1.f,1.f}) {
+        const bool isFront=x==front;
+        // The GT3 front tyres are slightly narrower and tucked further in,
+        // so steering lock cannot make them poke through the bonnet/fenders.
+        const float wheelTrack=(slot==2 && isFront)? .43f:track;
+        const float wheelWidth=(slot==2 && isFront)? .18f:width;
         // Each tyre follows the elevation directly beneath its own contact patch.
         const Vec2 wheelWorld=car.position+
-            forward*(x/kWorldScale)+lateral*(side*track/kWorldScale);
+            forward*(x/kWorldScale)+lateral*(side*wheelTrack/kWorldScale);
         const float wheelHeight=float(
             (elevation(wheelWorld)-elevation(car.position))*kWorldScale);
         rlPushMatrix();
-        rlTranslatef(x,r+.015f+wheelHeight,side*track);
-        if(x==front) rlRotatef(float(-car.steering*RAD2DEG),0,1,0);
-        DrawCylinderEx({0,0,-width*.5f},{0,0,width*.5f},r,r,12,
+        rlTranslatef(x,r+.015f+wheelHeight,side*wheelTrack);
+        if(isFront) rlRotatef(float(-car.steering*RAD2DEG),0,1,0);
+        DrawCylinderEx({0,0,-wheelWidth*.5f},{0,0,wheelWidth*.5f},r,r,12,
                        {27,30,36,255});
-        const float z=side*(width*.5f+.008f);
+        const float z=side*(wheelWidth*.5f+.008f);
         rod({0,0,z},{0,0,z+side*.017f},
             r*.52f,{90,96,107,255});
         rod({0,0,z+side*.020f},{0,0,z+side*.024f},
