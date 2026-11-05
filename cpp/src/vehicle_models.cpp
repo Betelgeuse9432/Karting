@@ -22,7 +22,7 @@ void box(float x,float y,float z,float sx,float sy,float sz,Color color) {
 }
 
 void rod(Vector3 a,Vector3 b,float width,Color color) {
-    DrawCylinderEx(a,b,width,width,7,color);
+    DrawCylinderEx(a,b,width,width,10,color);
 }
 
 void panel(Vector3 a,Vector3 b,Vector3 c,Vector3 d,Color color) {
@@ -327,7 +327,7 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
         rlPushMatrix();
         rlTranslatef(x,r+.015f+wheelHeight,side*track);
         if(x==front) rlRotatef(float(-car.steering*RAD2DEG),0,1,0);
-        DrawCylinderEx({0,0,-width*.5f},{0,0,width*.5f},r,r,12,
+        DrawCylinderEx({0,0,-width*.5f},{0,0,width*.5f},r,r,slot==2||slot==3?24:16,
                        {27,30,36,255});
         const float z=side*(width*.5f+.008f);
         rod({0,0,z},{0,0,z+side*.017f},
