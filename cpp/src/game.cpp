@@ -26,7 +26,7 @@ Controls controlsFromKeyboard() {
             IsKeyDown(KEY_DOWN)||IsKeyDown(KEY_S),
             int(IsKeyDown(KEY_RIGHT)||IsKeyDown(KEY_D))-
             int(IsKeyDown(KEY_LEFT)||IsKeyDown(KEY_Q)||IsKeyDown(KEY_A)),
-            IsKeyDown(KEY_SPACE)};
+            IsKeyPressed(KEY_SPACE)};
 }
 
 // Read M as a typed character as well as a physical key.
