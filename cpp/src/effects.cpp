@@ -25,10 +25,11 @@ void Effects::update(const Simulation& sim, double dt) {
         return car.position + forward * (k<2?p.rearAxle:p.frontAxle) +
                side*((k%2==0?-1:1)*p.halfWheelTrack);
     };
-    // Match the GT3 model's actual exhaust-tip coordinates (-1.385m, +/-0.245m).
-    // The previous anchor used the rear axle offset and placed the flames inside
-    // the bodywork, where the car hid them.
+    // F1: one central outlet; other cars keep the paired outlets.
+    const bool centralExhaust=sim.vehicleIndex()==5;
     const auto exhaustPosition=[&](int direction) {
+        if (centralExhaust)
+            return car.position+forward*(-1.795/kWorldScale);
         return car.position+forward*(-1.405/kWorldScale) +
                side*(direction*.245/kWorldScale);
     };
@@ -71,20 +72,32 @@ void Effects::update(const Simulation& sim, double dt) {
             }
         }
     }
-    // A short twin-exhaust backfire when the driver lifts off the throttle.
-    // Keep each flame locked to the matching exhaust tip as the car moves.
+    // Backfire on lift-off: one larger flame for the central F1 tailpipe.
     if (previousThrottle_ && !car.throttle && car.speed>180) {
-        for (const int direction : {-1,1}) {
-            const auto pos=exhaustPosition(direction);
+        if (centralExhaust) {
+            const auto pos=exhaustPosition(2);
             const double flicker=std::abs(velocity(generator_));
-            particles_.push_back({pos,elevation(pos)+.255/kWorldScale,
-                -forward.x*(205+flicker*105),
-                -forward.y*(205+flicker*105),
-                10+flicker*35,.30,.30,1,direction});
-            particles_.push_back({pos+forward*(-2),elevation(pos)+.255/kWorldScale,
-                -forward.x*(235+flicker*95),
-                -forward.y*(235+flicker*95),
-                6+flicker*28,.23,.23,3,direction});
+            particles_.push_back({pos,elevation(pos)+.245/kWorldScale,
+                -forward.x*(260+flicker*130),
+                -forward.y*(260+flicker*130),
+                16+flicker*42,.52,.52,1,2});
+            particles_.push_back({pos+forward*(-2.4),elevation(pos)+.245/kWorldScale,
+                -forward.x*(290+flicker*120),
+                -forward.y*(290+flicker*120),
+                8+flicker*32,.38,.38,3,2});
+        } else {
+            for (const int direction : {-1,1}) {
+                const auto pos=exhaustPosition(direction);
+                const double flicker=std::abs(velocity(generator_));
+                particles_.push_back({pos,elevation(pos)+.255/kWorldScale,
+                    -forward.x*(205+flicker*105),
+                    -forward.y*(205+flicker*105),
+                    10+flicker*35,.30,.30,1,direction});
+                particles_.push_back({pos+forward*(-2),elevation(pos)+.255/kWorldScale,
+                    -forward.x*(235+flicker*95),
+                    -forward.y*(235+flicker*95),
+                    6+flicker*28,.23,.23,3,direction});
+            }
         }
     }
     previousThrottle_=car.throttle;
@@ -135,14 +148,15 @@ void Effects::draw3D(const Camera3D& camera) const {
             const Vector3 tip={pos.x+dirX*.48f,
                                pos.y+float(p.dz)*.0018f,
                                pos.z+dirY*.48f};
+            const float scale=p.exhaustSide==2?1.8f:1.0f;
             if (p.kind==1) {
-                DrawCylinderEx(pos,tip,.13f*age,.018f*age,7,
+                DrawCylinderEx(pos,tip,.13f*age*scale,.018f*age,7,
                                Fade(ORANGE,age));
-                DrawSphere(pos,.105f*age,Fade(RED,age));
+                DrawSphere(pos,.105f*age*scale,Fade(RED,age));
             } else {
-                DrawCylinderEx(pos,tip,.065f*age,.008f*age,6,
+                DrawCylinderEx(pos,tip,.065f*age*scale,.008f*age,6,
                                Fade(YELLOW,age));
-                DrawSphere(pos,.055f*age,Fade(WHITE,age));
+                DrawSphere(pos,.055f*age*scale,Fade(WHITE,age));
             }
         }
     }
