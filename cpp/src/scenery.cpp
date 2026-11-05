@@ -122,34 +122,60 @@ void canopy(float width,float depth,float base,float peak,Color color) {
     poly(c,d,e,color);poly(d,a,e,color);
 }
 
+// Crowd bodies and heads share a single graphics batch. Previously a
+// grandstand drew 120 cubes + 120 spheres PER FRAME, in addition to the
+// structure. These simple two-sided silhouettes preserve colours and seating.
+void drawCrowd(float night,int variant) {
+    constexpr Color shirts[5]{{220,57,50,255},{55,120,196,255},
+                              {245,219,90,255},{225,228,221,255},
+                              {46,159,118,255}};
+    const Color skin=shade({204,165,133,255},night);
+    const auto face=[](float x0,float y0,float x1,float y1,
+                       float z,Color c) {
+        rlColor4ub(c.r,c.g,c.b,c.a);
+        rlVertex3f(x0,y0,z);
+        rlVertex3f(x1,y0,z);
+        rlVertex3f(x1,y1,z);
+        rlVertex3f(x0,y1,z);
+        // Double sided: stands can be approached from either direction.
+        rlVertex3f(x0,y1,z);
+        rlVertex3f(x1,y1,z);
+        rlVertex3f(x1,y0,z);
+        rlVertex3f(x0,y0,z);
+    };
+    rlBegin(RL_QUADS);
+    for(int row=0;row<6;++row) {
+        const float z=-1.57f+row*.57f+.10f;
+        const float y=.46f+row*.29f;
+        for(int i=0;i<20;++i) {
+            const float x=-4.17f+i*.44f;
+            const Color shirt=shade(shirts[(i*3+row+variant)%5],night);
+            face(x-.105f,y+.23f,x+.105f,y+.52f,z,shirt);
+            face(x-.075f,y+.51f,x+.075f,y+.71f,z,skin);
+        }
+    }
+    rlEnd();
+}
+
 void grandstand(float night,int variant) {
-    Color metal=shade({104,116,127,255},night);
-    Color concrete=shade({156,159,161,255},night);
+    const Color metal=shade({104,116,127,255},night);
+    const Color concrete=shade({156,159,161,255},night);
+    const Color accent=shade(variant%2?Color{43,94,159,255}:
+                                      Color{205,63,61,255},night);
     cube(0,.20f,0,9.3f,.36f,4.2f,shade({99,105,107,255},night));
     for(int row=0;row<6;++row) {
         const float z=-1.57f+row*.57f;
         const float y=.46f+row*.29f;
         cube(0,y,z,9.0f,.20f,.68f,concrete);
-        cube(0,y+.16f,z+.21f,8.8f,.13f,.15f,
-             shade(variant%2?Color{43,94,159,255}:Color{205,63,61,255},night));
-        for (int i=0;i<20;++i) {
-            // Small silhouettes instead of giant coloured blocks.
-            const float x=-4.17f+i*.44f;
-            const Color shirt[5]{{220,57,50,255},{55,120,196,255},
-                                 {245,219,90,255},{225,228,221,255},
-                                 {46,159,118,255}};
-            cube(x,y+.38f,z,.19f,.29f,.19f,
-                 shade(shirt[(i*3+row+variant)%5],night));
-            DrawSphere({x,y+.60f,z},.11f,shade({204,165,133,255},night));
-        }
+        cube(0,y+.16f,z+.21f,8.8f,.13f,.15f,accent);
     }
+    drawCrowd(night,variant);
     for(float x:{-4.f,4.f})for(float z:{-1.7f,1.65f})
         beam({x,0,z},{x,3.78f,z},.065f,metal);
     cube(0,3.75f,0,10.2f,.18f,5.3f,
          shade({48,57,73,255},night));
     cube(0,3.83f,-2.5f,10.5f,.20f,.12f,
          shade({204,57,53,255},night));
-    // Transparent-looking rear facade, stairway side.
     cube(-4.67f,1.52f,0,.15f,2.8f,4.35f,metal);
 }
 
