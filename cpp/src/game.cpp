@@ -55,7 +55,7 @@ void drawSkyDetails(int width, int height, float night, float rain,
 
     // Clouds are screen-space decorations, so they stay behind the 3D world.
     if (quality > 0) {
-        const int cloudCount = quality >= 2 ? 18 : 10;
+        const int cloudCount = quality >= 3 ? 26 : quality >= 2 ? 18 : 10;
         const float cloudVisibility =
             std::clamp((1.0f - night * 0.78f) * (1.0f - rain * 0.50f),
                        0.0f, 1.0f);
@@ -169,7 +169,7 @@ void Game::handleRace() {
         menu_=true;
         reset();
     }
-    if (IsKeyPressed(KEY_G)) quality_=(quality_+1)%3;
+    if (IsKeyPressed(KEY_G)) quality_=(quality_+1)%4;
     if (IsKeyPressed(KEY_N)) sim_.cycleWeather();
     if (IsKeyPressed(KEY_P)) sim_.toggleRain();
 }
@@ -296,7 +296,7 @@ void Game::renderRace() {
 
     // Rain is drawn in a separate transparent screen pass.
     if (r>.03f) {
-        const int drops=int((quality_==0?80:quality_==1?140:220)*r);
+        const int drops=int((quality_==0?80:quality_==1?140:quality_==2?220:320)*r);
         for (int i=0;i<drops;++i) {
             const int x=(i*173+int(gameTime_*160))%(width+65)-32;
             const int y=(i*277+int(gameTime_*900))%(height+25);
