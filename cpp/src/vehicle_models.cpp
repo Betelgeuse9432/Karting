@@ -393,7 +393,13 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
     case 0: kart(paint);break;
     case 1: offRoad(paint,glass,dark,car.brake>.1);break;
     case 2: gt3(paint,glass,dark,car.brake>.1);break;
-    case 3: wec(paint,glass,dark,car.brake>.1);break;
+    case 3:
+        // Raise only the WEC bodywork; wheels stay at their original ground contact.
+        rlPushMatrix();
+        rlTranslatef(0,.12f,0);
+        wec(paint,glass,dark,car.brake>.1);
+        rlPopMatrix();
+        break;
     default: gt3(paint,glass,dark,car.brake>.1);break;
     }
     rlPopMatrix();
