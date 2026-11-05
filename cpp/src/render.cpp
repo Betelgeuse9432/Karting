@@ -103,7 +103,8 @@ void draw3DLandscape(Vector3 camera, int quality, float night, double time) {
     }};
     const float visibility=quality==0?0.78f:1.0f;
     for(std::size_t i=0;i<mountainBases.size();++i) {
-        const auto b=mountainBases[i];
+        auto b=mountainBases[i];
+        b.y=float(elevation({b.x/kWorldScale,b.z/kWorldScale})*kWorldScale)-.25f;
         const float distance=Vector3Distance(camera,b);
         if(distance>(quality==0?260.0f:360.0f)) continue;
         const float radius= i%3==0?23.0f:17.0f;
@@ -259,10 +260,10 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
                  worldPoint({x1,z1},-2.65f),worldPoint({x0,z1},-2.65f),
                  shaded(grass,.94f+patch*.025f));
             if(grassTexture_.id) {
-                const auto ta=worldPoint({x0,z0},-2.45f);
-                const auto tb=worldPoint({x1,z0},-2.45f);
-                const auto tc=worldPoint({x1,z1},-2.45f);
-                const auto td=worldPoint({x0,z1},-2.45f);
+                const auto ta=worldPoint({x0,z0},-1.8f);
+                const auto tb=worldPoint({x1,z0},-1.8f);
+                const auto tc=worldPoint({x1,z1},-1.8f);
+                const auto td=worldPoint({x0,z1},-1.8f);
                 const float u=float(x1-x0)/8.f,v=float(z1-z0)/8.f;
                 texturedQuad(ta,tb,tc,td,grassTexture_,u,v);
                 // Weather tint is a cheap overlay, not another texture pass.
@@ -295,10 +296,10 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
         if(asphaltTexture_.id) {
             const float roadLength=Vector3Distance(roadA,roadB);
             const float roadWidth=Vector3Distance(roadA,roadD);
-            const auto ra=worldPoint(track.point(i,-Track::halfWidth),1.08f);
-            const auto rb=worldPoint(track.point(j,-Track::halfWidth),1.08f);
-            const auto rc=worldPoint(track.point(j,Track::halfWidth),1.08f);
-            const auto rd=worldPoint(track.point(i,Track::halfWidth),1.08f);
+            const auto ra=worldPoint(track.point(i,-Track::halfWidth),1.8f);
+            const auto rb=worldPoint(track.point(j,-Track::halfWidth),1.8f);
+            const auto rc=worldPoint(track.point(j,Track::halfWidth),1.8f);
+            const auto rd=worldPoint(track.point(i,Track::halfWidth),1.8f);
             texturedQuad(ra,rb,rc,rd,asphaltTexture_,
                          std::max(.05f,roadLength/4.f),roadWidth/4.f);
             // Subtle night/rain tint keeps the same material responsive to weather.
