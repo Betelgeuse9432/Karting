@@ -309,14 +309,65 @@ void wec(Color paint,Color glass,Color dark,bool braking) {
     rearWing(-1.25f,.50f,.98f,.14f,carbon);
 }
 
+
+void rally(Color paint,Color glass,Color dark,bool braking) {
+    // Compact rallycross hatch: raised suspension, short overhangs and roof scoop.
+    const Color carbon{24,28,34,255};
+    const Color lamp{238,242,224,255};
+    bodyShell({{-1.12f,.30f,.72f,.43f},
+               {-.82f,.29f,.83f,.51f},
+               {-.38f,.29f,.86f,.53f},
+               { .42f,.29f,.82f,.52f},
+               { .82f,.28f,.74f,.48f},
+               {1.08f,.27f,.62f,.40f}},
+              paint,tone(paint,.72f));
+    cockpit(.38f,-.78f,.05f,-.65f,.82f,1.42f,.44f,.36f,
+            glass,tone(paint,.82f));
+    for(float side:{-1.f,1.f}) {
+        // Flared arches, rally mud flaps and sturdy side skirts.
+        for(float x:{-.68f,.64f}) {
+            box(x,.48f,side*.51f,.48f,.18f,.13f,carbon);
+            box(x-.03f,.29f,side*.55f,.19f,.25f,.035f,
+                {35,38,43,255});
+        }
+        box(-.02f,.31f,side*.52f,.72f,.10f,.09f,carbon);
+        box(.34f,1.08f,side*.46f,.18f,.10f,.09f,dark);
+        // Roof rails and a small intake scoop.
+        rod({-.62f,1.47f,side*.29f},{.45f,1.47f,side*.29f},
+            .025f,carbon);
+        box(-.18f,1.49f,0,.34f,.13f,.23f,carbon);
+        // Door number panel and sill accent.
+        box(-.05f,.77f,side*.536f,.35f,.25f,.018f,
+            tone(WHITE,.92f));
+        box(-.05f,.77f,side*.55f,.23f,.18f,.012f,paint);
+    }
+    // Rally-style front lamps and broad protective bumpers.
+    box(1.08f,.36f,0,.13f,.22f,.82f,carbon);
+    box(1.15f,.20f,0,.20f,.045f,1.12f,carbon);
+    for(float side:{-1.f,1.f}) {
+        box(1.13f,.62f,side*.27f,.05f,.10f,.17f,lamp);
+        box(1.14f,.48f,side*.37f,.04f,.08f,.12f,
+            {35,42,49,255});
+        box(-1.10f,.58f,side*.31f,.035f,.13f,.16f,
+            braking?RED:Color{150,27,31,255});
+    }
+    // Compact rear wing with two upright supports.
+    for(float side:{-1.f,1.f})
+        rod({-.72f,.78f,side*.30f},{-.91f,1.18f,side*.34f},
+            .035f,carbon);
+    rearWing(-.99f,1.20f,.92f,.19f,carbon);
+    // Visible underbody skid plate.
+    box(.25f,.18f,0,.72f,.045f,.72f,{92,98,105,255});
+}
+
 void wheels(const Car& car,const VehicleProfile& p,int index) {
     // GT3 wheel centres sit close to the actual front and rear wheel arches.
     const float axleVisualScale=index==3?1.12f:1.0f;
     const float front=float(p.frontAxle*kWorldScale*axleVisualScale);
     const float rear=float(p.rearAxle*kWorldScale*axleVisualScale);
-    constexpr std::array<float,4> sizes{{.155f,.265f,.205f,.195f}};
-    constexpr std::array<float,4> widths{{.19f,.26f,.22f,.21f}};
-    constexpr std::array<float,4> tracks{{.45f,.65f,.48f,.58f}};
+    constexpr std::array<float,5> sizes{{.155f,.265f,.205f,.195f,.205f}};
+    constexpr std::array<float,5> widths{{.19f,.26f,.22f,.21f,.23f}};
+    constexpr std::array<float,5> tracks{{.45f,.65f,.48f,.58f,.58f}};
     const std::size_t slot=std::size_t(std::clamp(index,0,3));
     const float r=sizes[slot],width=widths[slot];
     const float track=std::max(float(p.halfWheelTrack*kWorldScale),tracks[slot]);
@@ -394,11 +445,12 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
         wec(paint,glass,dark,car.brake>.1);
         rlPopMatrix();
         break;
+    case 4: rally(paint,glass,dark,car.brake>.1);break;
     default: gt3(paint,glass,dark,car.brake>.1);break;
     }
     // Restrained clear-coat highlights help every vehicle read as painted metal.
-    const float highlightY=index==1?.82f:index==2?.445f:index==3?.285f:.205f;
-    const float highlightZ=index==1?.47f:index==2?.49f:index==3?.34f:.20f;
+    const float highlightY=index==1?.82f:index==2?.445f:index==3?.285f:index==4?.80f:.205f;
+    const float highlightZ=index==1?.47f:index==2?.49f:index==3?.34f:index==4?.48f:.20f;
     for(float side:{-1.f,1.f}) {
         DrawLine3D({.62f,highlightY,side*highlightZ},
                    {-.48f,highlightY-.012f,side*highlightZ*.94f},
