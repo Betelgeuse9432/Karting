@@ -61,6 +61,42 @@ void oak(float scale,float night,int color) {
                  shade(leaf,1.10f));
 }
 
+// Far objects keep their silhouette and colour but skip branches,
+// individual leaves and the crowd's hundreds of primitive draw calls.
+void cedarFar(float size,float night,int color) {
+    const Color green=shade(color%2?Color{44,99,66,255}:
+                                    Color{38,121,65,255},night);
+    beam({0,0,0},{0,1.55f*size,0},.09f*size,
+         shade({102,79,55,255},night));
+    DrawCylinderEx({0,.42f*size,0},{0,2.15f*size,0},
+                   .76f*size,0,6,green);
+}
+
+void oakFar(float size,float night,int color) {
+    beam({0,0,0},{0,1.55f*size,0},.14f*size,
+         shade({111,80,55,255},night));
+    DrawSphereEx({0,2.02f*size,0},.91f*size,5,7,
+                 shade(color%2?Color{79,141,60,255}:
+                                Color{55,123,58,255},night));
+}
+
+void standFar(float night,int variant) {
+    const Color concrete=shade({156,159,161,255},night);
+    const Color accent=shade(variant%2?Color{43,94,159,255}:
+                                      Color{205,63,61,255},night);
+    cube(0,.20f,0,9.3f,.36f,4.2f,shade({99,105,107,255},night));
+    for(int row=0;row<6;++row) {
+        const float z=-1.57f+row*.57f;
+        const float y=.46f+row*.29f;
+        cube(0,y,z,9.f,.20f,.68f,concrete);
+        cube(0,y+.26f,z,8.5f,.24f,.15f,accent);
+    }
+    cube(0,3.75f,0,10.2f,.18f,5.3f,
+         shade({48,57,73,255},night));
+    cube(-4.67f,1.52f,0,.15f,2.8f,4.35f,
+         shade({104,116,127,255},night));
+}
+
 void boulders(float size,float night) {
     Color rock=shade({127,128,125,255},night);
     DrawSphereEx({0,.22f*size,0},.56f*size,4,7,rock);
@@ -364,11 +400,16 @@ void WorldRenderer::drawScenery(const Weather& weather,int quality,
         rlTranslatef(origin.x,origin.y,origin.z);
         rlRotatef(obj.yaw,0,1,0);
         const float scale=obj.size;
+        const bool distant=d2>(obj.kind==3?27.f:obj.kind==4?48.f:32.f)*
+                              (obj.kind==3?27.f:obj.kind==4?48.f:32.f);
         switch(obj.kind) {
-        case 0: oak(scale,darkness,obj.color);break;
-        case 1: cedar(scale,darkness,obj.color);break;
+        case 0: if(distant) oakFar(scale,darkness,obj.color);
+                else oak(scale,darkness,obj.color);break;
+        case 1: if(distant) cedarFar(scale,darkness,obj.color);
+                else cedar(scale,darkness,obj.color);break;
         case 2: boulders(scale,darkness);break;
-        case 3: grandstand(darkness,obj.color);break;
+        case 3: if(distant) standFar(darkness,obj.color);
+                else grandstand(darkness,obj.color);break;
         case 4: pitBuilding(darkness,obj.color);break;
         case 5: paddockTent(darkness,obj.color);break;
         case 6: sponsor(darkness,obj.color);break;
