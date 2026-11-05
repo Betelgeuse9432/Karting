@@ -18,15 +18,28 @@ void close(double actual,double expected,double tolerance,const char* message) {
 
 void testCircuit() {
     const Track track;
-    require(track.size()==26*Track::subdivisions,"V6 Catmull-Rom point count");
-    require(track.lapLength()>15000,"Circuit should be long");
+    require(track.size()==72*Track::subdivisions,
+            "New circuit has 72 Catmull-Rom control points");
+    require(track.lapLength()>50000 && track.lapLength()<65000,
+            "Long circuit has a realistic controlled lap length");
     const auto start=track.startPosition();
-    require(length(start-Vec2{3200,1700})<1e-9,"V6 start point unchanged");
+    require(start.x>0 && start.x<Track::worldWidth &&
+            start.y>0 && start.y<Track::worldHeight,
+            "Starting point fits the extended world");
     require(std::isfinite(track.startHeading()),"Finite starting heading");
     require(track.heights().size()==track.size(),"Cached relief per vertex");
     const auto near=track.info(start);
     require(near.distance<1e-6,"Start line is on the track");
     require(!near.grass,"No grass at start");
+    for(const Vec2 p:track.center())
+        require(p.x>0 && p.x<Track::worldWidth &&
+                p.y>0 && p.y<Track::worldHeight,
+                "Whole track fits within world bounds");
+    for(std::size_t i=0;i<track.size();i+=Track::subdivisions) {
+        const auto point=track.point(i);
+        require(track.info(point).distance<1e-5,
+                "Interpolated points remain on the track");
+    }
 }
 
 void testProfiles() {
