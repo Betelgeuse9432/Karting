@@ -245,6 +245,73 @@ void towerLight(float night) {
                     shade({208,217,220,255},night));
 }
 
+// Lightweight trackside landmarks: few primitives, no per-object mesh
+// allocation, and the existing frustum/distance filters still apply.
+void marshalPost(float night,int variant,double seconds) {
+    const Color metal=shade({122,130,139,255},night);
+    const Color vest=shade({238,160,36,255},night);
+    cube(0,.08f,0,2.8f,.16f,1.65f,shade({98,101,103,255},night));
+    for(float x:{-1.15f,1.15f})
+        beam({x,0,-.55f},{x,2.4f,-.55f},.045f,metal);
+    cube(0,2.36f,-.55f,2.85f,.13f,1.7f,shade({45,54,61,255},night));
+    // Two marshals with high-visibility jackets.
+    for(float x:{-.55f,.55f}) {
+        cube(x,.85f,0,.38f,.76f,.3f,vest);
+        DrawSphereEx({x,1.38f,0},.20f,5,6,shade({214,177,141,255},night));
+    }
+    const Color flag=shade(variant%3==0?Color{241,205,39,255}:
+                           variant%3==1?Color{48,170,80,255}:
+                                        Color{216,55,55,255},night);
+    const float swing=.12f*std::sin(float(seconds)*3.f+float(variant));
+    beam({1.0f,.7f,.45f},{1.0f,2.35f,.45f},.035f,metal);
+    // Flag moves subtly; no texture, no animation allocations.
+    const Vector3 a{1.0f,2.29f,.45f},b{2.03f,2.18f+swing,.45f},
+                  c{2.03f,1.57f+swing,.45f},d{1.0f,1.64f,.45f};
+    poly(a,b,c,flag);poly(a,c,d,flag);
+}
+
+void brakeBoard(float night,int variant) {
+    const Color support=shade({119,125,128,255},night);
+    const Color board=shade({236,236,221,255},night);
+    const Color ink=shade({185,45,43,255},night);
+    for(float x:{-.65f,.65f})
+        beam({x,0,0},{x,2.2f,0},.045f,support);
+    cube(0,1.83f,.02f,1.65f,1.25f,.11f,board);
+    // Three distinct chevrons or bars for 150/100/50m countdown,
+    // avoiding text textures while staying readable at racing speed.
+    const int bars=3-variant%3;
+    for(int i=0;i<bars;++i)
+        cube(0,1.45f+i*.31f,.098f,1.12f,.16f,.025f,ink);
+}
+
+void turnChevron(float night,int variant) {
+    const Color background=shade({234,205,54,255},night);
+    const Color arrow=shade({39,45,50,255},night);
+    cube(0,.83f,0,2.75f,1.13f,.17f,background);
+    for(float x:{-1.03f,-.19f,.65f}) {
+        const float direction=variant%2==0?1.f:-1.f;
+        // Simple black directional bars, 3D silhouette from either side.
+        const float dx=.28f*direction;
+        beam({x-dx,.49f,.14f},{x, .84f,.14f},.10f,arrow);
+        beam({x, .84f,.14f},{x-dx,1.19f,.14f},.10f,arrow);
+    }
+    for(float x:{-1.14f,1.14f})
+        beam({x,0,0},{x,.32f,0},.045f,shade({112,116,119,255},night));
+}
+
+void safetyTyres(float night,int variant) {
+    const Color dark=shade({36,39,42,255},night);
+    const Color contrast=shade(variant%2==0?Color{207,57,54,255}:
+                                           Color{225,226,221,255},night);
+    // Compact stack at the outside of selected corners, not a long
+    // continuous wall of individually-rendered cylinders.
+    for(int i=0;i<3;++i) {
+        const float x=-.92f+i*.92f;
+        DrawCylinderEx({x,.12f,0},{x,.67f,0},.41f,.41f,6,dark);
+        cube(x,.39f,.39f,.77f,.14f,.025f,contrast);
+    }
+}
+
 void windmill(double seconds,float night) {
     Color metal=shade({214,214,216,255},night);
     DrawCylinderEx({0,0,0},{0,9.2f,0},.21f,.10f,8,metal);
@@ -287,7 +354,8 @@ void WorldRenderer::initialize(const Track& track) {
         if(p.x<120 || p.y<120 ||
            p.x>Track::worldWidth-120 ||
            p.y>Track::worldHeight-120) return;
-        const double clearance=(kind==0||kind==1||kind==2||kind==9)?
+        const double clearance=(kind==0||kind==1||kind==2||kind==9||
+                                kind==10||kind==11||kind==12||kind==13)?
                                25.0:120.0;
         // Avoid putting a building or a tree on another nearby section
         // of track, particularly between the two arms of the hairpin.
@@ -330,6 +398,31 @@ void WorldRenderer::initialize(const Track& track) {
             if(section%10==0)
                 place(s,1,Track::wall+960,8,1.f,section);
         }
+    }
+
+    // Route storytelling: braking boards before the hairpin and heavy
+    // corners, chevrons at the apex, safety stacks and marshal stations.
+    // Each location is a fraction of the lap so track resampling won't
+    // silently delete a landmark. The handful of props is CPU-cheap.
+    const auto corner=[&](double fraction,int side,int variant) {
+        const double along=fraction*lap;
+        for(int i=0;i<3;++i)
+            place(along-1100.+i*440.,side,Track::wall+95,
+                  11,1.f,i); // 150/100/50-style countdown
+        for(int i=-1;i<=1;++i)
+            place(along+i*160.,side,Track::wall+145,
+                  12,1.f,variant);
+        place(along+250.,side,Track::wall+215,13,1.f,variant);
+        place(along+460.,-side,Track::wall+220,10,1.f,variant);
+    };
+    corner(.135,1,0);  // Signature hairpin entry
+    corner(.38,-1,1);  // Southern fast sweep
+    corner(.59,1,0);   // Western rhythm section
+    corner(.82,-1,1);  // Final approach
+    for(int sector=0;sector<8;++sector) {
+        const double along=(sector+.4)*lap/8.;
+        place(along,(sector%2==0?1:-1),Track::wall+340,
+              10,1.f,sector);
     }
 
     // Forest density expressed in trees per world-unit of lap.
@@ -429,7 +522,8 @@ void WorldRenderer::drawScenery(const Weather& weather,int quality,
         // Conservative bounds: elevated winds, wide stands and tall trees
         // are retained when only their edge intersects the viewport.
         const float radius=obj.kind==3?7.5f:obj.kind==4?8.f:
-                           obj.kind==8?11.f:obj.kind==5?5.f:
+                           obj.kind==8?11.f:obj.kind==10?4.f:obj.kind==11?3.f:
+                           obj.kind==12?4.f:obj.kind==13?3.f:obj.kind==5?5.f:
                            obj.kind==7?6.f:obj.kind==6?5.f:
                            (obj.kind==0||obj.kind==1)?5.f*obj.size:
                            3.f*obj.size;
@@ -457,6 +551,10 @@ void WorldRenderer::drawScenery(const Weather& weather,int quality,
         case 6: sponsor(darkness,obj.color);break;
         case 7: towerLight(float(weather.nightLevel));break;
         case 8: windmill(time,darkness);break;
+        case 10: marshalPost(darkness,obj.color,time);break;
+        case 11: brakeBoard(darkness,obj.color);break;
+        case 12: turnChevron(darkness,obj.color);break;
+        case 13: safetyTyres(darkness,obj.color);break;
         default: brush(scale,darkness);break;
         }
         rlPopMatrix();
