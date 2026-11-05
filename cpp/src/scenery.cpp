@@ -201,65 +201,98 @@ void WorldRenderer::initialize(const Track& track) {
     scenery_.clear();
     std::mt19937 rng(72951);
     std::uniform_real_distribution<float> variation(.72f,1.38f);
-    std::uniform_real_distribution<float> wobble(-95.f,95.f);
-    std::uniform_real_distribution<float> facing(-180.f,180.f);
+    std::uniform_real_distribution<float> wobble(-55.f,55.f);
+    const double lap=track.lapLength();
+    scenery_.reserve(std::size_t(lap/145.0)*10);
 
-    const auto add=[&](std::size_t i,int side,double distance,int kind,
-                       float size,int variant) {
-        const auto n=track.size();
-        const Vec2 p=track.point(i%n,side*distance);
-        if(p.x<100||p.y<100||p.x>Track::worldWidth-100||
-           p.y>Track::worldHeight-100) return;
+    // All zones and density are specified in world-distance, NOT sample
+    // indices. A circuit can gain/remove spline points without erasing forests.
+    const auto service=[](double f) {
+        return f<.055 || f>.972;
+    };
+    const auto spectator=[](double f) {
+        return (f>.135 && f<.265) ||
+               (f>.38 && f<.49) ||
+               (f>.72 && f<.83);
+    };
+    const auto rocky=[](double f) {
+        return (f>.29 && f<.38) || (f>.58 && f<.68);
+    };
+    const auto place=[&](double along,int side,double lateral,
+                         int kind,float size,int color) {
+        const std::size_t i=track.indexAtDistance(along);
+        const Vec2 p=track.point(i,side*lateral);
+        if(p.x<120 || p.y<120 ||
+           p.x>Track::worldWidth-120 ||
+           p.y>Track::worldHeight-120) return;
+        const double clearance=(kind==0||kind==1||kind==2||kind==9)?
+                               25.0:120.0;
+        // Avoid putting a building or a tree on another nearby section
+        // of track, particularly between the two arms of the hairpin.
+        if(track.info(p).distance<Track::wall+clearance) return;
+        const std::size_t n=track.size();
         const Vec2 before=track.center()[(i+n-3)%n];
         const Vec2 after=track.center()[(i+3)%n];
         const float yaw=-std::atan2(float(after.y-before.y),
                                     float(after.x-before.x))*RAD2DEG;
-        scenery_.push_back({p,size,yaw,kind,variant});
+        scenery_.push_back({p,size,yaw,kind,color});
     };
 
-    const std::size_t n=track.size();
-    // Infrastructure in contiguous zones rather than sprinkling garages
-    // randomly among forests. The pit sector is around the start/finish.
-    for(std::size_t i=0;i<n;++i) {
-        const bool service=(i<85||i>n-50);
-        const bool spectator=(i>=100&&i<315)||(i>=1120&&i<1280);
-        if(service) {
-            if(i%26==0) add(i,1,560,4,1.f,int(i/26));
-            if(i%31==0) add(i,1,860,5,1.f,int(i/31));
-            if(i%45==0) add(i,-1,650,3,1.f,int(i/45));
-            if(i%20==0) add(i,1,320,7,1.f,0);
-        } else if(spectator) {
-            if(i%34==0) add(i,-1,550,3,1.f,int(i/34));
-            if(i%47==0) add(i,1,650,3,1.f,int(i/47));
-            if(i%37==0) add(i,-1,290,6,1.f,int(i/37));
-            if(i%45==0) add(i,1,280,7,1.f,0);
+    // Roadsides: grandstands cluster around interesting corners,
+    // the pits retain the garages and tents, other sectors get sparse
+    // technical infrastructure. No index-dependent missing zones.
+    for(double s=0;s<lap;s+=570.) {
+        const double fraction=s/lap;
+        const int section=int(s/570.);
+        if(service(fraction)) {
+            place(s,1,Track::wall+430,4,1.f,section);
+            if(section%2==0)
+                place(s+220,1,Track::wall+760,5,1.f,section);
+            if(section%3==0)
+                place(s,-1,Track::wall+350,3,1.f,section);
+            place(s+110,1,Track::wall+140,7,1.f,section);
+        } else if(spectator(fraction)) {
+            if(section%2==0)
+                place(s,-1,Track::wall+370,3,1.f,section);
+            if(section%3==0)
+                place(s,1,Track::wall+475,3,1.f,section);
+            place(s+170,-1,Track::wall+155,6,1.f,section);
+            if(section%3==1)
+                place(s,1,Track::wall+230,7,1.f,section);
         } else {
-            if(i%90==0) add(i,(i/90)%2?1:-1,650,8,1.f,0);
-            if(i%35==0) add(i,(i/35)%2?1:-1,325,6,1.f,int(i/35));
+            if(section%2==0)
+                place(s,(section%4==0)?1:-1,
+                      Track::wall+160,6,1.f,section);
+            if(section%10==0)
+                place(s,1,Track::wall+960,8,1.f,section);
         }
     }
 
-    // Vegetation is clustered along actual sectors, with a clear verge and
-    // multiple rows of trees. No random isolated structures on the horizon.
-    for(std::size_t i=0;i<n;i+=3) {
-        const bool facilities=(i<115||i>n-55||
-                               (i>=100&&i<315)||(i>=1120&&i<1280));
+    // Forest density expressed in trees per world-unit of lap.
+    // Five staggered rows per side build actual wooded landscapes;
+    // service/spectator zones keep enough clear space for buildings.
+    for(double s=0;s<lap;s+=160.) {
+        const double fraction=s/lap;
+        const bool facility=service(fraction)||spectator(fraction);
         for(int side:{-1,1}) {
-            for(int row=0;row<4;++row) {
-                if(facilities&&row<3) continue;
-                if((rng()%100)<(facilities?42:13)) continue;
-                const double distance=Track::wall+160+row*180+wobble(rng);
-                int kind=int(rng()%8)<5?int(rng()%2):2;
-                add(i+std::size_t(rng()%3),side,distance,kind,
-                    variation(rng)*(row==0?.85f:1.18f),int(rng()%6));
-                if(row>0&&(rng()%5==0))
-                    add(i+1,side,distance+70,9,.8f,int(rng()%6));
+            for(int row=0;row<5;++row) {
+                if(facility && row<2) continue;
+                if((rng()%100)<(facility?25:10)) continue;
+                const double lateral=Track::wall+115+row*170+wobble(rng);
+                const int pick=int(rng()%12);
+                const int kind=rocky(fraction)?
+                     (pick<5?2:pick<9?1:0):
+                     (pick<5?0:pick<10?1:pick==10?2:9);
+                const double along=s+double(rng()%90);
+                place(along,side,lateral,kind,
+                      variation(rng)*(row<2?.83f:1.15f),
+                      int(rng()%6));
+                if(row>=2 && rng()%4==0)
+                    place(along+65,side,lateral+55,9,
+                          .75f+variation(rng)*.20f,int(rng()%6));
             }
         }
     }
-    // Distinct rocky areas in the central and southern bends.
-    for(std::size_t i=420;i<650&&i<n;i+=4)
-        add(i,-1,510+int(i%5)*90,2,1.1f,int(i%6));
 }
 
 void WorldRenderer::drawTerrain(const Weather& weather,int quality,
