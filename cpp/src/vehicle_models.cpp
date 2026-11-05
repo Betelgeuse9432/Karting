@@ -365,8 +365,8 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
     const float axleVisualScale=index==3?1.12f:1.0f;
     const float front=float(p.frontAxle*kWorldScale*axleVisualScale);
     const float rear=float(p.rearAxle*kWorldScale*axleVisualScale);
-    constexpr std::array<float,5> sizes{{.155f,.265f,.205f,.195f,.205f}};
-    constexpr std::array<float,5> widths{{.19f,.26f,.22f,.21f,.23f}};
+    constexpr std::array<float,5> sizes{{.155f,.265f,.205f,.195f,.180f}};
+    constexpr std::array<float,5> widths{{.19f,.26f,.22f,.21f,.21f}};
     constexpr std::array<float,5> tracks{{.45f,.65f,.48f,.58f,.58f}};
     const std::size_t slot=std::size_t(std::clamp(index,0,4));
     const float r=sizes[slot],width=widths[slot];
@@ -445,7 +445,13 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
         wec(paint,glass,dark,car.brake>.1);
         rlPopMatrix();
         break;
-    case 4: rally(paint,glass,dark,car.brake>.1);break;
+    case 4:
+        // Scale the rally hatch to a compact real-world footprint.
+        rlPushMatrix();
+        rlScalef(.84f,.84f,.84f);
+        rally(paint,glass,dark,car.brake>.1);
+        rlPopMatrix();
+        break;
     default: gt3(paint,glass,dark,car.brake>.1);break;
     }
     // Restrained clear-coat highlights help every vehicle read as painted metal.
