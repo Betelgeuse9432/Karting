@@ -42,7 +42,7 @@ cmake --build cpp/build-core --config Release
 ctest --test-dir cpp/build-core -C Release --output-on-failure
 ```
 
-Les tests C++ valident les quatre profils de voitures, le circuit V6 interpolé, l'accélération, l'adhérence sous pluie, le frein à main, les collisions, le chrono et la cadence physique indépendante des FPS.
+Les tests C++ valident les quatre profils de voitures, le grand circuit interpolé, l'accélération, l'adhérence sous pluie, le frein à main, les collisions, le chrono et la cadence physique indépendante des FPS.
 
 ## Modèles 3D remaniés (silhouettes lisibles)
 
@@ -59,6 +59,27 @@ Les roues ont une géométrie distincte selon le véhicule, des jantes visibles
 et une animation liée à la rotation physique. Les hauteurs de caisse restent
 suffisamment basses pour conserver le cadrage de référence. Le résultat
 visuel reste à valider en jeu avant toute nouvelle retouche.
+
+## Grand circuit et environnement enrichi
+
+Le circuit initial d'environ **21 400 unités** a été remplacé par un parcours
+d'environ **54 900 unités**, soit **2,56 fois plus long**. Il utilise 72
+points de contrôle interpolés, avec des courbes longues, des sections
+techniques et un relief continu. La mini-carte se met automatiquement
+à l'échelle de la nouvelle piste. Les limites du monde ont été agrandies.
+
+Les quatre véhicules gagnent environ **8 à 9 % de vitesse maximale** et
+environ **5 % de puissance motrice**, en conservant leur accélération
+directe, leurs commandes et leurs comportements de dérive. Aucune boîte
+de vitesses n'est introduite.
+
+Le nouveau décor `src/scenery.cpp` comprend des conifères, arbres feuillus,
+bosquets, rochers, tribunes avec public, bâtiments, tentes, panneaux
+publicitaires, éoliennes animées et lampadaires. Les objets sont répartis
+de façon **déterministe** et non régénérés à chaque image ; leur affichage
+est contrôlé par la distance à la caméra et le niveau de qualité.
+
+Les essais graphiques et la mesure des FPS sur le PC restent nécessaires.
 
 ## Commandes
 
@@ -87,9 +108,10 @@ cpp/
     core.hpp                   interfaces simulation, piste, physique, course
     game.hpp                   interfaces graphique, effets et orchestration
   src/
-    core.cpp                   26 points, Catmull-Rom, 4 profils, physique, météo, tours
+    core.cpp                   72 points, Catmull-Rom, 4 profils, physique, météo, tours
     render.cpp                 scène 3D, route, vibreurs, murs, arbres
     vehicle_models.cpp         modèles procéduraux des quatre voitures
+    scenery.cpp                décors, tribunes, bâtiments, végétation et culling
     effects.cpp                fumée, étincelles, traces, flammes
     ui.cpp                     menu, compteurs, mini-carte, stands
     game.cpp                   boucle raylib, caméra, entrées, sauvegarde
@@ -102,7 +124,7 @@ Le **moteur logique ne contient aucun include raylib**. Le rendu dessine des obj
 ## État de migration
 
 Portés depuis la V6 Python :
-- Les 26 points de contrôle du circuit et leur interpolation fermée
+- Les 72 points de contrôle du grand circuit et leur interpolation fermée
 - Les quatre voitures (Kart / 4x4 / GT3 / WEC) avec leurs performances récentes
 - L'accélération, le freinage, le grip avant/arrière, la dérive avec frein à main, l'appui, la pluie et le relief
 - Les rails, les pénalités si quatre roues hors piste, la voie des stands, le chrono, les records et leur sauvegarde
