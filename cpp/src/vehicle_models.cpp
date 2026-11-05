@@ -191,6 +191,15 @@ void gt3(Color paint,Color glass,Color dark,bool braking) {
     cockpit(.30f,-.81f,-.02f,-.60f,.54f,.94f,.405f,.272f,
             glass,tone(paint,.83f));
 
+    // Define the side windows, B-pillars and roof without thick black slabs.
+    for(float side:{-1.f,1.f}) {
+        rod({-.41f,.945f,side*.277f},
+            {-.41f,.543f,side*.407f},.010f,dark);
+        rod({-.59f,.949f,side*.273f},
+            {-.03f,.949f,side*.273f},.008f,shadow);
+    }
+    box(-.32f,.951f,0,.28f,.014f,.12f,shadow);
+
     // Raised wheel-arch shoulders give the sides some shape rather than
     // looking like one rectangular block. They do not move the wheels.
     for(float side:{-1.f,1.f}) {
@@ -199,9 +208,13 @@ void gt3(Color paint,Color glass,Color dark,bool braking) {
                   {axle-.21f,.56f,side*.615f},
                   {axle+.20f,.55f,side*.615f},
                   {axle+.34f,.40f,side*.53f},highlight);
+            rod({axle-.15f,.562f,side*.620f},
+                {axle+.14f,.558f,side*.620f},.006f,
+                tone(paint,1.28f));
         }
         // Carbon side skirt and front canard, with a rear brake-cooling duct.
         box(-.04f,.17f,side*.58f,1.69f,.08f,.15f,carbon);
+        box(-.04f,.221f,side*.661f,1.32f,.012f,.018f,shadow);
         box(-.78f,.34f,side*.59f,.24f,.08f,.020f,grille);
         panel({.93f,.24f,side*.49f},{1.18f,.18f,side*.60f},
               {1.08f,.22f,side*.60f},{.87f,.30f,side*.52f},carbon);
@@ -211,8 +224,11 @@ void gt3(Color paint,Color glass,Color dark,bool braking) {
                    {-.17f,.51f,side*.563f},tone(paint,.52f));
         box(-.06f,.402f,side*.578f,.27f,.17f,.018f,
             {231,232,225,255});
-        box(-.06f,.40f,side*.590f,.075f,.12f,.010f,
-            {51,59,67,255});
+        // A small raised race number "7" rather than a generic black square.
+        rod({-.119f,.459f,side*.597f},
+            {.003f,.459f,side*.597f},.009f,grille);
+        rod({.003f,.459f,side*.597f},
+            {-.073f,.346f,side*.597f},.009f,grille);
         box(.26f,.74f,side*.45f,.14f,.075f,.12f,dark); // mirror
         rod({.20f,.71f,side*.39f},{.26f,.74f,side*.45f},.018f,dark);
 
@@ -229,13 +245,18 @@ void gt3(Color paint,Color glass,Color dark,bool braking) {
 
     // Deep front fascia: central mesh intake, two side intakes and splitter.
     box(1.191f,.246f,0,.026f,.142f,.60f,grille);
+    for(int i=-4;i<=4;++i)
+        box(1.209f,.245f,float(i)*.058f,.012f,.113f,.012f,
+            {56,62,70,255});
     for(float side:{-1.f,1.f})
         box(1.192f,.253f,side*.393f,.028f,.104f,.171f,carbon);
     box(1.205f,.139f,0,.275f,.047f,1.17f,carbon);
     box(1.285f,.154f,0,.053f,.018f,1.10f,tone(carbon,1.45f));
 
-    // Hood extractors, placed above the sloping bonnet surface.
+    // Hood contours and extractor vents follow the actual bonnet slope.
     for(float side:{-1.f,1.f}) {
+        rod({.49f,.487f,side*.40f},
+            {1.06f,.387f,side*.40f},.006f,highlight);
         panel({.60f,.483f,side*.16f},
               {.89f,.435f,side*.16f},
               {.89f,.437f,side*.31f},
@@ -244,8 +265,23 @@ void gt3(Color paint,Color glass,Color dark,bool braking) {
             {.85f,.456f,side*.24f},.008f,metal);
     }
 
+    // Vented rear deck: small surface panels, not a roof-height air scoop.
+    for(float side:{-1.f,1.f}) {
+        panel({-1.07f,.487f,side*.13f},
+              {-.87f,.538f,side*.13f},
+              {-.87f,.538f,side*.33f},
+              {-1.07f,.487f,side*.33f},grille);
+        for(int i=0;i<3;++i) {
+            const float x=-1.04f+float(i)*.066f;
+            rod({x,.50f+float(i)*.017f,side*.15f},
+                {x,.50f+float(i)*.017f,side*.31f},
+                .006f,metal);
+        }
+    }
+
     // Rear bumper, diffuser channels and discreet dual exhausts.
     box(-1.196f,.237f,0,.050f,.17f,1.03f,carbon);
+    box(-1.216f,.426f,0,.018f,.019f,.38f,tail);
     box(-1.236f,.125f,0,.29f,.06f,1.13f,carbon);
     for(float z:{-.44f,-.22f,0.f,.22f,.44f})
         box(-1.256f,.155f,z,.245f,.100f,.025f,grille);
@@ -328,12 +364,18 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
             r*.52f,{90,96,107,255});
         rod({0,0,z+side*.020f},{0,0,z+side*.024f},
             r*.17f,{188,191,199,255});
-        // The wheel rim rotates using the real wheel rotation state.
-        for(int spoke=0;spoke<5;++spoke) {
-            const float a=float(car.wheelRotation)+spoke*1.2566371f;
+        // GT3 gets a denser motorsport rim and a visible red brake caliper.
+        // Wheel rotation still comes from the simulation.
+        if(index==2)
+            box(-.045f,.087f,z+side*.031f,.052f,.080f,.018f,
+                {186,48,38,255});
+        const int spokes=index==2?10:5;
+        for(int spoke=0;spoke<spokes;++spoke) {
+            const float step=index==2?.62831853f:1.2566371f;
+            const float a=float(car.wheelRotation)+spoke*step;
             DrawLine3D({std::cos(a)*r*.2f,std::sin(a)*r*.2f,z+side*.028f},
                        {std::cos(a)*r*.48f,std::sin(a)*r*.48f,z+side*.028f},
-                       {180,185,193,255});
+                       index==2?Color{201,206,211,255}:Color{180,185,193,255});
         }
         rlPopMatrix();
     }
