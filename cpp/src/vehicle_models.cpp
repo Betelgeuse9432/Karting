@@ -205,28 +205,53 @@ void wec(Color paint,Color glass,Color dark,bool braking) {
 
     // Main monocoque: low nose, broad front shoulders, pinched waist,
     // high rear haunches and a tapered tail.
-    bodyShell({{-1.52f,.075f,.20f,.31f},
-               {-1.24f,.085f,.27f,.43f},
-               {-.82f,.095f,.31f,.46f},
-               {-.40f,.090f,.29f,.42f},
-               { .18f,.085f,.25f,.39f},
-               { .78f,.075f,.20f,.35f},
-               {1.23f,.065f,.145f,.29f},
-               {1.53f,.055f,.095f,.20f}},
+    bodyShell({{-1.56f,.070f,.145f,.25f},
+               {-1.42f,.078f,.205f,.34f},
+               {-1.22f,.090f,.265f,.42f},
+               {-.98f,.105f,.315f,.47f},
+               {-.76f,.112f,.325f,.49f},
+               {-.52f,.108f,.305f,.47f},
+               {-.25f,.100f,.280f,.435f},
+               { .05f,.092f,.255f,.405f},
+               { .34f,.085f,.245f,.395f},
+               { .60f,.080f,.235f,.390f},
+               { .82f,.073f,.215f,.365f},
+               {1.04f,.066f,.185f,.335f},
+               {1.25f,.060f,.150f,.295f},
+               {1.43f,.055f,.118f,.245f},
+               {1.56f,.052f,.090f,.185f}},
               paint,tone(paint,.70f));
 
     // Separate sculpted fenders create the wide 963 shoulders.
     for(float side:{-1.f,1.f}) {
         rlPushMatrix();
         rlTranslatef(0,0,side*.34f);
-        bodyShell({{-1.30f,.09f,.29f,.12f},
-                   {-.98f,.10f,.43f,.19f},
-                   {-.70f,.10f,.40f,.20f},
-                   {-.38f,.09f,.28f,.17f},
-                   { .45f,.08f,.25f,.15f},
-                   { .91f,.07f,.22f,.12f},
-                   {1.31f,.06f,.13f,.07f}},
+        bodyShell({{-1.34f,.085f,.245f,.105f},
+                   {-1.16f,.105f,.355f,.155f},
+                   {-.96f,.125f,.445f,.205f},
+                   {-.75f,.130f,.455f,.220f},
+                   {-.54f,.115f,.375f,.205f},
+                   {-.28f,.100f,.300f,.180f},
+                   { .12f,.090f,.270f,.165f},
+                   { .48f,.085f,.285f,.175f},
+                   { .75f,.080f,.345f,.205f},
+                   { .96f,.075f,.355f,.190f},
+                   {1.18f,.065f,.245f,.135f},
+                   {1.38f,.055f,.145f,.075f}},
                   tone(paint,1.08f),tone(paint,.76f));
+        rlPopMatrix();
+
+        // Rounded wheel-arch shoulders: overlapping smooth volumes soften
+        // the old angular silhouette without changing the wheel physics.
+        rlPushMatrix();
+        rlTranslatef(.58f,.205f,side*.405f);
+        rlScalef(.57f,.235f,.245f);
+        DrawSphere({0,0,0},1.0f, tone(paint,1.12f));
+        rlPopMatrix();
+        rlPushMatrix();
+        rlTranslatef(-.91f,.205f,side*.405f);
+        rlScalef(.53f,.245f,.255f);
+        DrawSphere({0,0,0},1.0f, tone(paint,1.10f));
         rlPopMatrix();
 
         // Sidepod lower edge and carbon floor.
@@ -288,9 +313,9 @@ void wec(Color paint,Color glass,Color dark,bool braking) {
     box(.98f,.218f,0,.23f,.014f,.025f,accent);
 
     // Cockpit canopy, dark panoramic glass and raised roof.
-    cockpit(.34f,-.79f,-.08f,-.58f,.335f,.755f,.285f,.185f,
+    cockpit(.38f,-.82f,-.10f,-.62f,.335f,.765f,.305f,.205f,
             tone(glass,1.12f),tone(paint,.83f));
-    box(-.13f,.766f,0,.36f,.025f,.245f,tone(paint,1.12f));
+    box(-.13f,.770f,0,.40f,.025f,.265f,tone(paint,1.12f));
     // Windscreen lower frame and roof centre accent.
     rod({.34f,.34f,-.285f},{.34f,.34f,.285f},.012f,carbonHi);
     box(-.13f,.784f,0,.42f,.012f,.025f,accent);
