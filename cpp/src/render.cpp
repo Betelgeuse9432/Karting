@@ -146,7 +146,7 @@ void drawGrandstand(const Track& track, std::size_t centerIndex,
     const std::size_t count=track.size();
     if(count<20) return;
     constexpr int halfLength=42;
-    constexpr int sampleStep=3;
+    constexpr int sampleStep=6;
     constexpr int rows=7;
     constexpr double baseOffset=Track::wall+105.0;
     const Color concrete=Fade({105,112,123,255},1-night*.42f);
@@ -179,9 +179,7 @@ void drawGrandstand(const Track& track, std::size_t centerIndex,
             quad(a,b,c,d,concrete);
             // Dark seat plinths and individual coloured spectator clusters.
             const auto seatA=point(s+1,offset+1.2,level+.18f);
-            const auto seatB=point(s+1,offset+3.6,level+.18f);
             DrawCubeV(seatA,{.48f,.13f,.28f},seatColor);
-            DrawCubeV(seatB,{.48f,.13f,.28f},seatColor);
             if(quality>=1) {
                 const Color crowd=palette((row*3+(s+halfLength)/sampleStep)%6);
                 const auto spectator=point(s+1,offset+2.4,level+.52f);
@@ -321,10 +319,10 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
     const auto grass=shaded({53,153,57,255},1-0.1f*rain-0.55f*night);
     // Build the visible terrain from the same elevation field as the road.
     // This removes the flat green "table" underneath the hilly circuit.
-    const double tile=quality>=3?210.0:420.0;
+    const double tile=quality>=3?300.0:480.0;
     const int baseX=int(std::floor((cameraPosition.x/kWorldScale)/tile));
     const int baseZ=int(std::floor((cameraPosition.z/kWorldScale)/tile));
-    const int terrainRadius=quality==0?6:quality==1?8:quality==2?10:13;
+    const int terrainRadius=quality==0?4:quality==1?5:quality==2?6:7;
     for(int gx=baseX-terrainRadius;gx<=baseX+terrainRadius;++gx) {
         for(int gz=baseZ-terrainRadius;gz<=baseZ+terrainRadius;++gz) {
             const double x0=std::max(0.0,gx*tile);
