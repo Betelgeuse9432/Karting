@@ -20,10 +20,10 @@ void HudRenderer::menu(const Simulation& sim,double time) const {
     DrawText("KARTING V6  /  C++20 + raylib",w/2-280,24,34,GOLD);
     DrawText("CHOISIS TON VEHICULE",w/2-210,74,27,RAYWHITE);
     const auto& cars=profiles();
-    for (int i=0;i<5;++i) {
-        const int x=w/2-420+i*170;
+    for (int i=0;i<6;++i) {
+        const int x=w/2-480+i*160;
         const bool selected=i==sim.vehicleIndex();
-        DrawRectangleRounded({float(x),121,157,42},.15f,8,
+        DrawRectangleRounded({float(x),121,150,42},.15f,8,
                              selected?GOLD:Color{52,59,72,255});
         DrawText(cars[i].name.data(),x+12,130,22,selected?BLACK:RAYWHITE);
     }
@@ -45,12 +45,13 @@ void HudRenderer::menu(const Simulation& sim,double time) const {
                       i%2==0?ORANGE:LIME);
     }
     DrawText("PHYSIQUE ET STYLE",w-385,205,22,RAYWHITE);
-    const char* description[5] = {
+    const char* description[6] = {
         "Kart nerveux, tres leger, agilité",
         "4x4 stable, grand debattement",
         "GT3 polyvalente et efficace",
         "WEC hypercar et appui enorme",
-        "Rallycross nerveuse, chassis sureleve"
+        "Rallycross nerveuse, chassis sureleve",
+        "F1 legere, appui aero et suspensions apparentes"
     };
     DrawText(description[sim.vehicleIndex()],w-385,244,18,LIGHTGRAY);
     DrawText(TextFormat("Vitesse max : %d km/h",
