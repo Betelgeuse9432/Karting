@@ -81,6 +81,19 @@ Le test `testSpeedDistanceCalibration()` vérifie la correspondance entre
 la vitesse affichée et la distance parcourue. Il faut tester la maniabilité
 et les collisions sur le PC réel, surtout en virage à haute vitesse.
 
+## Parcours plus vivant
+
+Des éléments légers et contextualisés rendent les secteurs plus identifiables :
+postes de commissaires avec deux silhouettes et drapeaux animés, panneaux de
+freinage en approche des virages, chevrons directionnels et piles de pneus dans
+les zones de dégagement. Quatre secteurs disposent de repères spécifiques,
+complétés par des postes de commissaires régulièrement espacés.
+
+Leur placement est lié à la progression sur le tour (pas au numéro de sommet).
+Les nouveaux objets profitent du filtrage par distance et du frustum culling
+déjà présent, et ne modifient ni le tracé ni les collisions. Les drapeaux
+s'animent uniquement lorsque leur poste est effectivement rendu.
+
 ## Frustum culling (champ visible de la caméra)
 
 Le rendu ignore désormais les **objets de décor**, les **sections de
