@@ -33,6 +33,14 @@ void panel(Vector3 a,Vector3 b,Vector3 c,Vector3 d,Color color) {
     DrawTriangle3D(d,c,a,color);
 }
 
+void ellipsoid(float x,float y,float z,float sx,float sy,float sz,Color color) {
+    rlPushMatrix();
+    rlTranslatef(x,y,z);
+    rlScalef(sx,sy,sz);
+    DrawSphere({0,0,0},1.0f,color);
+    rlPopMatrix();
+}
+
 struct Section {
     float x;
     float bottom;
@@ -248,10 +256,10 @@ void wec(Color paint,Color glass,Color dark,bool braking) {
             tone(paint,1.10f));
 
         // Mirrors on slim stalks.
-        rod({.18f,.48f,side*.29f},{.29f,.54f,side*.49f},
+        rod({.18f,.43f,side*.29f},{.29f,.49f,side*.49f},
             .014f,carbon);
-        box(.31f,.55f,side*.50f,.16f,.075f,.105f,carbon);
-        box(.33f,.57f,side*.552f,.075f,.018f,.012f,accent);
+        box(.31f,.50f,side*.50f,.16f,.075f,.105f,carbon);
+        box(.33f,.52f,side*.552f,.075f,.018f,.012f,accent);
 
         // Front corner dive planes and small canards.
         panel({1.05f,.19f,side*.34f},
@@ -282,24 +290,35 @@ void wec(Color paint,Color glass,Color dark,bool braking) {
             .012f,carbonHi);
     }
 
+    // Rounded upper body volumes: soften the flat panel transitions and
+    // give the hood and rear haunches a more sculpted prototype silhouette.
+    ellipsoid(.83f,.205f,0,.62f,.105f,.285f,tone(paint,1.035f));
+    ellipsoid(-1.00f,.205f,0,.46f,.105f,.355f,tone(paint,.96f));
+    for(float side:{-1.f,1.f}) {
+        ellipsoid(.76f,.235f,side*.355f,.48f,.145f,.175f,
+                  tone(paint,1.08f));
+        ellipsoid(-.91f,.235f,side*.385f,.43f,.145f,.17f,
+                  tone(paint,1.045f));
+    }
+
     // Contrasting custom-livery centre stripe, broken around the cockpit.
     box(.69f,.205f,0,.88f,.012f,.105f,pearl);
     box(1.20f,.145f,0,.54f,.012f,.095f,pearl);
     box(.98f,.218f,0,.23f,.014f,.025f,accent);
 
     // Cockpit canopy, dark panoramic glass and raised roof.
-    cockpit(.34f,-.79f,-.08f,-.58f,.335f,.755f,.285f,.185f,
+    cockpit(.34f,-.79f,-.08f,-.58f,.335f,.675f,.285f,.185f,
             tone(glass,1.12f),tone(paint,.83f));
-    box(-.13f,.766f,0,.36f,.025f,.245f,tone(paint,1.12f));
+    box(-.13f,.686f,0,.36f,.025f,.245f,tone(paint,1.12f));
     // Windscreen lower frame and roof centre accent.
     rod({.34f,.34f,-.285f},{.34f,.34f,.285f},.012f,carbonHi);
-    box(-.13f,.784f,0,.42f,.012f,.025f,accent);
+    box(-.13f,.704f,0,.42f,.012f,.025f,accent);
 
     // Roof air scoop, with dark opening and two cooling slots.
-    box(-.47f,.755f,0,.30f,.085f,.145f,carbon);
-    box(-.32f,.802f,0,.12f,.012f,.105f,carbonHi);
+    box(-.47f,.675f,0,.30f,.085f,.145f,carbon);
+    box(-.32f,.722f,0,.12f,.012f,.105f,carbonHi);
     for(int slot=0;slot<3;++slot)
-        box(-.52f+slot*.055f,.803f,0,.018f,.008f,.075f,accent);
+        box(-.52f+slot*.055f,.723f,0,.018f,.008f,.075f,accent);
 
     // Central dorsal fin: a long, tapered blade rather than a flat wall.
     panel({-.30f,.30f,-.018f},{-1.30f,.27f,-.018f},
