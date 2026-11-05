@@ -2,6 +2,7 @@
 #include <cmath>
 #include <exception>
 #include <iostream>
+#include <limits>
 #include <stdexcept>
 #include <string>
 
@@ -18,8 +19,8 @@ void close(double actual,double expected,double tolerance,const char* message) {
 
 void testCircuit() {
     const Track track;
-    require(track.size()==33*Track::subdivisions,
-            "Hairpin circuit has 33 Catmull-Rom control points");
+    require(track.size()==34*Track::subdivisions,
+            "Hairpin circuit has 34 Catmull-Rom control points");
     require(track.lapLength()>60000 && track.lapLength()<73000,
             "Hairpin circuit preserves a long lap");
     const auto start=track.startPosition();
@@ -31,6 +32,26 @@ void testCircuit() {
     const auto near=track.info(start);
     require(near.distance<1e-6,"Start line is on the track");
     require(!near.grass,"No grass at start");
+
+    // Arc-length lookup must remain valid after changing the spline density.
+    require(track.indexAtDistance(0)==0,
+            "Distance zero selects the start");
+    require(track.indexAtDistance(track.lapLength())==0,
+            "Lap length wraps to the start");
+    require(track.indexAtDistance(-track.lapLength())==0,
+            "Negative full lap wraps to the start");
+    for(int sector=1;sector<20;++sector) {
+        const double d=track.lapLength()*sector/20.;
+        const std::size_t i=track.indexAtDistance(d);
+        const std::size_t prev=track.indexAtDistance(d-200.);
+        require(i<track.size(),"Distance lookup is in bounds");
+        require(i>=prev || (sector==1 && prev>track.size()-5),
+                "Distance-based scenic placement follows the lap order");
+    }
+    bool invalidDistance=false;
+    try { (void)track.indexAtDistance(std::numeric_limits<double>::infinity()); }
+    catch(const std::invalid_argument&) { invalidDistance=true; }
+    require(invalidDistance,"Non-finite arc distance is rejected");
     require(Track::halfWidth==175 && Track::wall==275,
             "Road widened with matching barrier clearance");
     require(!track.info(track.point(0,Track::halfWidth-8)).grass,
