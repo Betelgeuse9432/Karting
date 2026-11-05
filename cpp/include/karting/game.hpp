@@ -35,6 +35,8 @@ private:
     bool lastSkidding_ = false;
     double previousThrottle_ = 0;
     double backfireCooldown_ = 0;
+    double sparkCooldown_ = 0;
+    bool backfireArmed_ = false;
     double emitTime_ = 0;
 };
 
