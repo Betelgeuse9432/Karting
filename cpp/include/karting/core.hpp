@@ -33,7 +33,7 @@ struct VehicleProfile {
     double frontAxle, rearAxle, halfWheelTrack;
     int defaultColor;
 };
-const std::array<VehicleProfile, 5>& profiles();
+const std::array<VehicleProfile, 6>& profiles();
 
 struct Controls {
     bool accelerate = false;
