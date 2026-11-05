@@ -142,8 +142,14 @@ void HudRenderer::draw(const Simulation& sim,int quality,int fps) const {
     }
     DrawText(TextFormat("GRIP : %d%%",int(telemetry.grip*100)),
              w/2-85,h-31,19,SKYBLUE);
-    DrawText("ESPACE drift  N ciel  P pluie  G qualite  R reset  M menu",
-             w/2-316,h-56,17,LIGHTGRAY);
+    const Color boostColor=sim.boostActive()?LIME:(sim.boostsRemaining()>0?GOLD:GRAY);
+    DrawText(TextFormat("BOOST : %d DISPONIBLE(S)",sim.boostsRemaining()),
+             w/2-112,h-88,18,boostColor);
+    if (sim.boostActive())
+        DrawText(TextFormat("BOOST ACTIF  %.1f s",sim.boostTimeRemaining()),
+                 w/2-108,h-111,17,LIME);
+    DrawText("ESPACE boost (2 x 2 s)  N ciel  P pluie  G qualite  R reset  M menu",
+             w/2-365,h-56,16,LIGHTGRAY);
 
     if (race.warningTime>0)
         DrawText("LIMITES DE PISTE : +1 SECONDE",w/2-239,152,23,RED);
@@ -153,7 +159,7 @@ void HudRenderer::draw(const Simulation& sim,int quality,int fps) const {
     if (telemetry.frontSlip)
         DrawText("SOUS-VIRAGE : FREINAGE",w/2-165,59,20,ORANGE);
     if (telemetry.rearSlip || telemetry.drifting)
-        DrawText("DERAPAGE !",w/2-75,91,24,GOLD);
+        DrawText("PERTE D'ADHERENCE",w/2-112,91,20,GOLD);
 
     if (telemetry.inPits) {
         DrawRectangleRounded({float(w/2-310),float(h/2-180),620,332},
