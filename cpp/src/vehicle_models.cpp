@@ -361,11 +361,9 @@ void rally(Color paint,Color glass,Color dark,bool braking) {
 }
 
 
-void formulaOne(Color paint,Color glass,Color dark,bool braking) {
+void formulaOne(Color paint,Color glass,bool braking) {
     const Color carbon{22,26,32,255};
     const Color blue{25,115,255,255};
-    const Color tyre{24,26,31,255};
-    const Color lamp{235,242,248,255};
 
     // Narrow pointed nose, raised chassis and sculpted sidepods.
     bodyShell({{-1.62f,.19f,.28f,.25f},
@@ -408,7 +406,6 @@ void formulaOne(Color paint,Color glass,Color dark,bool braking) {
     // Small front suspension fairing and nose tip.
     box(1.55f,.22f,0,.18f,.07f,.20f,carbon);
     box(1.62f,.25f,0,.09f,.035f,.12f,paint);
-    (void)tyre;
 }
 
 void wheels(const Car& car,const VehicleProfile& p,int index) {
@@ -456,9 +453,9 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
             const float springX=x+.12f;
             const float springZ=side*(track-.13f);
             const float springTop=.43f, springBottom=wheelY-.12f;
-            for(int turn=0;turn<8;++turn) {
-                const float t0=float(turn)/8.f,t1=float(turn+1)/8.f;
-                const float a0=t0*8.f*2*PI,a1=t1*8.f*2*PI;
+            for(int segment=0;segment<48;++segment) {
+                const float t0=float(segment)/48.f,t1=float(segment+1)/48.f;
+                const float a0=t0*6.f*2*PI,a1=t1*6.f*2*PI;
                 const float y0=springTop+(springBottom-springTop)*t0;
                 const float y1=springTop+(springBottom-springTop)*t1;
                 DrawLine3D({springX+std::cos(a0)*.035f,y0,springZ+std::sin(a0)*.035f},
@@ -531,7 +528,7 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
         rlPopMatrix();
         break;
     case 5:
-        formulaOne(paint,glass,dark,car.brake>.1);
+        formulaOne(paint,glass,car.brake>.1);
         break;
     case 4:
         // Scale the rally hatch to a compact real-world footprint.
