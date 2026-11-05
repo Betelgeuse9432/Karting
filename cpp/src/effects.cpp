@@ -25,6 +25,10 @@ void Effects::update(const Simulation& sim, double dt) {
         return car.position + forward * (k<2?p.rearAxle:p.frontAxle) +
                side*((k%2==0?-1:1)*p.halfWheelTrack);
     };
+    const auto exhaustPosition=[&](int direction) {
+        return car.position+forward*(p.rearAxle-10) +
+               side*(direction*std::max(10.0,p.halfWheelTrack*.55));
+    };
     for (int k=0;k<4;++k) {
         const auto wheel=wheelPosition(k);
         if (skid && lastSkidding_ && telemetry.wheelsOutside<2) {
@@ -65,26 +69,32 @@ void Effects::update(const Simulation& sim, double dt) {
         }
     }
     // A short twin-exhaust backfire when the driver lifts off the throttle.
+    // The particles stay attached to their exhaust outlets as the car moves.
     if (previousThrottle_ && !car.throttle && car.speed>180) {
         for (const int direction : {-1,1}) {
-            const auto pos=car.position+forward*(p.rearAxle-10) +
-                           side*(direction*std::max(10.0,p.halfWheelTrack*.55));
+            const auto pos=exhaustPosition(direction);
             const double flicker=std::abs(velocity(generator_));
             particles_.push_back({pos,elevation(pos)+13,
                 -forward.x*(205+flicker*105),
                 -forward.y*(205+flicker*105),
-                10+flicker*35,.30,.30,1});
+                10+flicker*35,.30,.30,1,direction});
             particles_.push_back({pos+forward*(-3),elevation(pos)+13,
                 -forward.x*(235+flicker*95),
                 -forward.y*(235+flicker*95),
-                6+flicker*28,.23,.23,3});
+                6+flicker*28,.23,.23,3,direction});
         }
     }
     previousThrottle_=car.throttle;
     for (auto& particle:particles_) {
-        particle.location=particle.location+Vec2{particle.dx,particle.dy}*dt;
-        particle.height+=particle.dz*dt;
-        if (particle.kind==2) particle.dz-=500*dt;
+        if ((particle.kind==1 || particle.kind==3) && particle.exhaustSide!=0) {
+            const auto pos=exhaustPosition(particle.exhaustSide);
+            particle.location=pos;
+            particle.height=elevation(pos)+13;
+        } else {
+            particle.location=particle.location+Vec2{particle.dx,particle.dy}*dt;
+            particle.height+=particle.dz*dt;
+            if (particle.kind==2) particle.dz-=500*dt;
+        }
         particle.life-=dt;
     }
     particles_.erase(std::remove_if(particles_.begin(),particles_.end(),
