@@ -36,7 +36,11 @@ static void quad(Vector3 a,Vector3 b,Vector3 c,Vector3 d,Color color) {
 }
 
 void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
-                         Vector3 cameraPosition,double time) const {
+                         const Camera3D& camera,double time) const {
+    const Vector3 cameraPosition=camera.position;
+    const float aspect=float(GetScreenWidth())/
+                       float(std::max(1,GetScreenHeight()));
+    const ViewFrustum frustum(camera,aspect,150.f);
     const float rain=float(weather.rainLevel);
     const float night=float(weather.nightLevel);
     const auto asphalt=shaded({84,86,95,255},1-0.35f*rain-0.52f*night);
@@ -50,7 +54,7 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
                float(Track::worldHeight*kWorldScale)},
               shaded(grass,.68f));
     // Near and mid-distance ground follows the same relief as the asphalt.
-    drawTerrain(weather,quality,cameraPosition);
+    drawTerrain(weather,quality,frustum,cameraPosition);
 
     const auto count=track.size();
     const float farDistance=quality==0?47.f:quality==1?63.f:81.f;
@@ -62,6 +66,13 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
         if (d2>(farDistance+12)*(farDistance+12)) { ++i; continue; }
         const std::size_t step=(d2<28*28?1:quality==0?5:quality==1?3:2);
         const auto j=(i+step)%count;
+        const Vector3 next=worldPoint(center[j]);
+        const Vector3 segmentMid=Vector3Scale(Vector3Add(mid,next),.5f);
+        const float segmentRadius=Vector3Distance(mid,next)*.5f+7.f;
+        if(!frustum.visible(segmentMid,segmentRadius)) {
+            i+=step;
+            continue;
+        }
         const auto l=[&](std::size_t k,double off) {
             return worldPoint(track.point(k,off),1);
         };
@@ -103,7 +114,8 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
             const Vector3 centerPoint=worldPoint(center[i]);
             const float dx=centerPoint.x-cameraPosition.x;
             const float dz=centerPoint.z-cameraPosition.z;
-            if (dx*dx+dz*dz>65.f*65.f) continue;
+            if (dx*dx+dz*dz>65.f*65.f ||
+                !frustum.visible(centerPoint,5.f)) continue;
             for (int side:{-1,1}) {
                 if (side>0 && track.isPitIndex(i)) continue;
                 const auto base=worldPoint(
@@ -123,7 +135,8 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
     if (quality>0) {
         const auto a=worldPoint(track.point(0,-Track::halfWidth-25));
         const auto b=worldPoint(track.point(0,Track::halfWidth+25));
-        if (Vector3Distance(a,cameraPosition)<65.f) {
+        if (Vector3Distance(a,cameraPosition)<65.f &&
+            (frustum.visible(a,5.f) || frustum.visible(b,5.f))) {
             DrawCylinderEx(a,{a.x,a.y+3.8f,a.z},.13f,.13f,6,LIGHTGRAY);
             DrawCylinderEx(b,{b.x,b.y+3.8f,b.z},.13f,.13f,6,LIGHTGRAY);
             DrawCylinderEx({a.x,a.y+3.8f,a.z},
@@ -133,7 +146,7 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
     }
 
     // Static scenery is generated once and culled before drawing.
-    drawScenery(weather,quality,cameraPosition,time);
+    drawScenery(weather,quality,frustum,cameraPosition,time);
 }
 
 } // namespace karting
