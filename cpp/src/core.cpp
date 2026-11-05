@@ -35,17 +35,16 @@ const std::array<VehicleProfile, 4>& profiles() {
 }
 
 Track::Track() {
-    // Circuit de Spa-Francorchamps: La Source, Eau Rouge/Raidillon,
-    // Kemmel, Les Combes, Bruxelles, Pouhon, Fagnes, Stavelot,
-    // Blanchimont and the Bus Stop chicane.
+    // Spa-Francorchamps-inspired single loop, laid out without a crossover:
+    // La Source -> Eau Rouge/Raidillon -> Kemmel -> Les Combes ->
+    // Bruxelles -> Pouhon -> Fagnes -> Stavelot -> Blanchimont -> Bus Stop.
     const std::vector<Vec2> raw{
-        {5000,800},{6100,800},{6750,950},{7100,1400},{6750,1850},
-        {5900,2200},{5350,2850},{5350,3650},{6000,4550},{7050,5350},
-        {7850,6200},{8050,6900},{7500,7350},{6700,7100},
-        {6100,6500},{6000,5750},{5350,5250},{4500,5250},
-        {3750,5750},{3450,6500},{3850,7200},{4650,7450},
-        {5250,7000},{5300,6200},{4750,5550},{4050,4750},
-        {3700,3700},{3300,2650},{3450,1850},{4150,1150}
+        {6500,6900},{7350,6750},{7700,6250},{7350,5750},
+        {6650,5550},{6100,4900},{5550,4200},{4900,3500},
+        {4450,2850},{4750,2350},{5550,2150},{5200,1650},
+        {4300,1450},{3450,1750},{2750,2350},{2450,3250},
+        {2650,4200},{3100,5100},{3850,5850},{4750,6450},
+        {5650,6750}
     };
     center_.reserve(raw.size() * subdivisions);
     for (std::size_t i = 0; i < raw.size(); ++i) {
