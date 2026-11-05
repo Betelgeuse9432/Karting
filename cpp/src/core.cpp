@@ -35,16 +35,16 @@ const std::array<VehicleProfile, 4>& profiles() {
 }
 
 Track::Track() {
-    // One continuous closed circuit inspired by Spa-Francorchamps.
-    // The route is deliberately a simple loop: no crossing, junction or
-    // shared road section. It keeps a long straight and a sequence of
-    // tighter and faster bends around the lap.
+    // Apex Ridge: an original, continuous circuit with no crossings.
+    // It combines a long opening run, a flowing outer section, a tight
+    // technical complex and a fast final sweep back to the start.
     const std::vector<Vec2> raw{
-        {6900,6500},{7550,6250},{7800,5650},{7350,5200},
-        {6600,4950},{5850,4350},{5050,3650},{4250,2950},
-        {3450,2350},{2750,2050},{2250,2450},{2100,3150},
-        {2450,3900},{3150,4650},{4050,5250},{5000,5650},
-        {5850,5800},{6500,5550},{7000,5850},{7150,6250}
+        {1700,6500},{2300,7100},{3400,7350},{4400,7000},
+        {5000,6250},{5700,5900},{6500,6100},{7300,6800},
+        {8200,6700},{8750,6000},{8500,5100},{7800,4550},
+        {6900,4400},{6200,4750},{5500,4300},{5100,3400},
+        {4300,2850},{3300,3000},{2700,3650},{2050,3900},
+        {1450,3350},{1200,4300},{1450,5350}
     };
     center_.reserve(raw.size() * subdivisions);
     for (std::size_t i = 0; i < raw.size(); ++i) {
