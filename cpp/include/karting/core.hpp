@@ -91,6 +91,7 @@ public:
     std::size_t size() const { return center_.size(); }
     double lapLength() const { return length_; }
     Vec2 point(std::size_t index, double offset = 0) const;
+    std::size_t indexAtDistance(double distance) const;
     Vec2 startPosition() const;
     double startHeading() const;
     bool isPitIndex(std::size_t index) const;
