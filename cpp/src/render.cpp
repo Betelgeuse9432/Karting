@@ -36,7 +36,7 @@ static void quad(Vector3 a,Vector3 b,Vector3 c,Vector3 d,Color color) {
 }
 
 static Texture2D makeSurfaceTexture(bool asphalt) {
-    constexpr int size=256;
+    constexpr int size=512;
     Image image=GenImageColor(size,size,asphalt?Color{78,80,86,255}:Color{65,128,53,255});
     std::mt19937 rng(asphalt?173u:947u);
     std::uniform_int_distribution<int> grain(-13,13);
@@ -57,10 +57,13 @@ static Texture2D makeSurfaceTexture(bool asphalt) {
         }
         ImageDrawPixel(&image,x,y,c);
     }
+    // Mipmaps keep the fine grain stable at a distance and reduce shimmer.
+    ImageMipmaps(&image);
     Texture2D texture=LoadTextureFromImage(image);
     UnloadImage(image);
     if(texture.id) {
-        SetTextureFilter(texture,TEXTURE_FILTER_BILINEAR);
+        GenTextureMipmaps(&texture);
+        SetTextureFilter(texture,TEXTURE_FILTER_TRILINEAR);
         SetTextureWrap(texture,TEXTURE_WRAP_REPEAT);
     }
     return texture;
@@ -79,6 +82,120 @@ static void texturedQuad(Vector3 a,Vector3 b,Vector3 c,Vector3 d,
     rlEnd();
     rlSetTexture(0);
 }
+
+namespace {
+void drawMountain(Vector3 base, float radius, float height, Color color,
+                  int slices) {
+    const Vector3 peak{base.x,base.y+height,base.z};
+    DrawCylinderEx(base,peak,radius,.12f,slices,color);
+    // A broad lower shoulder makes the silhouette less like a cone.
+    const Vector3 shoulder{base.x,base.y+height*.48f,base.z};
+    DrawCylinderEx(base,shoulder,radius*.82f,radius*.48f,slices,
+                   Fade(color,.92f));
+}
+void draw3DLandscape(Vector3 camera, int quality, float night, double time) {
+    const Color far{83,105,126,255};
+    const Color mid{68,91,76,255};
+    const std::array<Vector3,8> mountainBases{{
+        {-45,0,-36},{12,0,-52},{72,0,-48},{125,0,-34},
+        {190,0,8},{168,0,92},{105,0,145},{5,0,130}
+    }};
+    const float visibility=quality==0?0.78f:1.0f;
+    for(std::size_t i=0;i<mountainBases.size();++i) {
+        const auto b=mountainBases[i];
+        const float distance=Vector3Distance(camera,b);
+        if(distance>quality==0?260.0f:360.0f) continue;
+        const float radius= i%3==0?23.0f:17.0f;
+        const float height= i%3==0?25.0f:17.0f;
+        Color c=i%2==0?far:mid;
+        c=Fade(c,visibility);
+        drawMountain(b,radius,height,c,quality>=3?16:10);
+        if(quality>=2 && i%2==0) {
+            const Vector3 flank{b.x+radius*.72f,b.y,b.z+radius*.28f};
+            drawMountain(flank,radius*.55f,height*.66f,
+                         Fade(c,.82f),quality>=3?12:8);
+        }
+    }
+
+    // Fixed 3D cloud banks float over the circuit. Their world positions
+    // make parallax and camera movement visible, unlike a screen overlay.
+    const std::array<Vector3,7> cloudCenters{{
+        {-24,38,-12},{22,45,-35},{70,41,-22},{116,48,12},
+        {158,39,48},{120,44,100},{38,42,92}
+    }};
+    const float drift=float(std::fmod(time*.12,18.0));
+    for(std::size_t i=0;i<cloudCenters.size();++i) {
+        Vector3 p=cloudCenters[i];
+        p.x+=drift;
+        if(Vector3Distance(camera,p)>quality==0?95.0f:145.0f) continue;
+        const float scale= i%3==0?1.0f:.78f;
+        const Color cloud=Fade({224,231,239,255},(1.0f-night*.68f)*.88f);
+        DrawSphere({p.x,p.y,p.z},4.2f*scale,cloud);
+        DrawSphere({p.x+3.1f*scale,p.y+.8f*scale,p.z+.3f},
+                   3.3f*scale,cloud);
+        DrawSphere({p.x-2.8f*scale,p.y+.25f*scale,p.z-.2f},
+                   2.8f*scale,cloud);
+    }
+}
+void drawTrackLandmarks(const Track& track, Vector3 camera, int quality,
+                        float night) {
+    const auto place=[&](std::size_t index,double offset) {
+        return worldPoint(track.point(index,offset),.2f);
+    };
+    const auto visible=[&](Vector3 p,float range) {
+        return Vector3Distance(p,camera)<range;
+    };
+
+    // Signature pedestrian bridge over the long back straight.
+    if(quality>0) {
+        const std::size_t i=std::min<std::size_t>(track.size()-1,track.size()*0.29);
+        const auto left=place(i,-Track::halfWidth-17);
+        const auto right=place(i,Track::halfWidth+17);
+        if(visible(left,78)) {
+            const Color concrete=Fade({154,161,171,255},1-night*.48f);
+            DrawCylinderEx({left.x,left.y,left.z},{left.x,left.y+4.7f,left.z},
+                           .20f,.20f,8,concrete);
+            DrawCylinderEx({right.x,right.y,right.z},{right.x,right.y+4.7f,right.z},
+                           .20f,.20f,8,concrete);
+            DrawCubeV({(left.x+right.x)*.5f,left.y+4.55f,(left.z+right.z)*.5f},
+                      {2.0f,.35f,Vector3Distance(left,right)},concrete);
+            DrawCubeV({(left.x+right.x)*.5f,left.y+4.9f,(left.z+right.z)*.5f},
+                      {1.9f,.18f,Vector3Distance(left,right)},BLUE);
+        }
+    }
+
+    // A control tower beside the paddock and a tall timing pylon near sector 2.
+    const std::array<std::pair<std::size_t,double>,2> towers{{
+        {track.size()*0.965,Track::halfWidth+Track::pitWidth+65},
+        {track.size()*0.53,-Track::wall-75}
+    }};
+    for(std::size_t n=0;n<towers.size();++n) {
+        const auto p=place(towers[n].first,towers[n].second);
+        if(!visible(p,quality==0?35.f:58.f)) continue;
+        const Color wall=Fade({177,184,190,255},1-night*.45f);
+        DrawCubeV({p.x,p.y+1.7f,p.z},{2.0f,3.4f,1.8f},wall);
+        DrawCubeV({p.x,p.y+3.55f,p.z},{2.2f,.35f,2.0f},
+                  Fade({48,57,70,255},1-night*.4f));
+        DrawCubeV({p.x,p.y+2.35f,p.z+0.92f},{1.25f,.55f,.06f},
+                  Fade(n>.5?Color{255,185,75,255}:Color{65,155,220,255},
+                       1-night*.25f));
+        DrawCylinderEx({p.x+1.0f,p.y+3.6f,p.z},
+                       {p.x+1.0f,p.y+5.1f,p.z},.045f,.025f,6,wall);
+    }
+
+    // Three distinct corner markers: braking boards and coloured kerb-side pylons.
+    for(const std::size_t i:{track.size()*0.16,track.size()*0.43,
+                             track.size()*0.72}) {
+        const auto p=place(i,-Track::wall-12);
+        if(!visible(p,quality==0?26.f:43.f)) continue;
+        for(int board=0;board<3;++board) {
+            const auto q=worldPoint(track.point(i,-Track::wall-12-board*1.7),.2f);
+            DrawCubeV({q.x,q.y+.72f,q.z},{.12f,1.35f,1.1f},
+                      board==0?RED:Fade(WHITE,1-night*.35f));
+        }
+    }
+}
+} // namespace
 
 void WorldRenderer::initialize(const Track& track) {
     shutdown();
@@ -113,6 +230,7 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
                          Vector3 cameraPosition,double time) const {
     const float rain=float(weather.rainLevel);
     const float night=float(weather.nightLevel);
+    draw3DLandscape(cameraPosition,quality,night,time);
     const auto asphalt=shaded({84,86,95,255},1-0.35f*rain-0.52f*night);
     const auto kerbRed=shaded({223,37,37,255},1-0.25f*night);
     const auto kerbWhite=shaded({230,228,218,255},1-0.4f*night);
@@ -135,9 +253,17 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
             const auto c=worldPoint({x1,z1},-2.5f);
             const auto d=worldPoint({x0,z1},-2.5f);
             const int patch=(std::abs(gx*7+gz*11)%5);
+            // Always draw a real terrain base first. The texture is a detail layer.
+            quad(worldPoint({x0,z0},-2.65f),worldPoint({x1,z0},-2.65f),
+                 worldPoint({x1,z1},-2.65f),worldPoint({x0,z1},-2.65f),
+                 shaded(grass,.94f+patch*.025f));
             if(grassTexture_.id) {
+                const auto ta=worldPoint({x0,z0},-2.45f);
+                const auto tb=worldPoint({x1,z0},-2.45f);
+                const auto tc=worldPoint({x1,z1},-2.45f);
+                const auto td=worldPoint({x0,z1},-2.45f);
                 const float u=float(x1-x0)/8.f,v=float(z1-z0)/8.f;
-                texturedQuad(a,b,c,d,grassTexture_,u,v);
+                texturedQuad(ta,tb,tc,td,grassTexture_,u,v);
                 // Weather tint is a cheap overlay, not another texture pass.
                 if(rain>.05f || night>.05f)
                     quad(a,b,c,d,Fade(shaded(grass,.94f+patch*.025f),.16f*rain+.22f*night));
@@ -163,17 +289,22 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
         };
         const auto roadA=l(i,-Track::halfWidth),roadB=l(j,-Track::halfWidth);
         const auto roadC=l(j,Track::halfWidth),roadD=l(i,Track::halfWidth);
+        // The asphalt colour pass is always present beneath the texture.
+        quad(roadA,roadB,roadC,roadD,shaded(asphalt,int(i/9)%2==0?1.f:.90f));
         if(asphaltTexture_.id) {
             const float roadLength=Vector3Distance(roadA,roadB);
             const float roadWidth=Vector3Distance(roadA,roadD);
-            texturedQuad(roadA,roadB,roadC,roadD,asphaltTexture_,
+            const auto ra=worldPoint(track.point(i,-Track::halfWidth),1.08f);
+            const auto rb=worldPoint(track.point(j,-Track::halfWidth),1.08f);
+            const auto rc=worldPoint(track.point(j,Track::halfWidth),1.08f);
+            const auto rd=worldPoint(track.point(i,Track::halfWidth),1.08f);
+            texturedQuad(ra,rb,rc,rd,asphaltTexture_,
                          std::max(.05f,roadLength/4.f),roadWidth/4.f);
             // Subtle night/rain tint keeps the same material responsive to weather.
             if(rain>.05f || night>.05f)
                 quad(roadA,roadB,roadC,roadD,
                      Fade(asphalt, .20f*rain+.28f*night));
-        } else quad(roadA,roadB,roadC,roadD,
-                    shaded(asphalt,int(i/9)%2==0?1.f:.90f));
+        }
         const auto kerb=int(i/5)%2?kerbWhite:kerbRed;
         paint(-Track::halfWidth-Track::kerb,-Track::halfWidth,kerb);
         paint(Track::halfWidth,Track::halfWidth+Track::kerb,kerb);
@@ -309,6 +440,8 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
             DrawSphere(tip,.16f,night>.3?Color{255,235,150,255}:LIGHTGRAY);
         }
     }
+
+    drawTrackLandmarks(track,cameraPosition,quality,night);
 
     // Tree positions were generated once, instead of walking the circuit
     // and calling nearest-point search on every rendered frame.
