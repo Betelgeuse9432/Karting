@@ -175,6 +175,12 @@ void gt3(Color paint,Color glass,Color dark,bool braking) {
 
     // Front faces +X. Keep the same footprint as the original GT3 so the
     // existing wheels, camera and physics remain compatible.
+    // Flatten only the GT3 body (15% lower), pivoting around its floor.
+    // Wheels are drawn afterwards in their own transform, unchanged.
+    rlPushMatrix();
+    rlTranslatef(0.f,.14f,0.f);
+    rlScalef(1.f,.85f,1.f);
+    rlTranslatef(0.f,-.14f,0.f);
     bodyShell({{-1.18f,.15f,.42f,.48f},
                {-.95f,.15f,.52f,.57f},
                {-.54f,.16f,.55f,.56f},
@@ -252,6 +258,7 @@ void gt3(Color paint,Color glass,Color dark,bool braking) {
         rod({-1.018f,.46f,side*.34f},
             {-1.100f,.81f,side*.36f},.024f,carbon);
     rearWing(-1.105f,.84f,1.23f,.23f,carbon);
+    rlPopMatrix();
 }
 
 void wec(Color paint,Color glass,Color dark,bool braking) {
