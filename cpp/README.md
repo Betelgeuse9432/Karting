@@ -83,11 +83,12 @@ et les collisions sur le PC réel, surtout en virage à haute vitesse.
 
 ## Grand circuit et environnement enrichi
 
-Le grand circuit a été remodelé en **33 points de contrôle** avec une
-**épingle à 180°** à l'est (entrée et sortie sur deux voies séparées),
-de grandes courbes dans les secteurs sud et ouest, ainsi qu'une longue
-ligne droite avant l'épingle. Le parcours mesure environ **65 729 unités**
-(contre 54 900 précédemment). La mini-carte s'adapte automatiquement.
+Le grand circuit utilise désormais **34 points de contrôle** (environ
+**61 100 unités de longueur**). L'**épingle à 180°** à l'est est conservée,
+avec sa ligne droite d'entrée et ses deux branches séparées. Les sections
+sud et ouest ont été redessinées autour de courbes plus longues et
+progressives, sans les changements de cap brusques du tracé précédent.
+La mini-carte s'adapte automatiquement.
 
 La largeur totale d'asphalte passe de **300 à 350 unités** (+16,7 %).
 Les barrières ont été déplacées de 242 à 275 unités du centre pour
@@ -126,10 +127,15 @@ Le décor est construit dans `src/scenery.cpp` et rendu dans
 - **Vraies structures visuelles** : portes de garages et vitrages, tribunes
   étagées avec sièges/public, toits de tentes, lampadaires et éoliennes.
 
-Le placement est **déterministe** et dépend de la géométrie du circuit. Les
-objets sont orientés selon la tangente de la route, posés sur le terrain,
-puis filtrés par distance et qualité graphique avant affichage. Les modules
-des voitures, la caméra et les commandes n'ont pas été modifiés.
+Le placement est **déterministe** et exprimé en unités de **distance
+parcourue**, pas en numéros de points : l'ajout d'un virage ou un changement
+du nombre de points interpolés ne font plus disparaître la forêt. Les zones
+de paddock, tribunes et rochers sont définies en fractions du tour, et cinq
+rangées de végétation par côté densifient les secteurs boisés. Les objets
+sont orientés selon la tangente de la route, posés sur le terrain, tenus à
+distance des autres branches du circuit, puis filtrés par distance et qualité
+graphique avant affichage. Les véhicules, la caméra et les commandes restent
+inchangés.
 
 Ce travail reste **procédural et stylisé** : pas de textures PBR, de shaders
 d'éclairage physique ni d'ombres dynamiques. Un essai en conditions réelles
@@ -164,7 +170,7 @@ cpp/
     core.hpp                   interfaces simulation, piste, physique, course
     game.hpp                   interfaces graphique, effets et orchestration
   src/
-    core.cpp                   33 points, Catmull-Rom, 4 profils, physique, météo, tours
+    core.cpp                   34 points, Catmull-Rom, 4 profils, physique, météo, tours
     render.cpp                 scène 3D, route, vibreurs, murs, arbres
     vehicle_models.cpp         modèles procéduraux des quatre voitures
     scenery.cpp                décors, tribunes, bâtiments, végétation et culling
@@ -180,7 +186,7 @@ Le **moteur logique ne contient aucun include raylib**. Le rendu dessine des obj
 ## État de migration
 
 Portés depuis la V6 Python :
-- Les 33 points de contrôle du circuit à épingle et leur interpolation fermée
+- Les 34 points de contrôle du circuit à épingle et leur interpolation fermée
 - Les quatre voitures (Kart / 4x4 / GT3 / WEC) avec leurs performances récentes
 - L'accélération, le freinage, le grip avant/arrière, la dérive avec frein à main, l'appui, la pluie et le relief
 - Les rails, les pénalités si quatre roues hors piste, la voie des stands, le chrono, les records et leur sauvegarde
