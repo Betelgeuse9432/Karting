@@ -91,6 +91,7 @@ private:
     Camera3D camera_{};
     bool menu_ = true;
     bool paused_ = false;
+    bool boostQueued_ = false;
     int quality_ = 1;
     double gameTime_ = 0;
     double followAngle_ = 0;
