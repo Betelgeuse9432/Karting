@@ -169,15 +169,16 @@ void gt3(Color paint,Color glass,Color dark,bool braking) {
     const Color intake{12,15,20,255};
     const Color headlamp{225,238,245,255};
 
-    // Wide, muscular body with a relatively flat bonnet and a full rear haunch.
+    // Broad M4-style bonnet: stays wide and nearly level all the way to the nose.
+    // The front is blunt and muscular, not pinched down like a single-seater.
     bodyShell({{-1.30f,.13f,.34f,.39f},
                {-1.12f,.14f,.43f,.51f},
                {-.78f,.15f,.47f,.57f},
                {-.25f,.15f,.48f,.57f},
-               { .35f,.14f,.44f,.55f},
-               { .78f,.13f,.39f,.54f},
-               {1.08f,.12f,.31f,.48f},
-               {1.25f,.11f,.24f,.39f}},paint,tone(paint,.70f));
+               { .35f,.14f,.45f,.56f},
+               { .78f,.13f,.44f,.56f},
+               {1.08f,.12f,.41f,.53f},
+               {1.25f,.11f,.37f,.47f}},paint,tone(paint,.70f));
 
     // A lower, wider cabin. The long windscreen flows into a compact roof.
     cockpit(.40f,-.79f,.10f,-.58f,.47f,.79f,.43f,.33f,
