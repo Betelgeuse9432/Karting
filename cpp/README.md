@@ -128,12 +128,13 @@ sur la machine de jeu** ; aucun chiffre n'est garanti avant essai.
 
 ## Grand circuit et environnement enrichi
 
-Le grand circuit utilise désormais **34 points de contrôle** (environ
-**61 100 unités de longueur**). L'**épingle à 180°** à l'est est conservée,
-avec sa ligne droite d'entrée et ses deux branches séparées. Les sections
-sud et ouest ont été redessinées autour de courbes plus longues et
-progressives, sans les changements de cap brusques du tracé précédent.
-La mini-carte s'adapte automatiquement.
+Le circuit utilise **42 points de contrôle** pour un tour d'environ
+**71 200 unités**. L'**épingle à 180°** et sa ligne droite d'entrée sont
+strictement préservées. Le reste du tour comporte désormais quatre secteurs
+reconnaissables : ligne droite et épingle, S rapides à l'est, complexe à
+double apex au sud avec relances, et virages techniques à l'ouest avant
+le retour sur la ligne de départ. La courbe est fermée, sans intersection,
+et la mini-carte s'adapte automatiquement.
 
 La largeur totale d'asphalte passe de **300 à 350 unités** (+16,7 %).
 Les barrières ont été déplacées de 242 à 275 unités du centre pour
@@ -215,7 +216,7 @@ cpp/
     core.hpp                   interfaces simulation, piste, physique, course
     game.hpp                   interfaces graphique, effets et orchestration
   src/
-    core.cpp                   34 points, Catmull-Rom, 4 profils, physique, météo, tours
+    core.cpp                   42 points, Catmull-Rom, 4 profils, physique, météo, tours
     render.cpp                 scène 3D, route, vibreurs, murs, arbres
     vehicle_models.cpp         modèles procéduraux des quatre voitures
     scenery.cpp                décors, tribunes, bâtiments, végétation et culling
@@ -231,7 +232,7 @@ Le **moteur logique ne contient aucun include raylib**. Le rendu dessine des obj
 ## État de migration
 
 Portés depuis la V6 Python :
-- Les 34 points de contrôle du circuit à épingle et leur interpolation fermée
+- Les 42 points de contrôle du circuit à quatre secteurs et leur interpolation fermée
 - Les quatre voitures (Kart / 4x4 / GT3 / WEC) avec leurs performances récentes
 - L'accélération, le freinage, le grip avant/arrière, la dérive avec frein à main, l'appui, la pluie et le relief
 - Les rails, les pénalités si quatre roues hors piste, la voie des stands, le chrono, les records et leur sauvegarde
