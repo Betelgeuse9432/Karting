@@ -164,7 +164,7 @@ cpp/
     core.hpp                   interfaces simulation, piste, physique, course
     game.hpp                   interfaces graphique, effets et orchestration
   src/
-    core.cpp                   72 points, Catmull-Rom, 4 profils, physique, météo, tours
+    core.cpp                   33 points, Catmull-Rom, 4 profils, physique, météo, tours
     render.cpp                 scène 3D, route, vibreurs, murs, arbres
     vehicle_models.cpp         modèles procéduraux des quatre voitures
     scenery.cpp                décors, tribunes, bâtiments, végétation et culling
@@ -180,7 +180,7 @@ Le **moteur logique ne contient aucun include raylib**. Le rendu dessine des obj
 ## État de migration
 
 Portés depuis la V6 Python :
-- Les 72 points de contrôle du grand circuit et leur interpolation fermée
+- Les 33 points de contrôle du circuit à épingle et leur interpolation fermée
 - Les quatre voitures (Kart / 4x4 / GT3 / WEC) avec leurs performances récentes
 - L'accélération, le freinage, le grip avant/arrière, la dérive avec frein à main, l'appui, la pluie et le relief
 - Les rails, les pénalités si quatre roues hors piste, la voie des stands, le chrono, les records et leur sauvegarde
