@@ -27,6 +27,16 @@ Controls controlsFromKeyboard() {
             int(IsKeyDown(KEY_LEFT)||IsKeyDown(KEY_Q)||IsKeyDown(KEY_A)),
             IsKeyDown(KEY_SPACE)};
 }
+// Accept the typed 'm' on AZERTY and other keyboard layouts while keeping
+// the existing physical KEY_M shortcut. No on-screen menu button.
+bool menuKeyPressed() {
+    bool pressed=IsKeyPressed(KEY_M);
+    for(int character=GetCharPressed();character>0;
+        character=GetCharPressed()) {
+        if(character=='m' || character=='M') pressed=true;
+    }
+    return pressed;
+}
 } // namespace
 
 void Game::reset() {
@@ -57,7 +67,7 @@ void Game::handleMenu() {
 }
 
 void Game::handleRace() {
-    if (IsKeyPressed(KEY_M)) {
+    if (menuKeyPressed()) {
         menu_=true;
         reset();
         return;
