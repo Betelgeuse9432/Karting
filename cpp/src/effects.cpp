@@ -10,6 +10,8 @@ void Effects::clear() {
     lastSkidding_=false;
     previousThrottle_=0;
     backfireCooldown_=0;
+    sparkCooldown_=0;
+    backfireArmed_=false;
     emitTime_=0;
     for (auto& p:previous_) p={};
 }
@@ -48,37 +50,47 @@ void Effects::update(const Simulation& sim, double dt) {
                         .65, .65, 0});
         }
     }
-    // Sparse, side-directed brake sparks rather than permanent fireworks.
-    // All particles are tiny and fade rapidly; keep physics unchanged.
-    if (car.brake>.68 && car.brakeHeat>.35 &&
-        std::abs(car.speed)>.55*p.topSpeed &&
-        std::uniform_int_distribution<int>(0,10)(generator_)==0) {
+    // Controlled brake sparks: visible beside the rear wheels and emitted
+    // during sustained strong braking. No effect on driving physics.
+    sparkCooldown_=std::max(0.0,sparkCooldown_-dt);
+    if(car.brake>.72 && car.brakeHeat>.09 &&
+       std::abs(car.speed)>.30*p.topSpeed && sparkCooldown_<=0.0) {
         const int direction=std::uniform_int_distribution<int>(0,1)(generator_)?1:-1;
-        const Vec2 pos=car.position+forward*(p.frontAxle*.34)+
-                       side*(direction*(p.halfWheelTrack+3));
-        particles_.push_back({pos,elevation(pos)+11,
-                    side.x*direction*90-forward.x*35,
-                    side.y*direction*90-forward.y*35,
-                    12+std::abs(velocity(generator_))*20,
-                    .21,.21,2});
+        const Vec2 pos=car.position+forward*p.rearAxle+
+                       side*(direction*(p.halfWheelTrack+16));
+        for(int i=0;i<2;++i) {
+            const double flicker=velocity(generator_);
+            particles_.push_back({pos,elevation(pos)+8,
+                -forward.x*(55+20*i)+side.x*direction*(65+20*flicker),
+                -forward.y*(55+20*i)+side.y*direction*(65+20*flicker),
+                8+std::abs(flicker)*14,
+                .24,.24,2});
+        }
+        sparkCooldown_=.11;
     }
 
-    // Compact GT3 twin-exhaust pop when the driver lifts off.
-    // Anchor at the existing GT3 exhaust tips, not its wheelbase.
-    // Detect crossing a throttle threshold, not the floating-point zero.
+    // Backfire on the FIRST throttle-release frame, not when a narrowly
+    // chosen threshold happens to be crossed in one simulation tick.
     backfireCooldown_=std::max(0.0,backfireCooldown_-dt);
-    if(sim.vehicleIndex()==2 && car.speed>.55*p.topSpeed &&
-       previousThrottle_>.17 && car.throttle<=.12 &&
-       backfireCooldown_<=0.0) {
+    if(car.throttle>previousThrottle_+.015 || car.throttle>.75)
+        backfireArmed_=true;
+    const bool released=previousThrottle_>.38 &&
+                        car.throttle<previousThrottle_-.045;
+    if(sim.vehicleIndex()==2 && backfireArmed_ && released &&
+       car.speed>.35*p.topSpeed && backfireCooldown_<=0.0) {
         for(const int direction:{-1,1}) {
-            const Vec2 pos=car.position+forward*(-1.29/kWorldScale)+
+            // GT3 body ends around local X=-1.26m. Start outside the
+            // rear bumper at both visible exhaust outlets.
+            const Vec2 pos=car.position+forward*(-1.43/kWorldScale)+
                            side*(direction*.25/kWorldScale);
-            particles_.push_back({pos,elevation(pos)+.245/kWorldScale,
-                       -forward.x*45,-forward.y*45,0,
-                       .12,.12,1});
+            particles_.push_back({pos,elevation(pos)+.255/kWorldScale,
+                -forward.x*85,-forward.y*85,0,
+                .24,.24,1});
         }
-        backfireCooldown_=.55;
+        backfireArmed_=false;
+        backfireCooldown_=.40;
     }
+    if(car.throttle<.08) backfireArmed_=false;
     previousThrottle_=car.throttle;
     for (auto& particle:particles_) {
         particle.location=particle.location+Vec2{particle.dx,particle.dy}*dt;
@@ -111,17 +123,30 @@ void Effects::draw3D(const Camera3D& camera) const {
             DrawSphere(pos,(1.0f-age)*.24f+.09f,
                        Fade(LIGHTGRAY,age*.55f));
         else if (p.kind==1) {
-            // Small tapered orange core, no oversized spherical fireball.
-            const Vector3 tip{pos.x+float(p.dx)*.0023f*age,
-                              pos.y+.012f,
-                              pos.z+float(p.dy)*.0023f*age};
-            DrawCylinderEx(pos,tip,.060f*age,.008f*age,5,
-                           Fade({255,158,61,255},age));
+            // Compact flame cone behind the bumper, not a floating orb.
+            // At full lifetime the cone extends ~0.34m, easily visible
+            // from the chase camera without obscuring the vehicle.
+            const float strength=std::clamp(age*2.f,0.f,1.f);
+            const float len=.20f+.15f*strength;
+            const float dx=float(p.dx),dz=float(p.dy);
+            const float norm=std::max(.001f,std::sqrt(dx*dx+dz*dz));
+            const Vector3 tip{pos.x+dx/norm*len,pos.y+.025f,
+                              pos.z+dz/norm*len};
+            DrawCylinderEx(pos,tip,.105f*strength,.012f,6,
+                           Fade({255,151,43,255},age));
+            const Vector3 core{pos.x+(tip.x-pos.x)*.58f,
+                               pos.y+.010f,
+                               pos.z+(tip.z-pos.z)*.58f};
+            DrawCylinderEx(pos,core,.050f*strength,.006f,5,
+                           Fade({255,232,136,255},age));
         } else {
-            const Vector3 tip{pos.x+float(p.dx)*.0018f,
-                              pos.y+.020f,
-                              pos.z+float(p.dy)*.0018f};
-            DrawLine3D(pos,tip,Fade({255,201,93,255},age));
+            const float dx=float(p.dx),dz=float(p.dy);
+            const float norm=std::max(.001f,std::sqrt(dx*dx+dz*dz));
+            const Vector3 tip{pos.x+dx/norm*.27f,
+                              pos.y+.045f,
+                              pos.z+dz/norm*.27f};
+            DrawCylinderEx(pos,tip,.020f*age,.004f,4,
+                           Fade({255,209,102,255},age));
         }
     }
 }
