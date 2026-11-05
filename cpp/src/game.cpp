@@ -248,7 +248,7 @@ void Game::renderRace() {
         const float x=float(width*.78);
         const float y=92.f+120.f*n;
         const float visibility=(1-r)*(1-n*.6f);
-        DrawCircleGradient({x,y},66,
+        DrawCircleGradient(int(x),int(y),66.f,
                            Fade({255,220,145,255},visibility*.30f),
                            Fade({255,220,145,255},0));
         DrawCircle(int(x),int(y),28.f*(1-n*.5f),
@@ -264,7 +264,7 @@ void Game::renderRace() {
         }
         const int moonX=width/5,moonY=100;
         const float moonVisibility=std::clamp((n-.58f)/.42f,0.f,1.f)*(1-r);
-        DrawCircleGradient({float(moonX),float(moonY)},54,
+        DrawCircleGradient(moonX,moonY,54.f,
                            Fade({160,180,225,255},moonVisibility*.22f),
                            Fade({160,180,225,255},0));
         DrawCircle(moonX,moonY,17,
