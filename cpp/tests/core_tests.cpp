@@ -48,9 +48,13 @@ void testProfiles() {
     require(profiles()[1].name=="4x4","4x4 present");
     require(profiles()[2].name=="GT3","GT3 present");
     require(profiles()[3].name=="WEC","WEC present");
-    for (const auto& p:profiles()) {
-        require(p.topSpeed>=650,"All speed limits increased");
-        require(p.power>=1050,"All power limits increased");
+    const int maxSpeed[]={550,570,680,770};
+    const int maxPower[]={850,700,980,1150};
+    for (std::size_t i=0;i<profiles().size();++i) {
+        const auto& p=profiles()[i];
+        close(p.topSpeed,maxSpeed[i],1e-9,"Reduced speed cap matches driving balance");
+        close(p.power,maxPower[i],1e-9,"Reduced engine power matches balance");
+        require(p.throttleRate<=1.1,"Throttle response is manageable");
         require(p.frontAxle>0 && p.rearAxle<0,"Wheel position valid");
     }
 }
