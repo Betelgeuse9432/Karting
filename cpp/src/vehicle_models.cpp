@@ -416,6 +416,9 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
         // Raise only the WEC bodywork; wheels stay at their original ground contact.
         rlPushMatrix();
         rlTranslatef(0,.12f,0);
+        // Shorten the WEC body along its length without changing wheelbase,
+        // wheel positions, or the driving physics.
+        rlScalef(.90f,1.0f,1.0f);
         wec(paint,glass,dark,car.brake>.1);
         rlPopMatrix();
         break;
