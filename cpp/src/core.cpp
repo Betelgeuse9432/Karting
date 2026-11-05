@@ -305,7 +305,9 @@ void Simulation::update(const Controls& controls,double dt) {
     car_.wheelRotation+=car_.speed*dt/10*.35;
     telemetry_={off,frontSlip,rearSlip,std::abs(car_.lateralSpeed)>12,
                 before.pits,grip,impact,slope};
-    race_.tick(track_,car_,off,dt);
+    // Crossing the finish line completes a lap: refill both boost charges.
+    if (race_.tick(track_,car_,off,dt).has_value())
+        boostsRemaining_=2;
     boostTimeRemaining_=std::max(0.0,boostTimeRemaining_-dt);
 
     if (!std::isfinite(car_.position.x)||!std::isfinite(car_.position.y)||
