@@ -344,8 +344,10 @@ void wec(Color paint,Color glass,Color dark,bool braking) {
 }
 
 void wheels(const Car& car,const VehicleProfile& p,int index) {
-    const float front=float(p.frontAxle*kWorldScale);
-    const float rear=float(p.rearAxle*kWorldScale);
+    // Give the WEC a longer visual wheelbase without changing its physics.
+    const float axleVisualScale=index==3?1.35f:1.0f;
+    const float front=float(p.frontAxle*kWorldScale*axleVisualScale);
+    const float rear=float(p.rearAxle*kWorldScale*axleVisualScale);
     constexpr std::array<float,4> sizes{{.155f,.265f,.205f,.195f}};
     constexpr std::array<float,4> widths{{.19f,.26f,.22f,.21f}};
     constexpr std::array<float,4> tracks{{.45f,.65f,.60f,.58f}};
