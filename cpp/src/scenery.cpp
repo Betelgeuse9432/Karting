@@ -360,6 +360,7 @@ void WorldRenderer::initialize(const Track& track) {
 }
 
 void WorldRenderer::drawTerrain(const Weather& weather,int quality,
+                                 const ViewFrustum& frustum,
                                  Vector3 cameraPosition) const {
     const float rain=float(weather.rainLevel);
     const float night=float(weather.nightLevel);
@@ -397,6 +398,11 @@ void WorldRenderer::drawTerrain(const Weather& weather,int quality,
         const Vector3 b=vertices[std::size_t(i+1)*side+j];
         const Vector3 c=vertices[std::size_t(i+1)*side+j+1];
         const Vector3 d=vertices[std::size_t(i)*side+j+1];
+        const Vector3 center=Vector3Scale(Vector3Add(a,c),.5f);
+        // Bounding sphere includes the whole tile, including its relief.
+        // Keep a generous vertical margin so elevated terrain never pops.
+        const float radius=Vector3Distance(a,c)*.5f+5.f;
+        if(!frustum.visible(center,radius)) continue;
         const float noise=seedNoise(float(x+spacing*.5),float(z+spacing*.5));
         const Color grass=noise>.24f?Color{99,141,66,255}:
                           noise<-.23f?Color{63,128,60,255}:
@@ -410,6 +416,7 @@ void WorldRenderer::drawTerrain(const Weather& weather,int quality,
 }
 
 void WorldRenderer::drawScenery(const Weather& weather,int quality,
+                                 const ViewFrustum& frustum,
                                  Vector3 cameraPosition,double time) const {
     const float darkness=1.f-.48f*float(weather.nightLevel);
     const float distance=quality==0?55.f:quality==1?82.f:120.f;
@@ -419,6 +426,15 @@ void WorldRenderer::drawScenery(const Weather& weather,int quality,
         const float dx=origin.x-cameraPosition.x,dz=origin.z-cameraPosition.z;
         const float d2=dx*dx+dz*dz;
         if(d2>range2)continue;
+        // Conservative bounds: elevated winds, wide stands and tall trees
+        // are retained when only their edge intersects the viewport.
+        const float radius=obj.kind==3?7.5f:obj.kind==4?8.f:
+                           obj.kind==8?11.f:obj.kind==5?5.f:
+                           obj.kind==7?6.f:obj.kind==6?5.f:
+                           (obj.kind==0||obj.kind==1)?5.f*obj.size:
+                           3.f*obj.size;
+        const Vector3 visualCenter{origin.x,origin.y+radius*.48f,origin.z};
+        if(!frustum.visible(visualCenter,radius)) continue;
         if(quality==0 && (obj.kind==3||obj.kind==4||obj.kind==8)
            &&d2>38.f*38.f)continue;
         rlPushMatrix();
