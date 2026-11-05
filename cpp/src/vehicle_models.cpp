@@ -163,34 +163,95 @@ void offRoad(Color paint,Color glass,Color dark,bool braking) {
 }
 
 void gt3(Color paint,Color glass,Color dark,bool braking) {
-    // Coupe with a distinctly long front hood and a low sloping cabin.
-    bodyShell({{-1.11f,.14f,.39f,.42f},
-               {-.80f,.15f,.50f,.53f},
-               {-.22f,.15f,.51f,.50f},
-               { .55f,.14f,.38f,.47f},
-               {1.13f,.11f,.21f,.31f}},paint,tone(paint,.72f));
-    cockpit(.34f,-.79f,-.01f,-.54f,.50f,.88f,.38f,.27f,
-            glass,tone(paint,.79f));
+    // Modern GT3: broad stance, recognisable wheel haunches, low roof and
+    // separate aerodynamic details. All decoration remains procedural.
+    const Color shadow=tone(paint,.70f);
+    const Color highlight=tone(paint,1.13f);
+    const Color carbon{24,27,33,255};
+    const Color grille{12,16,20,255};
+    const Color metal{126,132,140,255};
+    const Color headlight{239,245,223,255};
+    const Color tail=braking?Color{255,46,39,255}:Color{155,27,34,255};
+
+    // Front faces +X. Keep the same footprint as the original GT3 so the
+    // existing wheels, camera and physics remain compatible.
+    bodyShell({{-1.18f,.15f,.42f,.48f},
+               {-.95f,.15f,.52f,.57f},
+               {-.54f,.16f,.55f,.56f},
+               {-.13f,.16f,.54f,.52f},
+               { .39f,.15f,.49f,.54f},
+               { .83f,.14f,.42f,.55f},
+               {1.18f,.13f,.35f,.48f}},paint,shadow);
+    cockpit(.30f,-.81f,-.02f,-.60f,.54f,.94f,.405f,.272f,
+            glass,tone(paint,.83f));
+
+    // Raised wheel-arch shoulders give the sides some shape rather than
+    // looking like one rectangular block. They do not move the wheels.
     for(float side:{-1.f,1.f}) {
-        const float z=side*.50f;
-        box(-.13f,.18f,z,.80f,.085f,.12f,dark); // skirts
-        box(-.74f,.51f,side*.40f,.47f,.07f,.19f,
-            tone(paint,.90f)); // haunches
-        box(-.57f,.33f,side*.52f,.28f,.053f,.016f,
-            {36,43,50,255}); // side intake
-        box(.37f,.78f,side*.34f,.10f,.065f,.07f,dark); // mirrors
-        box(-1.10f,.36f,side*.34f,.04f,.07f,.14f,
-            braking?RED:Color{139,25,29,255});
-        box(.99f,.31f,side*.30f,.09f,.057f,.17f,
-            {230,236,206,255});
-        rod({-1.01f,.45f,side*.30f},
-            {-1.01f,.61f,side*.30f},.018f,dark);
+        for(float axle:{-.40f,.40f}) {
+            panel({axle-.35f,.40f,side*.53f},
+                  {axle-.21f,.56f,side*.615f},
+                  {axle+.20f,.55f,side*.615f},
+                  {axle+.34f,.40f,side*.53f},highlight);
+        }
+        // Carbon side skirt and front canard, with a rear brake-cooling duct.
+        box(-.04f,.17f,side*.58f,1.69f,.08f,.15f,carbon);
+        box(-.78f,.34f,side*.59f,.24f,.08f,.020f,grille);
+        panel({.93f,.24f,side*.49f},{1.18f,.18f,side*.60f},
+              {1.08f,.22f,side*.60f},{.87f,.30f,side*.52f},carbon);
+
+        // Door outline and number panel. Deliberately logo-free.
+        DrawLine3D({-.17f,.30f,side*.563f},
+                   {-.17f,.51f,side*.563f},tone(paint,.52f));
+        box(-.06f,.402f,side*.578f,.27f,.17f,.018f,
+            {231,232,225,255});
+        box(-.06f,.40f,side*.590f,.075f,.12f,.010f,
+            {51,59,67,255});
+        box(.26f,.74f,side*.45f,.14f,.075f,.12f,dark); // mirror
+        rod({.20f,.71f,side*.39f},{.26f,.74f,side*.45f},.018f,dark);
+
+        // Low, sharp front lamp with separate white daylight signature.
+        box(1.183f,.365f,side*.395f,.020f,.082f,.205f,grille);
+        box(1.198f,.385f,side*.405f,.018f,.027f,.177f,headlight);
+        box(1.195f,.344f,side*.462f,.018f,.021f,.063f,
+            {164,198,218,255});
+
+        // Rear light clusters are bright when the brake is applied.
+        box(-1.193f,.424f,side*.405f,.021f,.055f,.20f,grille);
+        box(-1.209f,.430f,side*.406f,.016f,.024f,.171f,tail);
     }
-    box(1.14f,.13f,0,.21f,.06f,1.01f,dark); // splitter
-    box(-1.12f,.13f,0,.18f,.08f,.92f,dark); // diffuser
-    rearWing(-1.08f,.64f,.97f,.14f,dark);
-    for(float z:{-.23f,0.f,.23f})
-        box(.72f,.37f,z,.21f,.018f,.045f,dark); // hood vents
+
+    // Deep front fascia: central mesh intake, two side intakes and splitter.
+    box(1.191f,.246f,0,.026f,.142f,.60f,grille);
+    for(float side:{-1.f,1.f})
+        box(1.192f,.253f,side*.393f,.028f,.104f,.171f,carbon);
+    box(1.205f,.139f,0,.275f,.047f,1.17f,carbon);
+    box(1.285f,.154f,0,.053f,.018f,1.10f,tone(carbon,1.45f));
+
+    // Hood extractors, placed above the sloping bonnet surface.
+    for(float side:{-1.f,1.f}) {
+        panel({.60f,.483f,side*.16f},
+              {.89f,.435f,side*.16f},
+              {.89f,.437f,side*.31f},
+              {.60f,.493f,side*.31f},grille);
+        rod({.65f,.493f,side*.24f},
+            {.85f,.456f,side*.24f},.008f,metal);
+    }
+
+    // Rear bumper, diffuser channels and discreet dual exhausts.
+    box(-1.196f,.237f,0,.050f,.17f,1.03f,carbon);
+    box(-1.236f,.125f,0,.29f,.06f,1.13f,carbon);
+    for(float z:{-.44f,-.22f,0.f,.22f,.44f})
+        box(-1.256f,.155f,z,.245f,.100f,.025f,grille);
+    for(float side:{-1.f,1.f})
+        rod({-1.240f,.254f,side*.25f},
+            {-1.273f,.254f,side*.25f},.060f,metal);
+
+    // Twin pylons and a wide, thin GT wing with clear end plates.
+    for(float side:{-1.f,1.f})
+        rod({-1.018f,.46f,side*.34f},
+            {-1.100f,.81f,side*.36f},.024f,carbon);
+    rearWing(-1.105f,.84f,1.23f,.23f,carbon);
 }
 
 void wec(Color paint,Color glass,Color dark,bool braking) {
