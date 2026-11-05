@@ -90,19 +90,31 @@ void HudRenderer::draw(const Simulation& sim,int quality,int fps) const {
                     (quality==0?"ECO":quality==1?"ELEVE":"ULTRA")),
              27,95,17,LIGHTGRAY);
 
-    // Circuit minimap (V6 control points and interpolated curve).
+    // Fit the complete circuit into the minimap irrespective of its size.
     const auto& center=sim.track().center();
-    const float scale=.023f;
-    const float mx=float(w-239),my=27.f;
-    DrawRectangleRounded({mx-10,my-14,228,187},.11f,8,Fade(BLACK,.75f));
-    for (std::size_t i=0;i<center.size();i+=5) {
-        const auto& a=center[i],b=center[(i+5)%center.size()];
-        DrawLineEx({mx+float(a.x-1600)*scale,my+float(a.y-1600)*scale},
-                   {mx+float(b.x-1600)*scale,my+float(b.y-1600)*scale},
-                   2.3f,RAYWHITE);
+    const float panelX=float(w-239),panelY=27.f;
+    DrawRectangleRounded({panelX-10,panelY-14,228,187},.11f,8,
+                         Fade(BLACK,.75f));
+    double minX=center.front().x,maxX=minX;
+    double minY=center.front().y,maxY=minY;
+    for(const Vec2 p:center) {
+        minX=std::min(minX,p.x); maxX=std::max(maxX,p.x);
+        minY=std::min(minY,p.y); maxY=std::max(maxY,p.y);
     }
-    DrawCircleV({mx+float(car.position.x-1600)*scale,
-                 my+float(car.position.y-1600)*scale},5,RED);
+    const float mapScale=std::min(196.f/float(std::max(1.0,maxX-minX)),
+                                  142.f/float(std::max(1.0,maxY-minY)));
+    const float x0=panelX+(196.f-float(maxX-minX)*mapScale)*.5f;
+    const float y0=panelY+(142.f-float(maxY-minY)*mapScale)*.5f;
+    const auto project=[&](Vec2 p) {
+        return Vector2{x0+float(p.x-minX)*mapScale,
+                       y0+float(p.y-minY)*mapScale};
+    };
+    for (std::size_t i=0;i<center.size();i+=4) {
+        const auto& from=center[i],to=center[(i+4)%center.size()];
+        DrawLineEx(project(from),project(to),2.2f,RAYWHITE);
+    }
+    DrawCircleV(project(center.front()),3,GOLD);
+    DrawCircleV(project(car.position),5,RED);
     const char* phases[]={"JOUR","CREPUSCULE","NUIT"};
     DrawText(TextFormat("%s%s",phases[weather.phase],
              weather.raining?" + PLUIE":""),w-224,201,17,GOLD);
