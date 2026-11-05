@@ -88,57 +88,139 @@ namespace {
 void drawMountain(Vector3 base, float radius, float height, Color color,
                   int slices) {
     const Vector3 peak{base.x,base.y+height,base.z};
-    DrawCylinderEx(base,peak,radius,.12f,slices,color);
-    // A broad lower shoulder makes the silhouette less like a cone.
-    const Vector3 shoulder{base.x,base.y+height*.48f,base.z};
-    DrawCylinderEx(base,shoulder,radius*.82f,radius*.48f,slices,
-                   Fade(color,.92f));
+    DrawCylinderEx(base,peak,radius,.18f,slices,color);
+    const Vector3 shoulder{base.x,base.y+height*.42f,base.z};
+    DrawCylinderEx(base,shoulder,radius*.92f,radius*.50f,slices,
+                   Fade(color,.94f));
 }
 void draw3DLandscape(Vector3 camera, int quality, float night, double time) {
     const Color far{83,105,126,255};
     const Color mid{68,91,76,255};
-    const std::array<Vector3,8> mountainBases{{
-        {-45,0,-36},{12,0,-52},{72,0,-48},{125,0,-34},
-        {190,0,8},{168,0,92},{105,0,145},{5,0,130}
+    // The circuit occupies the central map. Keep every mountain well outside
+    // its playable footprint so no peak can intrude onto the racing surface.
+    const std::array<Vector3,10> mountainBases{{
+        {-145,-1.5f,-115},{-75,-1.5f,-175},{25,-1.5f,-190},
+        {135,-1.5f,-165},{245,-1.5f,-105},{285,-1.5f,5},
+        {270,-1.5f,135},{175,-1.5f,250},{55,-1.5f,270},
+        {-95,-1.5f,225}
     }};
     const float visibility=quality==0?0.78f:1.0f;
     for(std::size_t i=0;i<mountainBases.size();++i) {
-        auto b=mountainBases[i];
-        b.y=float(elevation({b.x/kWorldScale,b.z/kWorldScale})*kWorldScale)-.25f;
+        const auto b=mountainBases[i];
         const float distance=Vector3Distance(camera,b);
-        if(distance>(quality==0?260.0f:360.0f)) continue;
-        const float radius= i%3==0?23.0f:17.0f;
-        const float height= i%3==0?25.0f:17.0f;
-        Color c=i%2==0?far:mid;
-        c=Fade(c,visibility);
-        drawMountain(b,radius,height,c,quality>=3?16:10);
+        if(distance>(quality==0?340.0f:430.0f)) continue;
+        const float radius=i%3==0?43.0f:34.0f;
+        const float height=i%3==0?48.0f:35.0f;
+        Color color=i%2==0?far:mid;
+        color=Fade(color,visibility);
+        drawMountain(b,radius,height,color,quality>=3?18:12);
         if(quality>=2 && i%2==0) {
-            const Vector3 flank{b.x+radius*.72f,b.y,b.z+radius*.28f};
-            drawMountain(flank,radius*.55f,height*.66f,
-                         Fade(c,.82f),quality>=3?12:8);
+            const Vector3 flank{b.x+radius*.68f,b.y,b.z+radius*.30f};
+            drawMountain(flank,radius*.58f,height*.62f,
+                         Fade(color,.80f),quality>=3?14:9);
         }
     }
 
-    // Fixed 3D cloud banks float over the circuit. Their world positions
-    // make parallax and camera movement visible, unlike a screen overlay.
+    // Volumetric cloud banks remain high above the circuit and drift slowly.
     const std::array<Vector3,7> cloudCenters{{
-        {-24,38,-12},{22,45,-35},{70,41,-22},{116,48,12},
-        {158,39,48},{120,44,100},{38,42,92}
+        {-80,54,-60},{-15,61,-105},{65,57,-95},{145,64,-35},
+        {205,55,55},{125,59,155},{-10,57,135}
     }};
-    const float drift=float(std::fmod(time*.12,18.0));
+    const float drift=float(std::fmod(time*.12,22.0));
     for(std::size_t i=0;i<cloudCenters.size();++i) {
         Vector3 p=cloudCenters[i];
         p.x+=drift;
-        if(Vector3Distance(camera,p)>(quality==0?95.0f:145.0f)) continue;
-        const float scale= i%3==0?1.0f:.78f;
+        if(Vector3Distance(camera,p)>(quality==0?120.0f:175.0f)) continue;
+        const float scale=i%3==0?1.0f:.82f;
         const Color cloud=Fade({224,231,239,255},(1.0f-night*.68f)*.88f);
-        DrawSphere({p.x,p.y,p.z},4.2f*scale,cloud);
-        DrawSphere({p.x+3.1f*scale,p.y+.8f*scale,p.z+.3f},
+        DrawSphere({p.x,p.y,p.z},5.2f*scale,cloud);
+        DrawSphere({p.x+3.8f*scale,p.y+.9f*scale,p.z+.4f},
+                   4.0f*scale,cloud);
+        DrawSphere({p.x-3.4f*scale,p.y+.3f*scale,p.z-.3f},
                    3.3f*scale,cloud);
-        DrawSphere({p.x-2.8f*scale,p.y+.25f*scale,p.z-.2f},
-                   2.8f*scale,cloud);
     }
 }
+
+void drawGrandstand(const Track& track, std::size_t centerIndex,
+                    Vector3 camera, float night, int quality) {
+    const std::size_t count=track.size();
+    if(count<20) return;
+    constexpr int halfLength=42;
+    constexpr int sampleStep=3;
+    constexpr int rows=7;
+    constexpr double baseOffset=Track::wall+105.0;
+    const Color concrete=Fade({105,112,123,255},1-night*.42f);
+    const Color seatColor=Fade({36,43,55,255},1-night*.30f);
+    const Color roofColor=Fade({48,56,69,255},1-night*.34f);
+    const Color fascia=Fade({195,202,211,255},1-night*.42f);
+
+    const auto idx=[&](int delta) {
+        const long long raw=static_cast<long long>(centerIndex)+delta;
+        const long long wrapped=(raw%static_cast<long long>(count)+
+                                 static_cast<long long>(count))%
+                                 static_cast<long long>(count);
+        return static_cast<std::size_t>(wrapped);
+    };
+    const auto point=[&](int delta,double offset,float height) {
+        return worldPoint(track.point(idx(delta),-offset),height);
+    };
+    const auto nearPoint=point(0,baseOffset,0);
+    if(Vector3Distance(nearPoint,camera)>105.0f) return;
+
+    // Broad stepped concrete terraces, continuous along the whole stand.
+    for(int row=0;row<rows;++row) {
+        const double offset=baseOffset+row*5.2;
+        const float level=.32f+row*.34f;
+        for(int s=-halfLength;s<halfLength;s+=sampleStep) {
+            const auto a=point(s,offset,level);
+            const auto b=point(s+sampleStep,offset,level);
+            const auto c=point(s+sampleStep,offset+4.8,level);
+            const auto d=point(s,offset+4.8,level);
+            quad(a,b,c,d,concrete);
+            // Dark seat plinths and individual coloured spectator clusters.
+            const auto seatA=point(s+1,offset+1.2,level+.18f);
+            const auto seatB=point(s+1,offset+3.6,level+.18f);
+            DrawCubeV(seatA,{.48f,.13f,.28f},seatColor);
+            DrawCubeV(seatB,{.48f,.13f,.28f},seatColor);
+            if(quality>=1) {
+                const Color crowd=palette((row*3+(s+halfLength)/sampleStep)%6);
+                const auto spectator=point(s+1,offset+2.4,level+.52f);
+                DrawSphere(spectator,.16f,Fade(crowd,1-night*.28f));
+            }
+        }
+        // The raised rear riser makes the stepped seating profile readable.
+        for(int s=-halfLength;s<halfLength;s+=sampleStep*2) {
+            const auto a=point(s,offset+4.7,level);
+            const auto b=point(s,offset+4.7,level+.30f);
+            DrawCylinderEx(a,b,.045f,.045f,5,concrete);
+        }
+    }
+
+    // Continuous roof canopy over the seating, with regularly spaced columns.
+    const double roofOffset=baseOffset+rows*5.2+5.0;
+    const float roofHeight=3.25f;
+    for(int s=-halfLength;s<halfLength;s+=sampleStep) {
+        const auto a=point(s,baseOffset-1.0,roofHeight);
+        const auto b=point(s+sampleStep,baseOffset-1.0,roofHeight);
+        const auto c=point(s+sampleStep,roofOffset,roofHeight+.35f);
+        const auto d=point(s,roofOffset,roofHeight+.35f);
+        quad(a,b,c,d,roofColor);
+        if(s%12==0) {
+            const auto postA=point(s,baseOffset+1.0,.2f);
+            const auto postB=point(s,baseOffset+1.0,roofHeight);
+            DrawCylinderEx(postA,postB,.11f,.085f,8,fascia);
+        }
+    }
+    // Long fascia at the front edge, giving the stand a finished silhouette.
+    for(int s=-halfLength;s<halfLength;s+=sampleStep) {
+        const auto a=point(s,baseOffset-1.0,roofHeight);
+        const auto b=point(s+sampleStep,baseOffset-1.0,roofHeight);
+        const auto c=point(s+sampleStep,baseOffset-1.0,roofHeight+.65f);
+        const auto d=point(s,baseOffset-1.0,roofHeight+.65f);
+        quad(a,b,c,d,fascia);
+    }
+}
+
 void drawTrackLandmarks(const Track& track, Vector3 camera, int quality,
                         float night) {
     const auto place=[&](std::size_t index,double offset) {
@@ -328,11 +410,6 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
         const bool isCorner=std::abs(turn)>.002;
         const int outsideSide=turn>0?-1:1;
 
-        bool publicZone=false;
-        for(std::size_t stand=95;stand<330;stand+=20) {
-            if(i>=stand && i<stand+10) { publicZone=true; break; }
-        }
-
         // Selected corner exits use tyre walls instead of metal barriers.
         const double progress=double(i)/double(count);
         const bool tyreSection=
@@ -344,8 +421,7 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
             for (int side:{-1,1}) {
                 if (side>0 && track.isPitIndex(i)) continue;
                 const bool outsideCorner=isCorner && side==outsideSide;
-                const bool spectatorSide=publicZone && side==-1;
-                if(!outsideCorner && !spectatorSide) continue;
+                if(!outsideCorner) continue;
 
                 const bool useTyres=tyreSection && outsideCorner;
                 if(useTyres) {
@@ -400,26 +476,10 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
         }
     }
 
-    // Grandstands reproduce the V6 crowd zones, without sprite processing.
+    // Two long, covered grandstands grouped into recognisable spectator zones.
     if (quality>0) {
-        for (std::size_t i=95;i<330 && i<count;i+=20) {
-            for (int row=0;row<4;++row) {
-                const auto p=track.point(i,-Track::wall-85-row*36);
-                const auto ground=worldPoint(p);
-                if (Vector3Distance(ground,cameraPosition)>53) continue;
-                const float high=.3f+row*.28f;
-                DrawCubeV({ground.x,ground.y+high,ground.z},
-                          {1.35f,.16f,1.25f},
-                          shaded({120,125,134,255},1-.45f*night));
-                for (int seat=0;seat<3;++seat) {
-                    const Color crowdColor=palette((int(i/20)+row+seat)%6);
-                    DrawCubeV({ground.x+seat*.3f-.4f,
-                               ground.y+high+.22f,ground.z},
-                              {.17f,.26f,.17f},
-                              shaded(crowdColor,1-.4f*night));
-                }
-            }
-        }
+        drawGrandstand(track,count*0.22,cameraPosition,night,quality);
+        drawGrandstand(track,count*0.68,cameraPosition,night,quality);
         // Advertising panels on selected outside barriers.
         for (std::size_t i=115;i<count;i+=145) {
             const auto p=track.point(i,(i/145)%2?Track::wall+35:-Track::wall-35);
