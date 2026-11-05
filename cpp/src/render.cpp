@@ -96,6 +96,29 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
         i+=step;
     }
 
+    // Close roadside reflectors give passing-speed cues without fake blur.
+    // One pair about every 25-30 metres, culled before any draw calls.
+    if (quality>0) {
+        for (std::size_t i=0;i<count;i+=42) {
+            const Vector3 centerPoint=worldPoint(center[i]);
+            const float dx=centerPoint.x-cameraPosition.x;
+            const float dz=centerPoint.z-cameraPosition.z;
+            if (dx*dx+dz*dz>65.f*65.f) continue;
+            for (int side:{-1,1}) {
+                if (side>0 && track.isPitIndex(i)) continue;
+                const auto base=worldPoint(
+                    track.point(i,side*(Track::halfWidth+Track::kerb+34)),0);
+                const Color pillar=shaded({228,231,224,255},1.f-.45f*night);
+                DrawCylinderEx(base,{base.x,base.y+.78f,base.z},
+                               .045f,.043f,6,pillar);
+                DrawCubeV({base.x,base.y+.57f,base.z},
+                          {.12f,.14f,.12f},
+                          side>0?shaded({225,62,48,255},1.f-.35f*night):
+                                 shaded({242,204,72,255},1.f-.35f*night));
+            }
+        }
+    }
+
     // Start/finish gantry is part of the track infrastructure.
     if (quality>0) {
         const auto a=worldPoint(track.point(0,-Track::halfWidth-25));
