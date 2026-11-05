@@ -96,20 +96,19 @@ s'animent uniquement lorsque leur poste est effectivement rendu.
 
 ## Intégration sélective de la branche de Nathan
 
-Cette version reprend de `cpp-raylibb-nathan` uniquement :
+La version reprend les fonctionnalités retenues de `cpp-raylibb-nathan` :
 
-- **Clavier AZERTY** : la touche `M` est reconnue à la fois comme touche
-  physique et comme caractère saisi, sans bouton graphique supplémentaire.
-- **Ciel dynamique** : nuages et reliefs d'horizon liés à l'orientation de
-  la caméra ; les nuages hors du champ de vision sont écartés avant tout
-  appel de dessin. Le rendu est adapté au niveau de qualité.
-- **WEC** : carrosserie Hypercar et proportions révisées, sans remplacer
-  la GT3 ni modifier la physique ou les positions des roues.
-- **Effets GT3** : courts retours de flamme à la décélération et étincelles
-  de freinage rares, avec durée et nombre de particules limités.
+- **Touche M / AZERTY** : lecture du caractère saisi en complément de la touche physique.
+- **Ciel** : nuages dynamiques projetés selon l'orientation et le champ de vision
+  de la caméra. Les montagnes artificielles ont été retirées après essai.
+- **WEC** : carrosserie Hypercar révisée, sans modifier la GT3 ni les roues.
+- **Effets GT3** : retour de flamme bref lors du lever de pied, déclenché par
+  la variation de l'accélérateur. Étincelles peu nombreuses et plus visibles
+  à proximité des roues arrière pendant un freinage appuyé.
 
-**Exclus** : boost, remplacement de BMW M4 GT3, tracé et décor de l'ancienne
-branche. Les performances restent à confirmer sur le PC de jeu.
+**Non repris** : boost, BMW M4 GT3 de Nathan, ancien tracé et ancien décor.
+Les modifications ne changent ni la physique ni le Frustum Culling.
+Les FPS et le résultat visuel des effets doivent encore être validés en jeu.
 
 ## Frustum culling (champ visible de la caméra)
 
