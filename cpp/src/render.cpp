@@ -48,7 +48,7 @@ void WorldRenderer::initialize(const Track& track) {
         }
     }
     std::uniform_real_distribution<double> x(0,9800), y(0,8700);
-    for (int i=0;i<180;++i) {
+    for (int i=0;i<300;++i) {
         const Vec2 p{x(rng),y(rng)};
         if (track.info(p).distance>Track::wall+140) trees_.push_back(p);
     }
@@ -64,10 +64,10 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
     const auto grass=shaded({53,153,57,255},1-0.1f*rain-0.55f*night);
     // Build the visible terrain from the same elevation field as the road.
     // This removes the flat green "table" underneath the hilly circuit.
-    const double tile=420.0;
+    const double tile=quality>=3?210.0:420.0;
     const int baseX=int(std::floor((cameraPosition.x/kWorldScale)/tile));
     const int baseZ=int(std::floor((cameraPosition.z/kWorldScale)/tile));
-    const int terrainRadius=quality==0?6:quality==1?8:10;
+    const int terrainRadius=quality==0?6:quality==1?8:quality==2?10:13;
     for(int gx=baseX-terrainRadius;gx<=baseX+terrainRadius;++gx) {
         for(int gz=baseZ-terrainRadius;gz<=baseZ+terrainRadius;++gz) {
             const double x0=std::max(0.0,gx*tile);
@@ -85,14 +85,14 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
     }
 
     const auto count=track.size();
-    const float farDistance=quality==0?47.f:quality==1?63.f:81.f;
+    const float farDistance=quality==0?47.f:quality==1?63.f:quality==2?81.f:98.f;
     const auto& center=track.center();
     for (std::size_t i=0;i<count;) {
         const Vector3 mid=worldPoint(center[i]);
         const float dx=mid.x-cameraPosition.x, dz=mid.z-cameraPosition.z;
         const float d2=dx*dx+dz*dz;
         if (d2>(farDistance+12)*(farDistance+12)) { ++i; continue; }
-        const std::size_t step=(d2<28*28?1:quality==0?5:quality==1?3:2);
+        const std::size_t step=(d2<40*40?1:quality==0?5:quality==1?3:quality==2?2:1);
         const auto j=(i+step)%count;
         const auto l=[&](std::size_t k,double off) {
             return worldPoint(track.point(k,off),1);
@@ -150,7 +150,7 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
                         const float radius=.34f;
                         const Color tire=shaded({25,27,31,255},1-.35f*night);
                         DrawCylinderEx(p,{p.x,p.y+tireHeight,p.z},
-                                       radius,radius,12,tire);
+                                       radius,radius,quality>=3?20:12,tire);
                         DrawCylinderEx({p.x,p.y+tireHeight,p.z},
                                        {p.x,p.y+2*tireHeight,p.z},
                                        radius,radius,12,tire);
@@ -244,7 +244,7 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
         const auto origin=worldPoint(p);
         const float dx=origin.x-cameraPosition.x,dz=origin.z-cameraPosition.z;
         const float distance2=dx*dx+dz*dz;
-        const float treeFar=quality==0?28.f:quality==1?39.f:50.f;
+        const float treeFar=quality==0?28.f:quality==1?39.f:quality==2?50.f:62.f;
         if (distance2>treeFar*treeFar) continue;
         const int variation=std::abs(int(p.x*.13+p.y*.27))%4;
         const float size=(variation==2?1.18f:variation==1?.72f:0.88f)+
@@ -273,6 +273,12 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
             if(quality>0 && distance2<25*25)
                 DrawSphere({origin.x-.21f*size,origin.y+size*1.65f,origin.z},
                            .35f*size,shaded(foliage,1.1f));
+            if(quality>=3 && distance2<38*38) {
+                DrawSphere({origin.x+size*.34f,origin.y+size*1.30f,origin.z+size*.18f},
+                           .31f*size,shaded(foliage,1.08f));
+                DrawSphere({origin.x-size*.28f,origin.y+size*1.42f,origin.z-size*.20f},
+                           .29f*size,shaded(foliage,.92f));
+            }
         }
     }
 }
