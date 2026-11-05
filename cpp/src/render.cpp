@@ -59,7 +59,7 @@ static Texture2D makeSurfaceTexture(bool asphalt) {
         ImageDrawPixel(&image,x,y,c);
     }
     // Mipmaps keep the fine grain stable at a distance and reduce shimmer.
-    ImageMipmaps(&image);
+    // GPU mipmaps are generated once after upload.
     Texture2D texture=LoadTextureFromImage(image);
     UnloadImage(image);
     if(texture.id) {
