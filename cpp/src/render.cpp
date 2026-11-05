@@ -35,7 +35,55 @@ static void quad(Vector3 a,Vector3 b,Vector3 c,Vector3 d,Color color) {
     DrawTriangle3D(d,c,a,color);
 }
 
+static Texture2D makeSurfaceTexture(bool asphalt) {
+    constexpr int size=256;
+    Image image=GenImageColor(size,size,asphalt?Color{78,80,86,255}:Color{65,128,53,255});
+    std::mt19937 rng(asphalt?173u:947u);
+    std::uniform_int_distribution<int> grain(-13,13);
+    std::uniform_int_distribution<int> fleck(0,99);
+    for(int y=0;y<size;++y) for(int x=0;x<size;++x) {
+        const int n=grain(rng);
+        Color c{};
+        if(asphalt) {
+            const int value=std::clamp(79+n+(fleck(rng)<5?-12:0),35,112);
+            c={static_cast<unsigned char>(value),
+               static_cast<unsigned char>(std::clamp(value+grain(rng)/3,0,255)),
+               static_cast<unsigned char>(std::clamp(value+grain(rng)/2,0,255)),255};
+        } else {
+            const int value=std::clamp(116+n*2,65,165);
+            c={static_cast<unsigned char>(std::clamp(value/2+n/3,0,255)),
+               static_cast<unsigned char>(value),
+               static_cast<unsigned char>(std::clamp(value/2+n/2,0,255)),255};
+        }
+        ImageDrawPixel(&image,x,y,c);
+    }
+    Texture2D texture=LoadTextureFromImage(image);
+    UnloadImage(image);
+    if(texture.id) {
+        SetTextureFilter(texture,TEXTURE_FILTER_BILINEAR);
+        SetTextureWrap(texture,TEXTURE_WRAP_REPEAT);
+    }
+    return texture;
+}
+
+static void texturedQuad(Vector3 a,Vector3 b,Vector3 c,Vector3 d,
+                         Texture2D texture,float uRepeat,float vRepeat) {
+    if(!texture.id) return;
+    rlSetTexture(texture.id);
+    rlBegin(RL_QUADS);
+    rlColor4ub(255,255,255,255);
+    rlTexCoord2f(0,0);             rlVertex3f(a.x,a.y,a.z);
+    rlTexCoord2f(uRepeat,0);       rlVertex3f(b.x,b.y,b.z);
+    rlTexCoord2f(uRepeat,vRepeat); rlVertex3f(c.x,c.y,c.z);
+    rlTexCoord2f(0,vRepeat);       rlVertex3f(d.x,d.y,d.z);
+    rlEnd();
+    rlSetTexture(0);
+}
+
 void WorldRenderer::initialize(const Track& track) {
+    shutdown();
+    asphaltTexture_=makeSurfaceTexture(true);
+    grassTexture_=makeSurfaceTexture(false);
     trees_.clear();
     std::mt19937 rng(7);
     std::uniform_real_distribution<double> noise(-310,310);
@@ -52,6 +100,13 @@ void WorldRenderer::initialize(const Track& track) {
         const Vec2 p{x(rng),y(rng)};
         if (track.info(p).distance>Track::wall+140) trees_.push_back(p);
     }
+}
+
+void WorldRenderer::shutdown() {
+    if(asphaltTexture_.id) UnloadTexture(asphaltTexture_);
+    if(grassTexture_.id) UnloadTexture(grassTexture_);
+    asphaltTexture_={};
+    grassTexture_={};
 }
 
 void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
@@ -80,7 +135,13 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
             const auto c=worldPoint({x1,z1},-2.5f);
             const auto d=worldPoint({x0,z1},-2.5f);
             const int patch=(std::abs(gx*7+gz*11)%5);
-            quad(a,b,c,d,shaded(grass,.94f+patch*.025f));
+            if(grassTexture_.id) {
+                const float u=float(x1-x0)/8.f,v=float(z1-z0)/8.f;
+                texturedQuad(a,b,c,d,grassTexture_,u,v);
+                // Weather tint is a cheap overlay, not another texture pass.
+                if(rain>.05f || night>.05f)
+                    quad(a,b,c,d,Fade(shaded(grass,.94f+patch*.025f),.16f*rain+.22f*night));
+            } else quad(a,b,c,d,shaded(grass,.94f+patch*.025f));
         }
     }
 
@@ -100,8 +161,19 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
         const auto paint=[&](double left,double right,Color color) {
             quad(l(i,left),l(j,left),l(j,right),l(i,right),color);
         };
-        paint(-Track::halfWidth,Track::halfWidth,
-              shaded(asphalt,int(i/9)%2==0?1.f:.90f));
+        const auto roadA=l(i,-Track::halfWidth),roadB=l(j,-Track::halfWidth);
+        const auto roadC=l(j,Track::halfWidth),roadD=l(i,Track::halfWidth);
+        if(asphaltTexture_.id) {
+            const float roadLength=Vector3Distance(roadA,roadB);
+            const float roadWidth=Vector3Distance(roadA,roadD);
+            texturedQuad(roadA,roadB,roadC,roadD,asphaltTexture_,
+                         std::max(.05f,roadLength/4.f),roadWidth/4.f);
+            // Subtle night/rain tint keeps the same material responsive to weather.
+            if(rain>.05f || night>.05f)
+                quad(roadA,roadB,roadC,roadD,
+                     Fade(asphalt, .20f*rain+.28f*night));
+        } else quad(roadA,roadB,roadC,roadD,
+                    shaded(asphalt,int(i/9)%2==0?1.f:.90f));
         const auto kerb=int(i/5)%2?kerbWhite:kerbRed;
         paint(-Track::halfWidth-Track::kerb,-Track::halfWidth,kerb);
         paint(Track::halfWidth,Track::halfWidth+Track::kerb,kerb);
