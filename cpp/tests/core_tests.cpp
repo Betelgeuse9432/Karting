@@ -48,13 +48,13 @@ void testProfiles() {
     require(profiles()[1].name=="4x4","4x4 present");
     require(profiles()[2].name=="GT3","GT3 present");
     require(profiles()[3].name=="WEC","WEC present");
-    const int maxSpeed[]={550,570,680,770};
-    const int maxPower[]={850,700,980,1150};
+    const int maxSpeed[]={300,320,400,450};
+    const int maxPower[]={320,280,390,460};
     for (std::size_t i=0;i<profiles().size();++i) {
         const auto& p=profiles()[i];
         close(p.topSpeed,maxSpeed[i],1e-9,"Reduced speed cap matches driving balance");
         close(p.power,maxPower[i],1e-9,"Reduced engine power matches balance");
-        require(p.throttleRate<=1.1,"Throttle response is manageable");
+        require(p.throttleRate<=0.65,"Throttle response is manageable");
         require(p.frontAxle>0 && p.rearAxle<0,"Wheel position valid");
     }
 }
@@ -65,8 +65,8 @@ void testCarAcceleration() {
         sim.selectVehicle(i);
         const auto initial=sim.car().position;
         for (int k=0;k<60;++k) sim.update({true,false,0,false},1./60);
-        require(sim.car().speed>100,"Car accelerates within one second");
-        require(length(sim.car().position-initial)>20,"Car moves forward");
+        require(sim.car().speed>35,"Car accelerates progressively within one second");
+        require(length(sim.car().position-initial)>5,"Car moves forward");
         require(std::isfinite(sim.car().position.x),"Finite physics");
     }
 }
