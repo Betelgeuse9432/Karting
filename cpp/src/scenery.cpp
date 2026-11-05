@@ -299,34 +299,50 @@ void WorldRenderer::drawTerrain(const Weather& weather,int quality,
                                  Vector3 cameraPosition) const {
     const float rain=float(weather.rainLevel);
     const float night=float(weather.nightLevel);
-    // Camera-centred terrain follows the SAME elevation as the circuit.
-    // Snapping avoids sub-frame movement of the mesh under the vehicle.
     const double spacing=quality==0?250.0:quality==1?190.0:160.0;
     const int half=quality==0?21:quality==1?28:38;
+    const int side=2*half+1;
     const double cx=std::floor(double(cameraPosition.x)/kWorldScale/spacing)*spacing;
     const double cz=std::floor(double(cameraPosition.z)/kWorldScale/spacing)*spacing;
-    const auto vertex=[&](double x,double z) {
-        return Vector3{float(x*kWorldScale),groundY(x,z),
-                       float(z*kWorldScale)};
-    };
-    const auto color=[&](double x,double z) {
-        const float noise=seedNoise(float(x),float(z));
-        const float damp=.99f-.27f*night-.04f*rain;
-        Color c=noise>.24f?Color{99,141,66,255}:
-                noise<-.23f?Color{63,128,60,255}:
-                            Color{67,144,63,255};
-        return shade(c,damp);
-    };
-    for(int i=-half;i<half;++i)for(int j=-half;j<half;++j) {
-        const double x=cx+i*spacing,z=cz+j*spacing;
-        const auto a=vertex(x,z),b=vertex(x+spacing,z);
-        const auto c=vertex(x+spacing,z+spacing);
-        const auto d=vertex(x,z+spacing);
-        const Color first=color(x+spacing*.25,z+spacing*.25);
-        const Color second=color(x+spacing*.75,z+spacing*.75);
-        poly(a,b,c,first);
-        poly(a,c,d,second);
+    const float damp=.99f-.27f*night-.04f*rain;
+
+    // Cache height once per grid vertex, rather than four times per quad.
+    // Keep the old geometry and colours: only submission is optimized.
+    std::vector<Vector3> vertices(std::size_t(side)*std::size_t(side));
+    for(int i=0;i<side;++i)for(int j=0;j<side;++j) {
+        const double x=cx+(i-half)*spacing;
+        const double z=cz+(j-half)*spacing;
+        vertices[std::size_t(i)*side+j]=
+            {float(x*kWorldScale),groundY(x,z),float(z*kWorldScale)};
     }
+    const auto emit=[](Vector3 v) {
+        rlVertex3f(v.x,v.y,v.z);
+    };
+    const auto triangle=[&](Vector3 a,Vector3 b,Vector3 c) {
+        emit(a);emit(b);emit(c);
+        emit(c);emit(b);emit(a);
+    };
+
+    // Old code issued up to 12,000+ separate DrawTriangle3D calls
+    // per frame. One rlgl immediate-mode batch removes that CPU overhead.
+    // rlgl automatically flushes when its internal vertex buffer fills.
+    rlBegin(RL_TRIANGLES);
+    for(int i=0;i<2*half;++i)for(int j=0;j<2*half;++j) {
+        const double x=cx+(i-half)*spacing,z=cz+(j-half)*spacing;
+        const Vector3 a=vertices[std::size_t(i)*side+j];
+        const Vector3 b=vertices[std::size_t(i+1)*side+j];
+        const Vector3 c=vertices[std::size_t(i+1)*side+j+1];
+        const Vector3 d=vertices[std::size_t(i)*side+j+1];
+        const float noise=seedNoise(float(x+spacing*.5),float(z+spacing*.5));
+        const Color grass=noise>.24f?Color{99,141,66,255}:
+                          noise<-.23f?Color{63,128,60,255}:
+                                      Color{67,144,63,255};
+        const Color color=shade(grass,damp);
+        rlColor4ub(color.r,color.g,color.b,color.a);
+        triangle(a,b,c);
+        triangle(a,c,d);
+    }
+    rlEnd();
 }
 
 void WorldRenderer::drawScenery(const Weather& weather,int quality,
