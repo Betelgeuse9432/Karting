@@ -368,7 +368,7 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
     constexpr std::array<float,5> sizes{{.155f,.265f,.205f,.195f,.205f}};
     constexpr std::array<float,5> widths{{.19f,.26f,.22f,.21f,.23f}};
     constexpr std::array<float,5> tracks{{.45f,.65f,.48f,.58f,.58f}};
-    const std::size_t slot=std::size_t(std::clamp(index,0,3));
+    const std::size_t slot=std::size_t(std::clamp(index,0,4));
     const float r=sizes[slot],width=widths[slot];
     const float track=std::max(float(p.halfWheelTrack*kWorldScale),tracks[slot]);
 
