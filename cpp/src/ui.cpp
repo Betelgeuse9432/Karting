@@ -4,8 +4,19 @@
 
 namespace karting {
 
+UiViewport uiViewport() {
+    const int physicalWidth=std::max(1,GetScreenWidth());
+    const int physicalHeight=std::max(1,GetScreenHeight());
+    const float scale=std::max(0.25f,std::min(physicalWidth/1100.f,
+                                              physicalHeight/720.f));
+    return {scale,int(std::round(physicalWidth/scale)),
+                  int(std::round(physicalHeight/scale))};
+}
+
 void HudRenderer::menu(const Simulation& sim,double time) const {
-    const int w=GetScreenWidth(),h=GetScreenHeight();
+    const auto ui=uiViewport();
+    const int w=ui.width,h=ui.height;
+    BeginMode2D(ui.camera());
     DrawText("KARTING V6  /  C++20 + raylib",w/2-280,24,34,GOLD);
     DrawText("CHOISIS TON VEHICULE",w/2-210,74,27,RAYWHITE);
     const auto& cars=profiles();
@@ -56,10 +67,13 @@ void HudRenderer::menu(const Simulation& sim,double time) const {
              w/2-336,h-55,19,LIGHTGRAY);
     DrawText("ESC quitter",w/2-55,h-28,15,GRAY);
     (void)time;
+    EndMode2D();
 }
 
 void HudRenderer::draw(const Simulation& sim,int quality,int fps) const {
-    const int w=GetScreenWidth(),h=GetScreenHeight();
+    const auto ui=uiViewport();
+    const int w=ui.width,h=ui.height;
+    BeginMode2D(ui.camera());
     const auto& car=sim.car();
     const auto& race=sim.race();
     const auto& telemetry=sim.telemetry();
@@ -156,6 +170,7 @@ void HudRenderer::draw(const Simulation& sim,int quality,int fps) const {
         DrawText(TextFormat("Pointe : %d km/h",int(race.topSpeed*.3)),
                  w/2-260,h/2+33,23,RAYWHITE);
     }
+    EndMode2D();
 }
 
 } // namespace karting
