@@ -307,18 +307,18 @@ void wec(Color paint,Color glass,Color dark,bool braking) {
     box(.98f,.218f,0,.23f,.014f,.025f,accent);
 
     // Cockpit canopy, dark panoramic glass and raised roof.
-    cockpit(.34f,-.79f,-.08f,-.58f,.335f,.675f,.285f,.185f,
+    cockpit(.34f,-.79f,-.08f,-.58f,.335f,.585f,.285f,.185f,
             tone(glass,1.12f),tone(paint,.83f));
-    box(-.13f,.686f,0,.36f,.025f,.245f,tone(paint,1.12f));
+    box(-.13f,.596f,0,.36f,.025f,.245f,tone(paint,1.12f));
     // Windscreen lower frame and roof centre accent.
     rod({.34f,.34f,-.285f},{.34f,.34f,.285f},.012f,carbonHi);
-    box(-.13f,.704f,0,.42f,.012f,.025f,accent);
+    box(-.13f,.614f,0,.42f,.012f,.025f,accent);
 
     // Roof air scoop, with dark opening and two cooling slots.
-    box(-.47f,.675f,0,.30f,.085f,.145f,carbon);
-    box(-.32f,.722f,0,.12f,.012f,.105f,carbonHi);
+    box(-.47f,.585f,0,.30f,.065f,.145f,carbon);
+    box(-.32f,.622f,0,.12f,.012f,.105f,carbonHi);
     for(int slot=0;slot<3;++slot)
-        box(-.52f+slot*.055f,.723f,0,.018f,.008f,.075f,accent);
+        box(-.52f+slot*.055f,.623f,0,.018f,.008f,.075f,accent);
 
     // Central dorsal fin: a long, tapered blade rather than a flat wall.
     panel({-.30f,.30f,-.018f},{-1.30f,.27f,-.018f},
@@ -345,15 +345,15 @@ void wec(Color paint,Color glass,Color dark,bool braking) {
 
     // Rear wing: two swan-neck supports, broad blade and endplates.
     for(float side:{-1.f,1.f}) {
-        rod({-.98f,.30f,side*.29f},{-1.12f,.66f,side*.31f},
+        rod({-.98f,.30f,side*.29f},{-1.12f,.56f,side*.31f},
             .025f,carbon);
-        rod({-1.18f,.30f,side*.29f},{-1.12f,.66f,side*.31f},
+        rod({-1.18f,.30f,side*.29f},{-1.12f,.56f,side*.31f},
             .022f,carbonHi);
-        box(-1.13f,.55f,side*.49f,.24f,.34f,.025f,carbon);
-        box(-1.13f,.55f,side*.505f,.12f,.19f,.009f,accent);
+        box(-1.13f,.48f,side*.49f,.24f,.24f,.025f,carbon);
+        box(-1.13f,.48f,side*.505f,.12f,.14f,.009f,accent);
     }
-    rearWing(-1.13f,.69f,1.12f,.24f,carbon);
-    box(-1.13f,.715f,0,.17f,.012f,.72f,carbonHi);
+    rearWing(-1.13f,.59f,1.12f,.19f,carbon);
+    box(-1.13f,.615f,0,.17f,.012f,.72f,carbonHi);
 
     // Small identification panels and tow points complete the prototype look.
     box(.88f,.235f,0,.22f,.012f,.055f,accent);
@@ -416,9 +416,9 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
         // Raise only the WEC bodywork; wheels stay at their original ground contact.
         rlPushMatrix();
         rlTranslatef(0,.12f,0);
-        // Shorten the WEC body along its length without changing wheelbase,
-        // wheel positions, or the driving physics.
-        rlScalef(.90f,1.0f,1.0f);
+        // Give the main body more vertical volume and a slightly shorter nose-to-tail
+        // profile. Keep the wheelbase and tyre contact points unchanged.
+        rlScalef(.86f,1.22f,1.0f);
         wec(paint,glass,dark,car.brake>.1);
         rlPopMatrix();
         break;
