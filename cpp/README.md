@@ -81,6 +81,25 @@ Le test `testSpeedDistanceCalibration()` vérifie la correspondance entre
 la vitesse affichée et la distance parcourue. Il faut tester la maniabilité
 et les collisions sur le PC réel, surtout en virage à haute vitesse.
 
+## Optimisation du rendu du décor
+
+Le rendu conserve les forêts, tribunes et paddocks, mais réduit les opérations
+répétitives par image :
+
+- Le maillage du terrain est envoyé par lots `rlgl` au lieu de milliers
+  d'appels séparés à `DrawTriangle3D`. Les hauteurs des sommets sont
+  calculées une seule fois pour chaque sommet partagé.
+- La position 3D des éléments statiques est calculée à la génération.
+  Aucun appel de calcul de relief n'est nécessaire pour les replacer
+  à chaque frame.
+- Les arbres et les tribunes possèdent un niveau de détail éloigné simplifié.
+  Les modèles proches restent détaillés, sans réduire la densité des forêts.
+- Les limites d'affichage en fonction de la qualité restent inchangées.
+
+Ces changements visent la chute de performances observée après
+l'augmentation de densité du décor. **Les FPS réels doivent être mesurés
+sur la machine de jeu** ; aucun chiffre n'est garanti avant essai.
+
 ## Grand circuit et environnement enrichi
 
 Le grand circuit utilise désormais **34 points de contrôle** (environ
