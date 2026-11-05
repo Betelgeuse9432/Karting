@@ -184,6 +184,23 @@ void gt3(Color paint,Color glass,Color dark,bool braking) {
     cockpit(.40f,-.79f,.10f,-.58f,.47f,.79f,.43f,.33f,
             glass,tone(paint,.78f));
 
+    // Twin bonnet extraction vents inspired by the Mercedes-AMG GT3.
+    // They sit flush on the flat bonnet, one on each side of the centreline.
+    for(float side:{-1.f,1.f}) {
+        const float ventZ=side*.365f;
+        box(.63f,.451f,ventZ,.31f,.012f,.145f,{12,15,20,255});
+        // Four slim longitudinal louvres inside each dark vent opening.
+        for(int louvre=0;louvre<4;++louvre) {
+            const float z=ventZ+(louvre-1.5f)*.031f;
+            box(.63f,.460f,z,.265f,.009f,.012f,{78,84,92,255});
+        }
+        // Small painted edges make the vents read as recessed bonnet details.
+        box(.63f,.458f,ventZ-side*.076f,.30f,.006f,.008f,
+            tone(paint,.68f));
+        box(.63f,.458f,ventZ+side*.076f,.30f,.006f,.008f,
+            tone(paint,.68f));
+    }
+
     // Front bumper, deep lower intake and the twin BMW kidney grilles.
     box(1.245f,.245f,0,.055f,.25f,.72f,carbon);
     box(1.278f,.265f,-.145f,.025f,.205f,.145f,grille);
