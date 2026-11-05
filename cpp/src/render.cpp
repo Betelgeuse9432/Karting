@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include <random>
+#include <utility>
 
 namespace karting {
 
@@ -104,7 +105,7 @@ void draw3DLandscape(Vector3 camera, int quality, float night, double time) {
     for(std::size_t i=0;i<mountainBases.size();++i) {
         const auto b=mountainBases[i];
         const float distance=Vector3Distance(camera,b);
-        if(distance>quality==0?260.0f:360.0f) continue;
+        if(distance>(quality==0?260.0f:360.0f)) continue;
         const float radius= i%3==0?23.0f:17.0f;
         const float height= i%3==0?25.0f:17.0f;
         Color c=i%2==0?far:mid;
@@ -127,7 +128,7 @@ void draw3DLandscape(Vector3 camera, int quality, float night, double time) {
     for(std::size_t i=0;i<cloudCenters.size();++i) {
         Vector3 p=cloudCenters[i];
         p.x+=drift;
-        if(Vector3Distance(camera,p)>quality==0?95.0f:145.0f) continue;
+        if(Vector3Distance(camera,p)>(quality==0?95.0f:145.0f)) continue;
         const float scale= i%3==0?1.0f:.78f;
         const Color cloud=Fade({224,231,239,255},(1.0f-night*.68f)*.88f);
         DrawSphere({p.x,p.y,p.z},4.2f*scale,cloud);
