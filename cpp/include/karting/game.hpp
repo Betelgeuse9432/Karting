@@ -41,6 +41,7 @@ struct SceneryProp {
     float yaw=0.f;
     int kind=0;
     int color=0;
+    Vector3 groundPosition{}; // Precomputed; avoids thousands of trig calls per frame.
 };
 
 class WorldRenderer {
