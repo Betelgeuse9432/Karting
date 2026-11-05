@@ -434,32 +434,43 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
         float wheelHeight=float(
             (elevation(wheelWorld)-elevation(car.position))*kWorldScale);
         if(slot==2) wheelHeight=std::clamp(wheelHeight,-.045f,.045f);
+        if(slot==5) {
+            wheelHeight=std::clamp(wheelHeight,-.075f,.075f);
+            const float wheelY=r+.015f+wheelHeight;
+            const float innerZ=side*(track-.25f);
+            const Vector3 upperA{x-.20f,.43f,innerZ};
+            const Vector3 upperB{x+.20f,.43f,innerZ};
+            const Vector3 upperHubA{x-.07f,wheelY+.11f,side*track};
+            const Vector3 upperHubB{x+.07f,wheelY+.11f,side*track};
+            const Vector3 lowerA{x-.20f,.17f,innerZ};
+            const Vector3 lowerB{x+.20f,.17f,innerZ};
+            const Vector3 lowerHubA{x-.07f,wheelY-.10f,side*track};
+            const Vector3 lowerHubB{x+.07f,wheelY-.10f,side*track};
+            // The wishbones stay attached to the chassis while their outer
+            // joints follow the wheel, making suspension travel visible.
+            rod(upperA,upperHubA,.018f,{112,119,129,255});
+            rod(upperB,upperHubB,.018f,{112,119,129,255});
+            rod(lowerA,lowerHubA,.022f,{112,119,129,255});
+            rod(lowerB,lowerHubB,.022f,{112,119,129,255});
+            // Blue coil-over: its lower end follows the wheel's vertical travel.
+            const float springX=x+.12f;
+            const float springZ=side*(track-.13f);
+            const float springTop=.43f, springBottom=wheelY-.12f;
+            for(int turn=0;turn<8;++turn) {
+                const float t0=float(turn)/8.f,t1=float(turn+1)/8.f;
+                const float a0=t0*8.f*2*PI,a1=t1*8.f*2*PI;
+                const float y0=springTop+(springBottom-springTop)*t0;
+                const float y1=springTop+(springBottom-springTop)*t1;
+                DrawLine3D({springX+std::cos(a0)*.035f,y0,springZ+std::sin(a0)*.035f},
+                           {springX+std::cos(a1)*.035f,y1,springZ+std::sin(a1)*.035f},
+                           {25,115,255,255});
+            }
+            rod({springX,springTop,springZ},
+                {springX,springBottom,springZ},.014f,{70,80,95,255});
+        }
         rlPushMatrix();
         rlTranslatef(x,r+.015f+wheelHeight,side*track);
         if(x==front) rlRotatef(float(-car.steering*RAD2DEG),0,1,0);
-        if(slot==5) {
-            // Double wishbones: both triangles follow the live wheel travel.
-            const float innerZ=-side*.27f;
-            const Vector3 hub{0,0,0};
-            rod({-.20f,.17f,innerZ},{-.035f,.075f,0},.018f,{105,112,122,255});
-            rod({ .18f,.17f,innerZ},{-.035f,.075f,0},.018f,{105,112,122,255});
-            rod({-.20f,-.14f,innerZ},{ .025f,-.035f,0},.021f,{105,112,122,255});
-            rod({ .18f,-.14f,innerZ},{ .025f,-.035f,0},.021f,{105,112,122,255});
-            // Blue coil-over spring, compressed/extended with the wheel.
-            const float springX=.105f;
-            const float springZ=-side*.16f;
-            for(int turn=0;turn<7;++turn) {
-                const float y0=-.105f+float(turn)*.032f;
-                const float y1=y0+.032f;
-                const float a0=float(turn)*1.35f;
-                const float a1=float(turn+1)*1.35f;
-                DrawLine3D({springX+std::cos(a0)*.045f,y0,springZ+std::sin(a0)*.045f},
-                           {springX+std::cos(a1)*.045f,y1,springZ+std::sin(a1)*.045f},
-                           {25,115,255,255});
-            }
-            rod({springX,.13f,springZ},{springX,-.13f,springZ},.018f,{55,65,78,255});
-            (void)hub;
-        }
         DrawCylinderEx({0,0,-width*.5f},{0,0,width*.5f},r,r,slot==2||slot==3?24:16,
                        {27,30,36,255});
         // Fine circumferential grooves and angled tread cuts add rubber detail.
