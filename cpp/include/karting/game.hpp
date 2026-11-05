@@ -19,6 +19,7 @@ struct Particle {
     Vec2 location{};
     double height = 0, dx = 0, dy = 0, dz = 0, life = 0, maxLife = 1;
     int kind = 0; // 0 smoke, 1 flame, 2 spark
+    int exhaustSide = 0; // -1/+1 keeps flame particles attached to an exhaust
 };
 
 class Effects {
