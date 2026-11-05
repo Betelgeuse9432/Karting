@@ -35,16 +35,15 @@ const std::array<VehicleProfile, 4>& profiles() {
 }
 
 Track::Track() {
-    // Spa-Francorchamps-inspired single loop, laid out without a crossover:
+    // Spa-Francorchamps-inspired long, asymmetric loop. The route runs
     // La Source -> Eau Rouge/Raidillon -> Kemmel -> Les Combes ->
     // Bruxelles -> Pouhon -> Fagnes -> Stavelot -> Blanchimont -> Bus Stop.
     const std::vector<Vec2> raw{
-        {6500,6900},{7350,6750},{7700,6250},{7350,5750},
-        {6650,5550},{6100,4900},{5550,4200},{4900,3500},
-        {4450,2850},{4750,2350},{5550,2150},{5200,1650},
-        {4300,1450},{3450,1750},{2750,2350},{2450,3250},
-        {2650,4200},{3100,5100},{3850,5850},{4750,6450},
-        {5650,6750}
+        {6900,6500},{7550,6250},{7800,5650},{7350,5200},
+        {6600,4950},{5850,4350},{5050,3650},{4250,2950},
+        {3450,2350},{2750,2050},{2250,2450},{2100,3150},
+        {2450,3900},{3150,4650},{4050,5250},{5000,5650},
+        {5850,5800},{6500,5550},{7000,5850},{7150,6250}
     };
     center_.reserve(raw.size() * subdivisions);
     for (std::size_t i = 0; i < raw.size(); ++i) {
