@@ -252,8 +252,9 @@ void Simulation::update(const Controls& controls,double dt) {
     const bool frontSlip=frontUse>frontGrip;
     if (frontSlip) rotation*=frontGrip/frontUse;
 
-    double motor=p.power*car_.throttle*(1-std::max(v,0.0)/p.topSpeed)*
-                 (boostActive?1.65:1.0);
+    const double targetSpeed=p.topSpeed*(boostActive?1.18:1.0);
+    double motor=p.power*car_.throttle*
+                 (1-std::max(v,0.0)/targetSpeed)*(boostActive?1.65:1.0);
     const double rearUse=std::hypot(motor,aLateral);
     const bool rearSlip=rearUse>rearGrip;
     if (rearSlip) {
