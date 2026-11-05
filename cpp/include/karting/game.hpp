@@ -32,6 +32,7 @@ private:
     std::vector<Particle> particles_;
     std::array<Vec2,4> previous_{};
     bool lastSkidding_ = false;
+    bool previousThrottle_ = false;
     double emitTime_ = 0;
 };
 
