@@ -253,9 +253,16 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
     const float r=sizes[slot],width=widths[slot];
     const float track=std::max(float(p.halfWheelTrack*kWorldScale),tracks[slot]);
 
+    const Vec2 forward{std::cos(car.heading),std::sin(car.heading)};
+    const Vec2 lateral{-forward.y,forward.x};
     for(float x:{rear,front}) for(float side:{-1.f,1.f}) {
+        // Each tyre follows the elevation directly beneath its own contact patch.
+        const Vec2 wheelWorld=car.position+
+            forward*(x/kWorldScale)+lateral*(side*track/kWorldScale);
+        const float wheelHeight=float(
+            (elevation(wheelWorld)-elevation(car.position))*kWorldScale);
         rlPushMatrix();
-        rlTranslatef(x,r+.015f,side*track);
+        rlTranslatef(x,r+.015f+wheelHeight,side*track);
         if(x==front) rlRotatef(float(-car.steering*RAD2DEG),0,1,0);
         DrawCylinderEx({0,0,-width*.5f},{0,0,width*.5f},r,r,12,
                        {27,30,36,255});
