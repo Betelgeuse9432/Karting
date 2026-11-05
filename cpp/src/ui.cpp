@@ -87,7 +87,7 @@ void HudRenderer::draw(const Simulation& sim,int quality,int fps) const {
     else
         DrawText("Record : --",27,58,20,GOLD);
     DrawText(TextFormat("%s  %d FPS  %s",profile.name.data(),fps,
-                    (quality==0?"ECO":quality==1?"ELEVE":"ULTRA")),
+                    (quality==0?"ECO":quality==1?"ELEVE":quality==2?"ULTRA":"ULTRA+")),
              27,95,17,LIGHTGRAY);
 
     // Circuit minimap (V6 control points and interpolated curve).
