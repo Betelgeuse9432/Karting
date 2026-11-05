@@ -15,13 +15,9 @@ double length(Vec2 a) { return std::hypot(a.x, a.y); }
 double wrapAngle(double a) { return std::remainder(a, 2 * kPi); }
 
 double elevation(Vec2 p) {
-    const double rolling = 34 * (0.6 * std::sin(p.x / 1100) +
-                                 0.4 * std::sin(p.y / 900 + 1) +
-                                 0.3 * std::sin((p.x + p.y) / 1400 + 2));
-    // Localized climb from the Eau Rouge valley to the Raidillon crest.
-    const double corridor = std::exp(-std::pow((p.x-8240.0)/760.0,2));
-    const double climb = 118.0 / (1.0 + std::exp((p.y-4440.0)/260.0));
-    return rolling + corridor*climb;
+    return 70 * (0.6 * std::sin(p.x / 1100) +
+                 0.4 * std::sin(p.y / 900 + 1) +
+                 0.3 * std::sin((p.x + p.y) / 1400 + 2));
 }
 
 const std::array<VehicleProfile, 4>& profiles() {
@@ -39,25 +35,14 @@ const std::array<VehicleProfile, 4>& profiles() {
 }
 
 Track::Track() {
-    // Spa-Francorchamps-inspired lap, ordered from La Source:
-    // pit straight, Eau Rouge/Raidillon, Kemmel, Les Combes,
-    // Bruxelles, Pouhon, Stavelot, Blanchimont and the Bus Stop chicane.
-    // The dense Catmull-Rom interpolation below keeps the racing line smooth.
     const std::vector<Vec2> raw{
-        {7000,6500},{7450,6600},{7900,6750},{8250,6800},
-        {8500,6550},{8620,6200},{8580,5800},{8450,5400},
-        {8400,5000},{8550,4650},{8700,4250},{8680,3850},
-        {8500,3450},{8250,3050},{7950,2700},{7600,2350},
-        {7200,2050},{6800,1850},{6400,1750},{6000,1780},
-        {5650,1950},{5400,2250},{5200,2600},{4950,2900},
-        {4650,3050},{4350,2950},{4100,2700},{3800,2650},
-        {3500,2900},{3370,3250},{3450,3600},{3700,3900},
-        {4000,4100},{4250,4400},{4380,4750},{4250,5100},
-        {4000,5400},{3800,5750},{3900,6100},{4200,6400},
-        {4600,6600},{5050,6750},{5500,6800},{5900,6700},
-        {6250,6500},{6500,6250},{6700,6200},{6850,6450},
-        {7000,6800}
-    };    center_.reserve(raw.size() * subdivisions);
+        {3200,1700},{5000,1700},{6700,1720},{7500,1950},{8000,2550},
+        {8000,3250},{7650,3900},{8100,4550},{7950,5300},{7700,6000},
+        {7100,6550},{6200,6750},{5200,6750},{4500,6700},{3950,6480},
+        {3400,6930},{2850,6700},{2200,6600},{1750,6150},{1700,5500},
+        {1950,4850},{1600,4200},{1950,3550},{1650,2900},{1850,2300},{2350,1850}
+    };
+    center_.reserve(raw.size() * subdivisions);
     for (std::size_t i = 0; i < raw.size(); ++i) {
         const auto a = raw[(i + raw.size() - 1) % raw.size()];
         const auto b = raw[i];
