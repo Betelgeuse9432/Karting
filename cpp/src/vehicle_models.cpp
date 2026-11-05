@@ -413,9 +413,9 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
     const float axleVisualScale=index==3?1.12f:1.0f;
     const float front=float(p.frontAxle*kWorldScale*axleVisualScale);
     const float rear=float(p.rearAxle*kWorldScale*axleVisualScale);
-    constexpr std::array<float,6> sizes{{.155f,.265f,.205f,.195f,.180f,.245f}};
-    constexpr std::array<float,6> widths{{.19f,.26f,.22f,.21f,.21f,.29f}};
-    constexpr std::array<float,6> tracks{{.45f,.65f,.48f,.58f,.58f,.67f}};
+    constexpr std::array<float,6> sizes{{.155f,.265f,.205f,.195f,.180f,.220f}};
+    constexpr std::array<float,6> widths{{.19f,.26f,.22f,.21f,.21f,.245f}};
+    constexpr std::array<float,6> tracks{{.45f,.65f,.48f,.58f,.58f,.63f}};
     const std::size_t slot=std::size_t(std::clamp(index,0,5));
     const float r=sizes[slot],width=widths[slot];
     const float track=std::max(float(p.halfWheelTrack*kWorldScale),tracks[slot]);
@@ -435,20 +435,27 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
             wheelHeight=std::clamp(wheelHeight,-.075f,.075f);
             const float wheelY=r+.015f+wheelHeight;
             const float innerZ=side*(track-.25f);
-            const Vector3 upperA{x-.20f,.43f,innerZ};
-            const Vector3 upperB{x+.20f,.43f,innerZ};
-            const Vector3 upperHubA{x-.07f,wheelY+.11f,side*track};
-            const Vector3 upperHubB{x+.07f,wheelY+.11f,side*track};
-            const Vector3 lowerA{x-.20f,.17f,innerZ};
-            const Vector3 lowerB{x+.20f,.17f,innerZ};
-            const Vector3 lowerHubA{x-.07f,wheelY-.10f,side*track};
-            const Vector3 lowerHubB{x+.07f,wheelY-.10f,side*track};
-            // The wishbones stay attached to the chassis while their outer
-            // joints follow the wheel, making suspension travel visible.
-            rod(upperA,upperHubA,.018f,{112,119,129,255});
-            rod(upperB,upperHubB,.018f,{112,119,129,255});
-            rod(lowerA,lowerHubA,.022f,{112,119,129,255});
-            rod(lowerB,lowerHubB,.022f,{112,119,129,255});
+            const Vector3 upperA{x-.17f,.43f,innerZ};
+            const Vector3 upperB{x+.17f,.43f,innerZ};
+            const Vector3 upperHub{x,wheelY+.105f,side*(track-.015f)};
+            const Vector3 lowerA{x-.19f,.18f,innerZ};
+            const Vector3 lowerB{x+.19f,.18f,innerZ};
+            const Vector3 lowerHub{x,wheelY-.105f,side*(track-.015f)};
+            // Two arms converge at each upright joint: proper triangular
+            // upper and lower wishbones, with their inner pivots on brackets.
+            rod(upperA,upperHub,.018f,{145,153,164,255});
+            rod(upperB,upperHub,.018f,{145,153,164,255});
+            rod(lowerA,lowerHub,.022f,{145,153,164,255});
+            rod(lowerB,lowerHub,.022f,{145,153,164,255});
+            // Short mounts visibly connect the wishbone pivots to the chassis.
+            rod({x-.17f,.43f,side*.34f},upperA,.025f,carbon);
+            rod({x+.17f,.43f,side*.34f},upperB,.025f,carbon);
+            rod({x-.19f,.18f,side*.34f},lowerA,.027f,carbon);
+            rod({x+.19f,.18f,side*.34f},lowerB,.027f,carbon);
+            // The upright links both ball joints and moves with the wheel.
+            rod(upperHub,lowerHub,.027f,{75,83,95,255});
+            DrawSphere(upperHub,.025f,{185,193,203,255});
+            DrawSphere(lowerHub,.027f,{185,193,203,255});
             // Blue coil-over: its lower end follows the wheel's vertical travel.
             const float springX=x+.12f;
             const float springZ=side*(track-.13f);
@@ -463,7 +470,7 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
                            {25,115,255,255});
             }
             rod({springX,springTop,springZ},
-                {springX,springBottom,springZ},.014f,{70,80,95,255});
+                {springX,springBottom,springZ},.025f,{70,80,95,255});
         }
         rlPushMatrix();
         rlTranslatef(x,r+.015f+wheelHeight,side*track);
@@ -528,7 +535,12 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
         rlPopMatrix();
         break;
     case 5:
+        // Compact the F1 body around its centre; suspension and wheels retain
+        // their own dimensions so the tyres stay planted on the track.
+        rlPushMatrix();
+        rlScalef(.88f,.90f,.90f);
         formulaOne(paint,glass,car.brake>.1);
+        rlPopMatrix();
         break;
     case 4:
         // Scale the rally hatch to a compact real-world footprint.
