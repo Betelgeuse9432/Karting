@@ -60,6 +60,27 @@ et une animation liée à la rotation physique. Les hauteurs de caisse restent
 suffisamment basses pour conserver le cadrage de référence. Le résultat
 visuel reste à valider en jeu avant toute nouvelle retouche.
 
+## Calibration vitesse et sensations
+
+La vitesse affichée et le déplacement 3D utilisent maintenant la même
+conversion physique : `toKmH(car.speed) = car.speed × 0,3`.
+Le facteur `kTravelScale = 0,3/(3,6 × kWorldScale)` est appliqué
+**seulement à la translation**, de sorte que le compteur 300 km/h signifie
+environ 83,3 mètres 3D par seconde. Les rapports de transmission n'existent
+toujours pas. La loi de rotation du volant, les commandes et les profils de
+puissance restent inchangés ; le rayon de virage à haute vitesse devient plus
+grand, ce qui nécessite de freiner davantage.
+
+Les indices visuels sont renforcés sans déplacer la caméra latéralement :
+- petits réflecteurs de bord de piste tous les ~25-30 mètres ;
+- champ de vision élargi progressivement de 64 à 78 degrés ;
+- quelques filets de vitesse discrets à la périphérie, seulement à haute
+  vitesse et en qualité graphique au moins « élevée ».
+
+Le test `testSpeedDistanceCalibration()` vérifie la correspondance entre
+la vitesse affichée et la distance parcourue. Il faut tester la maniabilité
+et les collisions sur le PC réel, surtout en virage à haute vitesse.
+
 ## Grand circuit et environnement enrichi
 
 Le circuit initial d'environ **21 400 unités** a été remplacé par un parcours
