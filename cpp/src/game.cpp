@@ -272,7 +272,6 @@ void Game::renderRace() {
         DrawCircle(moonX-5,moonY-5,4,
                    Fade({255,255,255,255},moonVisibility*.55f));
     }
-    drawSkyDetails(width,height,n,r,gameTime_,quality_,bottom);
 
     // Each subsystem can fail independently without taking down the process.
     const auto safe=[&](const char* name,auto&& operation) {
