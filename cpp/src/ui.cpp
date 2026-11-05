@@ -53,7 +53,7 @@ void HudRenderer::menu(const Simulation& sim,double time) const {
     };
     DrawText(description[sim.vehicleIndex()],w-385,244,18,LIGHTGRAY);
     DrawText(TextFormat("Vitesse max : %d km/h",
-             int(p.topSpeed*.3)),w-385,280,19,RAYWHITE);
+             int(toKmH(p.topSpeed))),w-385,280,19,RAYWHITE);
     DrawText(TextFormat("Puissance : %.0f (jeu)",p.power),
              w-385,309,19,RAYWHITE);
     DrawText("PEINTURE",w/2-110,h-142,22,RAYWHITE);
@@ -135,7 +135,7 @@ void HudRenderer::draw(const Simulation& sim,int quality,int fps) const {
     DrawLineEx({cx,cy},{cx+std::cos(angle)*(r-23),cy+std::sin(angle)*(r-23)},
                4,GOLD);
     DrawCircleV({cx,cy},7,RAYWHITE);
-    DrawText(TextFormat("%03d",int(std::abs(car.speed)*.3)),
+    DrawText(TextFormat("%03d",int(std::abs(toKmH(car.speed)))),
              int(cx-38),int(cy+27),32,RAYWHITE);
     DrawText("km/h",int(cx-22),int(cy+62),15,LIGHTGRAY);
 
@@ -179,7 +179,7 @@ void HudRenderer::draw(const Simulation& sim,int quality,int fps) const {
         if (race.bestLap>0)
             DrawText(TextFormat("Meilleur : %.2f s",race.bestLap),
                      w/2-260,h/2-14,23,GOLD);
-        DrawText(TextFormat("Pointe : %d km/h",int(race.topSpeed*.3)),
+        DrawText(TextFormat("Pointe : %d km/h",int(toKmH(race.topSpeed))),
                  w/2-260,h/2+33,23,RAYWHITE);
     }
     EndMode2D();
