@@ -62,7 +62,27 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
     const auto kerbRed=shaded({223,37,37,255},1-0.25f*night);
     const auto kerbWhite=shaded({230,228,218,255},1-0.4f*night);
     const auto grass=shaded({53,153,57,255},1-0.1f*rain-0.55f*night);
-    DrawPlane({88.2f,-2.6f,78.3f},{190,174},grass);
+    // Build the visible terrain from the same elevation field as the road.
+    // This removes the flat green "table" underneath the hilly circuit.
+    const double tile=420.0;
+    const int baseX=int(std::floor((cameraPosition.x/kWorldScale)/tile));
+    const int baseZ=int(std::floor((cameraPosition.z/kWorldScale)/tile));
+    const int terrainRadius=quality==0?6:quality==1?8:10;
+    for(int gx=baseX-terrainRadius;gx<=baseX+terrainRadius;++gx) {
+        for(int gz=baseZ-terrainRadius;gz<=baseZ+terrainRadius;++gz) {
+            const double x0=std::max(0.0,gx*tile);
+            const double z0=std::max(0.0,gz*tile);
+            const double x1=std::min(9800.0,(gx+1)*tile);
+            const double z1=std::min(8700.0,(gz+1)*tile);
+            if(x1<=x0 || z1<=z0) continue;
+            const auto a=worldPoint({x0,z0},-2.5f);
+            const auto b=worldPoint({x1,z0},-2.5f);
+            const auto c=worldPoint({x1,z1},-2.5f);
+            const auto d=worldPoint({x0,z1},-2.5f);
+            const int patch=(std::abs(gx*7+gz*11)%5);
+            quad(a,b,c,d,shaded(grass,.94f+patch*.025f));
+        }
+    }
 
     const auto count=track.size();
     const float farDistance=quality==0?47.f:quality==1?63.f:81.f;
@@ -184,19 +204,33 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
         const float distance2=dx*dx+dz*dz;
         const float treeFar=quality==0?28.f:quality==1?39.f:50.f;
         if (distance2>treeFar*treeFar) continue;
-        const float size=0.80f+float((int(p.x+p.y)%9))/15.f;
-        const auto foliage=shaded({42,127,51,255},1-0.60f*night);
+        const int variation=std::abs(int(p.x*.13+p.y*.27))%4;
+        const float size=(variation==2?1.18f:variation==1?.72f:0.88f)+
+                         float(std::abs(int(p.x+p.y))%9)/18.f;
+        const auto foliage=shaded(
+            variation==1?Color{67,145,62,255}:
+            variation==2?Color{35,105,48,255}:Color{42,127,51,255},
+            1-0.60f*night);
         DrawCylinderEx(origin,{origin.x,origin.y+size*.95f,origin.z},
-                       .08f*size,.06f*size,5,
+                       .07f*size,.045f*size,5,
                        shaded({98,67,44,255},1-.5f*night));
-        if (quality==0 || distance2>25*25) {
+        if(variation==0) {
+            // Tall conifer.
+            DrawCylinderEx({origin.x,origin.y+size*.45f,origin.z},
+                           {origin.x,origin.y+size*2.0f,origin.z},
+                           size*.43f,.015f,7,foliage);
+        } else if(variation==3) {
+            // Split crown, with two overlapping canopies.
+            DrawSphere({origin.x-size*.20f,origin.y+size*1.30f,origin.z},
+                       .42f*size,foliage);
+            DrawSphere({origin.x+size*.20f,origin.y+size*1.48f,origin.z},
+                       .38f*size,shaded(foliage,1.12f));
+        } else {
             DrawSphere({origin.x,origin.y+size*1.35f,origin.z},
                        .48f*size,foliage);
-        } else {
-            DrawSphere({origin.x,origin.y+size*1.25f,origin.z},
-                       .5f*size,foliage);
-            DrawSphere({origin.x-.21f*size,origin.y+size*1.65f,origin.z},
-                       .35f*size,shaded(foliage,1.1f));
+            if(quality>0 && distance2<25*25)
+                DrawSphere({origin.x-.21f*size,origin.y+size*1.65f,origin.z},
+                           .35f*size,shaded(foliage,1.1f));
         }
     }
 }
