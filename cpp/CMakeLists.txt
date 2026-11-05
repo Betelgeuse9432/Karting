@@ -39,6 +39,7 @@ if(KARTING_BUILD_GAME)
     src/game.cpp
     src/render.cpp
     src/vehicle_models.cpp
+    src/scenery.cpp
     src/effects.cpp
     src/ui.cpp)
   target_link_libraries(karting_cpp PRIVATE karting_core raylib)
