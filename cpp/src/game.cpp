@@ -29,6 +29,23 @@ Controls controlsFromKeyboard() {
             IsKeyDown(KEY_SPACE)};
 }
 
+// Read M as a typed character as well as a physical key.
+// This also works on AZERTY keyboards, where the physical M key can have
+// a different Raylib key code from KEY_M (which follows the US layout).
+bool returnToMenuPressed() {
+    bool pressed = IsKeyPressed(KEY_M);
+
+    // GetCharPressed() returns typed characters, independently of layout.
+    // Drain the whole queue so no old character remains for the next frame.
+    for (int character = GetCharPressed(); character > 0;
+         character = GetCharPressed()) {
+        if (character == 'm' || character == 'M') {
+            pressed = true;
+        }
+    }
+    return pressed;
+}
+
 // Adds the horizon details that existed in the Python V6 sky:
 // moving clouds and layered mountain silhouettes.
 // This is purely visual: it never changes the car or track simulation.
@@ -147,7 +164,7 @@ void Game::handleMenu() {
 
 void Game::handleRace() {
     if (IsKeyPressed(KEY_R)) reset();
-    if (IsKeyPressed(KEY_M)) {
+    if (returnToMenuPressed()) {
         menu_=true;
         reset();
     }
