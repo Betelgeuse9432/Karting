@@ -111,12 +111,17 @@ void Effects::draw3D(const Camera3D& camera) const {
         if (p.kind==0)
             DrawSphere(pos,(1.0f-age)*.24f+.09f,
                        Fade(LIGHTGRAY,age*.55f));
-        else {
-            const Vector2 direction=Vector2Normalize(
-                {float(p.dx),float(p.dy)});
-            const Vector3 tip={pos.x+direction.x*.24f,
+        else if (p.kind==2) {
+            // Keep braking sparks as compact bright particles.
+            DrawSphere(pos,.08f*age,Fade(YELLOW,age));
+        } else {
+            // Normalize the particle direction without relying on raymath.
+            const float length=std::sqrt(float(p.dx*p.dx+p.dy*p.dy));
+            const float dirX=length>0.001f?float(p.dx)/length:0.0f;
+            const float dirY=length>0.001f?float(p.dy)/length:0.0f;
+            const Vector3 tip={pos.x+dirX*.24f,
                                pos.y+float(p.dz)*.0012f,
-                               pos.z+direction.y*.24f};
+                               pos.z+dirY*.24f};
             if (p.kind==1) {
                 DrawCylinderEx(pos,tip,.075f*age,.012f*age,7,
                                Fade(ORANGE,age));
