@@ -27,6 +27,94 @@ Controls controlsFromKeyboard() {
             int(IsKeyDown(KEY_LEFT)||IsKeyDown(KEY_Q)||IsKeyDown(KEY_A)),
             IsKeyDown(KEY_SPACE)};
 }
+
+// Adds the horizon details that existed in the Python V6 sky:
+// moving clouds and layered mountain silhouettes.
+// This is purely visual: it never changes the car or track simulation.
+void drawSkyDetails(int width, int height, float night, float rain,
+                    double time, int quality, Color skyBottom) {
+    const int horizon = int(height * 0.40f);
+
+    // Clouds are screen-space decorations, so they stay behind the 3D world.
+    if (quality > 0) {
+        const int cloudCount = quality >= 2 ? 18 : 10;
+        const float cloudVisibility =
+            std::clamp((1.0f - night * 0.78f) * (1.0f - rain * 0.50f),
+                       0.0f, 1.0f);
+        const Color cloudBase =
+            lerp({238, 242, 249, 255}, {112, 119, 132, 255},
+                 std::clamp(rain * 0.55f + night * 0.65f, 0.0f, 1.0f));
+        const Color cloud = Fade(cloudBase, cloudVisibility * 0.72f);
+        const Color cloudShadow =
+            Fade(lerp(cloudBase, {75, 83, 101, 255}, 0.32f),
+                 cloudVisibility * 0.34f);
+
+        for (int i = 0; i < cloudCount; ++i) {
+            const float span = float(width + 320);
+            const float offset =
+                std::fmod(float(i * 173) + float(time * 4.2), span);
+            const float x = offset - 160.0f;
+            const float y = 24.0f + float((i * 43) %
+                                std::max(30, horizon - 80));
+            const float size = 0.58f + float(i % 5) * 0.13f;
+
+            DrawEllipse(int(x), int(y + 7.0f * size),
+                        43.0f * size, 13.0f * size, cloudShadow);
+            DrawEllipse(int(x - 25.0f * size), int(y),
+                        21.0f * size, 15.0f * size, cloud);
+            DrawEllipse(int(x + 2.0f * size), int(y - 8.0f * size),
+                        29.0f * size, 21.0f * size, cloud);
+            DrawEllipse(int(x + 29.0f * size), int(y),
+                        23.0f * size, 15.0f * size, cloud);
+        }
+    }
+
+    // Three mountain layers give depth. Low quality keeps only the nearest one.
+    constexpr std::array<float, 3> amplitudes{{120.0f, 82.0f, 48.0f}};
+    constexpr std::array<float, 3> bases{{40.0f, 18.0f, 0.0f}};
+    constexpr std::array<float, 3> frequencyA{{1.3f, 2.1f, 3.0f}};
+    constexpr std::array<float, 3> frequencyB{{3.1f, 4.7f, 6.1f}};
+    constexpr std::array<float, 3> frequencyC{{7.0f, 9.5f, 13.0f}};
+    constexpr std::array<Color, 3> mountainColors{{
+        {112, 132, 172, 255},
+        {80, 104, 132, 255},
+        {50, 92, 70, 255}
+    }};
+
+    const int firstLayer = std::clamp(2 - quality, 0, 2);
+    for (int layer = firstLayer; layer < 3; ++layer) {
+        Color mountain = lerp(mountainColors[std::size_t(layer)],
+                              skyBottom, 0.28f);
+        mountain = lerp(mountain, {6, 8, 22, 255}, night * 0.55f);
+        mountain = lerp(mountain, {96, 103, 116, 255}, rain * 0.50f);
+
+        const auto profile = [&](float x) {
+            const float angle = x / float(std::max(1, width)) * 6.2831853f
+                              + float(time * 0.0015);
+            const float wave =
+                0.55f
+                + 0.30f * std::sin(angle * frequencyA[std::size_t(layer)] + 1.3f)
+                + 0.20f * std::sin(angle * frequencyB[std::size_t(layer)] + 0.4f)
+                + 0.12f * std::sin(angle * frequencyC[std::size_t(layer)]);
+            const float heightAboveHorizon =
+                bases[std::size_t(layer)] +
+                amplitudes[std::size_t(layer)] * std::clamp(wave, 0.08f, 1.0f);
+            return float(horizon) - heightAboveHorizon;
+        };
+
+        for (int x = 0; x < width; x += 8) {
+            const int nextX = std::min(width, x + 8);
+            const float y0 = profile(float(x));
+            const float y1 = profile(float(nextX));
+            DrawTriangle({float(x), float(horizon)},
+                         {float(nextX), float(horizon)},
+                         {float(nextX), y1}, mountain);
+            DrawTriangle({float(x), float(horizon)},
+                         {float(nextX), y1},
+                         {float(x), y0}, mountain);
+        }
+    }
+}
 } // namespace
 
 void Game::reset() {
@@ -140,17 +228,32 @@ void Game::renderRace() {
     if (n<.8f && r<.8f) {
         const float x=float(width*.78);
         const float y=92.f+120.f*n;
+        const float visibility=(1-r)*(1-n*.6f);
+        DrawCircleGradient(int(x),int(y),66,
+                           Fade({255,220,145,255},visibility*.30f),
+                           Fade({255,220,145,255},0));
         DrawCircle(int(x),int(y),28.f*(1-n*.5f),
-                   Fade(n>.4f?ORANGE:YELLOW,(1-r)*(1-n*.6f)));
+                   Fade(n>.4f?ORANGE:YELLOW,visibility));
     }
     if (n>.5f && r<.6f) {
+        const float starVisibility=(n-.5f)*2*(1-r);
         for (int i=0;i<90;++i) {
             const int x=(i*617+23)%width;
             const int y=(i*277+17)%(height/2);
-            DrawCircle(x,y,1,Fade(WHITE,(n-.5f)*2*(1-r)));
+            const float twinkle=.72f+.28f*std::sin(float(i)*1.7f+float(gameTime_*2));
+            DrawCircle(x,y,1,Fade(WHITE,starVisibility*twinkle));
         }
-        DrawCircle(width/5,100,19,Fade(RAYWHITE,(n-.5f)*2*(1-r)));
+        const int moonX=width/5,moonY=100;
+        const float moonVisibility=std::clamp((n-.58f)/.42f,0.f,1.f)*(1-r);
+        DrawCircleGradient(moonX,moonY,54,
+                           Fade({160,180,225,255},moonVisibility*.22f),
+                           Fade({160,180,225,255},0));
+        DrawCircle(moonX,moonY,17,
+                   Fade({232,237,248,255},moonVisibility));
+        DrawCircle(moonX-5,moonY-5,4,
+                   Fade({255,255,255,255},moonVisibility*.55f));
     }
+    drawSkyDetails(width,height,n,r,gameTime_,quality_,bottom);
 
     // Each subsystem can fail independently without taking down the process.
     const auto safe=[&](const char* name,auto&& operation) {
