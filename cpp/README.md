@@ -90,16 +90,16 @@ techniques et un relief continu. La mini-carte se met automatiquement
 à l'échelle de la nouvelle piste. Les limites du monde ont été agrandies.
 
 Après calibration des distances en mètres 3D, le premier réglage moteur
-s'est révélé trop agressif. Les moteurs ont donc été **rééquilibrés** :
-la puissance, la vitesse de montée des gaz et la vitesse de pointe ont été
-réduites. Les plafonds affichés sont désormais :
+s'est révélé trop agressif. Les moteurs ont donc été **fortement ralentis** :
+la puissance a été réduite d'environ 60 % et la montée des gaz est plus
+progressive. Les plafonds théoriques affichés sont désormais :
 
 | Véhicule | Pointe théorique | Puissance moteur (unités du jeu) |
 | --- | ---: | ---: |
-| Kart | 165 km/h | 850 |
-| 4x4 | 171 km/h | 700 |
-| GT3 | 204 km/h | 980 |
-| WEC | 231 km/h | 1 150 |
+| Kart | 90 km/h | 320 |
+| 4x4 | 96 km/h | 280 |
+| GT3 | 120 km/h | 390 |
+| WEC | 135 km/h | 460 |
 
 Le déplacement 3D reste calibré sur les km/h réels, sans modifier la
 direction, les commandes, les modèles ou le décor. Le comportement doit être
