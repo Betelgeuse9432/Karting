@@ -94,6 +94,23 @@ Les nouveaux objets profitent du filtrage par distance et du frustum culling
 déjà présent, et ne modifient ni le tracé ni les collisions. Les drapeaux
 s'animent uniquement lorsque leur poste est effectivement rendu.
 
+## Intégration sélective de la branche de Nathan
+
+Cette version reprend de `cpp-raylibb-nathan` uniquement :
+
+- **Clavier AZERTY** : la touche `M` est reconnue à la fois comme touche
+  physique et comme caractère saisi, sans bouton graphique supplémentaire.
+- **Ciel dynamique** : nuages et reliefs d'horizon liés à l'orientation de
+  la caméra ; les nuages hors du champ de vision sont écartés avant tout
+  appel de dessin. Le rendu est adapté au niveau de qualité.
+- **WEC** : carrosserie Hypercar et proportions révisées, sans remplacer
+  la GT3 ni modifier la physique ou les positions des roues.
+- **Effets GT3** : courts retours de flamme à la décélération et étincelles
+  de freinage rares, avec durée et nombre de particules limités.
+
+**Exclus** : boost, remplacement de BMW M4 GT3, tracé et décor de l'ancienne
+branche. Les performances restent à confirmer sur le PC de jeu.
+
 ## Frustum culling (champ visible de la caméra)
 
 Le rendu ignore désormais les **objets de décor**, les **sections de
