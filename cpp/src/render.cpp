@@ -43,10 +43,14 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
     const auto kerbRed=shaded({223,37,37,255},1-0.25f*night);
     const auto kerbWhite=shaded({230,228,218,255},1-0.4f*night);
     const auto grass=shaded({53,153,57,255},1-0.1f*rain-0.55f*night);
-    // Terrain height is sampled from the same relief as the road.
-    // The old horizontal plane made every building appear to float.
+    // A distant lower base hides the far edge of the camera-local terrain.
+    DrawPlane({float(Track::worldWidth*kWorldScale*.5f),-4.f,
+               float(Track::worldHeight*kWorldScale*.5f)},
+              {float(Track::worldWidth*kWorldScale),
+               float(Track::worldHeight*kWorldScale)},
+              shaded(grass,.68f));
+    // Near and mid-distance ground follows the same relief as the asphalt.
     drawTerrain(weather,quality,cameraPosition);
-    (void)grass;
 
     const auto count=track.size();
     const float farDistance=quality==0?47.f:quality==1?63.f:81.f;
