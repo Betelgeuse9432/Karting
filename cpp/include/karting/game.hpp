@@ -75,7 +75,6 @@ struct UiViewport {
     }
 };
 UiViewport uiViewport();
-Rectangle menuButtonRect(const UiViewport& ui);
 
 class HudRenderer {
 public:
