@@ -73,11 +73,28 @@ environ **5 % de puissance motrice**, en conservant leur accélération
 directe, leurs commandes et leurs comportements de dérive. Aucune boîte
 de vitesses n'est introduite.
 
-Le nouveau décor `src/scenery.cpp` comprend des conifères, arbres feuillus,
-bosquets, rochers, tribunes avec public, bâtiments, tentes, panneaux
-publicitaires, éoliennes animées et lampadaires. Les objets sont répartis
-de façon **déterministe** et non régénérés à chaque image ; leur affichage
-est contrôlé par la distance à la caméra et le niveau de qualité.
+Le décor est construit dans `src/scenery.cpp` et rendu dans
+`src/render.cpp` :
+
+- **Terrain 3D réel** : maillage adapté à la caméra dont chaque sommet utilise
+  la même fonction de relief que la piste ; couleurs de sol nuancées.
+  Le sol plat de l'ancienne version est repoussé en arrière-plan.
+- **Forêts denses** : feuillus ramifiés, conifères à plusieurs étages,
+  broussailles et groupes rocheux, répartis près de la route.
+- **Secteurs fonctionnels** : bâtiments de paddock et tentes autour du
+  départ/stands ; tribunes et signalisation sur des secteurs spectateurs ;
+  forêt et rochers dans les autres portions de la piste.
+- **Vraies structures visuelles** : portes de garages et vitrages, tribunes
+  étagées avec sièges/public, toits de tentes, lampadaires et éoliennes.
+
+Le placement est **déterministe** et dépend de la géométrie du circuit. Les
+objets sont orientés selon la tangente de la route, posés sur le terrain,
+puis filtrés par distance et qualité graphique avant affichage. Les modules
+des voitures, la caméra et les commandes n'ont pas été modifiés.
+
+Ce travail reste **procédural et stylisé** : pas de textures PBR, de shaders
+d'éclairage physique ni d'ombres dynamiques. Un essai en conditions réelles
+est nécessaire pour valider les visuels et les 60 FPS.
 
 Les essais graphiques et la mesure des FPS sur le PC restent nécessaires.
 
