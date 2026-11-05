@@ -35,19 +35,21 @@ const std::array<VehicleProfile, 4>& profiles() {
 }
 
 Track::Track() {
-    // 72 smooth control points form a large, non-self-intersecting circuit.
-    // Harmonic lobes create fast sections, linked turns and varied scenery.
-    // The old circuit measured about 21,400 world units; this one is ~54,900.
-    constexpr std::size_t controls=72;
-    std::vector<Vec2> raw;
-    raw.reserve(controls);
-    for (std::size_t i=0;i<controls;++i) {
-        const double a=(2*kPi*i)/controls;
-        const double radius=1.0 + .10*std::sin(5*a+.6)
-                                 + .055*std::sin(9*a-.8);
-        raw.push_back({11000+8500*radius*std::cos(a),
-                       9000+7200*radius*std::sin(a)});
-    }
+    // Clockwise circuit: fast opening straight, a genuine 180-degree
+    // hairpin at the eastern tip, then long sweeping southern/western turns.
+    // Each hairpin leg is separated by 1800 world units (32.4 rendered m),
+    // leaving clearance for the enlarged 350-unit roadway and barriers.
+    const std::vector<Vec2> raw{
+        {8500,2400}, {11200,2380}, {14000,2400}, {17000,2400},
+        {18900,2400}, {19700,2480}, {20250,2800}, {20450,3350},
+        {20250,3900}, {19700,4180}, {18900,4200}, {17400,4200},
+        {16000,4300}, {14900,5100}, {15100,6500}, {16800,7600},
+        {19100,7900}, {21100,9100}, {21600,11300}, {21000,13700},
+        {19100,15300}, {16500,16200}, {13800,16600}, {11100,15900},
+        {9000,16500}, {6600,16500}, {4400,15100}, {2800,12900},
+        {2500,10700}, {3100,8300}, {4200,5900}, {5600,4000},
+        {7100,2750}
+    };
     center_.reserve(raw.size() * subdivisions);
     for (std::size_t i = 0; i < raw.size(); ++i) {
         const auto a = raw[(i + raw.size() - 1) % raw.size()];
