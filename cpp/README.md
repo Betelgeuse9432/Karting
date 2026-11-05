@@ -81,6 +81,19 @@ Le test `testSpeedDistanceCalibration()` vérifie la correspondance entre
 la vitesse affichée et la distance parcourue. Il faut tester la maniabilité
 et les collisions sur le PC réel, surtout en virage à haute vitesse.
 
+## Frustum culling (champ visible de la caméra)
+
+Le rendu ignore désormais les **objets de décor**, les **sections de
+route**, les **réflecteurs** et les **dalles de terrain** situés hors du
+champ de la caméra. Un test de sphère englobante avec marge conserve les
+objets partiellement visibles aux bords de l'écran. Le filtrage par
+distance et les modèles à faible niveau de détail restent actifs. Le
+calcul est effectué une fois par image à partir de la caméra utilisée
+par `BeginMode3D`, sans changer sa position ni ses commandes.
+
+Cette optimisation économise des appels de dessin, mais ne retire pas
+les objets occultés par les reliefs : il ne s'agit pas d'occlusion culling.
+
 ## Optimisation du rendu du décor
 
 Le rendu conserve les forêts, tribunes et paddocks, mais réduit les opérations
