@@ -202,6 +202,8 @@ void Simulation::reset(bool preserveRecord) {
     car_.heading=track_.startHeading();
     race_.reset(preserveRecord);
     telemetry_=Telemetry{};
+    boostTimeRemaining_=0.0;
+    boostsRemaining_=2;
 }
 
 void Simulation::setBestLap(double seconds) {
@@ -212,6 +214,11 @@ void Simulation::update(const Controls& controls,double dt) {
     if (!(dt>0 && dt<=.05 && std::isfinite(dt)))
         throw std::invalid_argument("Invalid simulation timestep");
     const auto& p=profile();
+    if (controls.boostPressed && boostsRemaining_>0 && boostTimeRemaining_<=0.0) {
+        boostTimeRemaining_=2.0;
+        --boostsRemaining_;
+    }
+    const bool boostActive=boostTimeRemaining_>0.0;
     weather_.update(dt);
     const auto oldPosition=car_.position;
     const auto before=track_.info(oldPosition);
@@ -234,7 +241,7 @@ void Simulation::update(const Controls& controls,double dt) {
     const double downforce=1+p.downforce*std::pow(std::abs(v)/p.topSpeed,2);
     const double grip=downforce*(1-0.3*weather_.rainLevel)*(1-p.grassGrip*off/4.0);
     const double frontGrip=std::max(1.0,p.frontGrip*grip);
-    const double rearGrip=std::max(1.0,p.rearGrip*grip*(controls.handbrake?.35:1.0));
+    const double rearGrip=std::max(1.0,p.rearGrip*grip);
     const double maxSteer=p.maxSteer/(1+std::abs(v)/p.steerSensitivity);
     car_.steering+=(std::clamp(controls.steer,-1,1)*maxSteer-car_.steering)*
                     std::min(1.0,8*dt);
@@ -245,12 +252,13 @@ void Simulation::update(const Controls& controls,double dt) {
     const bool frontSlip=frontUse>frontGrip;
     if (frontSlip) rotation*=frontGrip/frontUse;
 
-    double motor=p.power*car_.throttle*(1-std::max(v,0.0)/p.topSpeed);
+    double motor=p.power*car_.throttle*(1-std::max(v,0.0)/p.topSpeed)*
+                 (boostActive?1.65:1.0);
     const double rearUse=std::hypot(motor,aLateral);
     const bool rearSlip=rearUse>rearGrip;
     if (rearSlip) {
         const double excess=rearUse/rearGrip-1;
-        rotation*=1+(controls.handbrake?std::min(2*excess,1.5):2*excess);
+        rotation*=1+2*excess;
         motor*=rearGrip/rearUse;
     }
 
@@ -263,12 +271,13 @@ void Simulation::update(const Controls& controls,double dt) {
         nextSpeed-=std::copysign(std::min(std::abs(nextSpeed),370*dt),nextSpeed);
     nextSpeed-=nextSpeed*p.grassDrag*off*dt;
     nextSpeed-=slope*1200*dt;
-    car_.speed=std::clamp(nextSpeed,-150.0,p.topSpeed);
+    const double speedLimit=p.topSpeed*(boostActive?1.18:1.0);
+    car_.speed=std::clamp(nextSpeed,-150.0,speedLimit);
 
     const double dAngle=rotation*dt;
-    if (controls.handbrake || std::abs(car_.lateralSpeed)>.01) {
+    if (std::abs(car_.lateralSpeed)>.01) {
         double side=car_.lateralSpeed*std::cos(dAngle)-car_.speed*std::sin(dAngle);
-        const double recovery=950*(controls.handbrake?.055:1.0);
+        const double recovery=950;
         side=std::copysign(std::max(0.0,std::abs(side)-recovery*dt),side);
         car_.lateralSpeed=std::abs(side)>=.01?side:0.0;
     } else car_.lateralSpeed=0;
@@ -298,6 +307,7 @@ void Simulation::update(const Controls& controls,double dt) {
     telemetry_={off,frontSlip,rearSlip,std::abs(car_.lateralSpeed)>12,
                 before.pits,grip,impact,slope};
     race_.tick(track_,car_,off,dt);
+    boostTimeRemaining_=std::max(0.0,boostTimeRemaining_-dt);
 
     if (!std::isfinite(car_.position.x)||!std::isfinite(car_.position.y)||
         !std::isfinite(car_.speed)||!std::isfinite(car_.heading))
