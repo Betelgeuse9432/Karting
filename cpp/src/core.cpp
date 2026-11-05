@@ -22,26 +22,32 @@ double elevation(Vec2 p) {
 
 const std::array<VehicleProfile, 4>& profiles() {
     static const std::array<VehicleProfile, 4> cars{{
-        {"KART", 650, 1300, 1.7, 2.0, 800, 950, 950, 0.0, 30, 0.7, 200,
+        {"KART", 710, 1360, 1.7, 2.0, 800, 950, 950, 0.0, 30, 0.7, 200,
          0.00005, 0.03, 0.4, 0.2, 0.5, 48, 125, 17, -15, 18, 0},
-        {"4x4", 680, 1050, 1.15, 1.3, 560, 600, 650, 0.05, 52, 0.5, 150,
+        {"4x4", 740, 1100, 1.15, 1.3, 560, 600, 650, 0.05, 52, 0.5, 150,
          0.0003, 0.12, 1.8, 0.04, 0.1, 85, 175, 30, -30, 26, 5},
-        {"GT3", 860, 1400, 1.35, 1.6, 760, 740, 780, 0.55, 46, 0.55, 150,
+        {"GT3", 930, 1470, 1.35, 1.6, 760, 740, 780, 0.55, 46, 0.55, 150,
          0.00012, 0.07, 1.0, 0.18, 0.45, 65, 150, 22, -22, 21, 3},
-        {"WEC", 1020, 1700, 1.25, 1.5, 840, 760, 800, 1.3, 50, 0.5, 140,
+        {"WEC", 1100, 1780, 1.25, 1.5, 840, 760, 800, 1.3, 50, 0.5, 140,
          0.00008, 0.05, 0.6, 0.3, 0.6, 58, 160, 30, -30, 22, 1}
     }};
     return cars;
 }
 
 Track::Track() {
-    const std::vector<Vec2> raw{
-        {3200,1700},{5000,1700},{6700,1720},{7500,1950},{8000,2550},
-        {8000,3250},{7650,3900},{8100,4550},{7950,5300},{7700,6000},
-        {7100,6550},{6200,6750},{5200,6750},{4500,6700},{3950,6480},
-        {3400,6930},{2850,6700},{2200,6600},{1750,6150},{1700,5500},
-        {1950,4850},{1600,4200},{1950,3550},{1650,2900},{1850,2300},{2350,1850}
-    };
+    // 72 smooth control points form a large, non-self-intersecting circuit.
+    // Harmonic lobes create fast sections, linked turns and varied scenery.
+    // The old circuit measured about 21,400 world units; this one is ~54,900.
+    constexpr std::size_t controls=72;
+    std::vector<Vec2> raw;
+    raw.reserve(controls);
+    for (std::size_t i=0;i<controls;++i) {
+        const double a=(2*kPi*i)/controls;
+        const double radius=1.0 + .10*std::sin(5*a+.6)
+                                 + .055*std::sin(9*a-.8);
+        raw.push_back({11000+8500*radius*std::cos(a),
+                       9000+7200*radius*std::sin(a)});
+    }
     center_.reserve(raw.size() * subdivisions);
     for (std::size_t i = 0; i < raw.size(); ++i) {
         const auto a = raw[(i + raw.size() - 1) % raw.size()];
@@ -277,8 +283,8 @@ void Simulation::update(const Controls& controls,double dt) {
     const Vec2 carSide{-carForward.y,carForward.x};
     car_.position=car_.position+(carForward*car_.speed+
                                   carSide*car_.lateralSpeed)*dt;
-    car_.position.x=std::clamp(car_.position.x,0.0,9800.0);
-    car_.position.y=std::clamp(car_.position.y,0.0,8700.0);
+    car_.position.x=std::clamp(car_.position.x,0.0,Track::worldWidth);
+    car_.position.y=std::clamp(car_.position.y,0.0,Track::worldHeight);
     const double impact=track_.collide(car_,dt);
     car_.brakeHeat=std::clamp(car_.brakeHeat+
             (car_.brake>.05 && car_.speed>0?
