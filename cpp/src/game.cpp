@@ -57,11 +57,17 @@ void Game::handleMenu() {
 }
 
 void Game::handleRace() {
-    if (IsKeyPressed(KEY_R)) reset();
-    if (IsKeyPressed(KEY_M)) {
+    const UiViewport ui=uiViewport();
+    const Vector2 mouse=GetMousePosition();
+    const bool menuClick=IsMouseButtonPressed(MOUSE_BUTTON_LEFT) &&
+        CheckCollisionPointRec({mouse.x/ui.scale,mouse.y/ui.scale},
+                               menuButtonRect(ui));
+    if (IsKeyPressed(KEY_M) || menuClick) {
         menu_=true;
         reset();
+        return;
     }
+    if (IsKeyPressed(KEY_R)) reset();
     if (IsKeyPressed(KEY_G)) quality_=(quality_+1)%3;
     if (IsKeyPressed(KEY_N)) sim_.cycleWeather();
     if (IsKeyPressed(KEY_P)) sim_.toggleRain();
