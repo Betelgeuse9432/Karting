@@ -44,6 +44,22 @@ ctest --test-dir cpp/build-core -C Release --output-on-failure
 
 Les tests C++ valident les quatre profils de voitures, le circuit V6 interpolé, l'accélération, l'adhérence sous pluie, le frein à main, les collisions, le chrono et la cadence physique indépendante des FPS.
 
+## Modèles 3D remaniés (silhouettes lisibles)
+
+Les quatre voitures disposent désormais d'une géométrie procédurale dédiée,
+dans `cpp/src/vehicle_models.cpp`. Aucune dépendance Blender, aucun modèle
+externe et aucune modification des commandes ni du suivi de caméra.
+
+- **Kart** : petit châssis effilé, pare-chocs, pilote, siège et moteur visible.
+- **4x4** : carrosserie haute à capot effilé, vitrages inclinés, galerie et roue de secours.
+- **GT3** : long capot, pavillon bas, ailes profilées, prises d'air et **aileron mince et bas**.
+- **WEC** : nez de prototype, pontons séparés, cockpit bas, petite dérive et **aileron arrière fin**, dimensionné pour limiter l'obstruction de la vue arrière.
+
+Les roues ont une géométrie distincte selon le véhicule, des jantes visibles
+et une animation liée à la rotation physique. Les hauteurs de caisse restent
+suffisamment basses pour conserver le cadrage de référence. Le résultat
+visuel reste à valider en jeu avant toute nouvelle retouche.
+
 ## Commandes
 
 | Action | Touche |
@@ -72,7 +88,8 @@ cpp/
     game.hpp                   interfaces graphique, effets et orchestration
   src/
     core.cpp                   26 points, Catmull-Rom, 4 profils, physique, météo, tours
-    render.cpp                 scène 3D, route, vibreurs, murs, arbres, véhicules
+    render.cpp                 scène 3D, route, vibreurs, murs, arbres
+    vehicle_models.cpp         modèles procéduraux des quatre voitures
     effects.cpp                fumée, étincelles, traces, flammes
     ui.cpp                     menu, compteurs, mini-carte, stands
     game.cpp                   boucle raylib, caméra, entrées, sauvegarde
