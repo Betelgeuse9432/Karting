@@ -13,6 +13,10 @@ UiViewport uiViewport() {
                   int(std::round(physicalHeight/scale))};
 }
 
+Rectangle menuButtonRect(const UiViewport& ui) {
+    return {float(ui.width)*.5f-82.f,15.f,164.f,44.f};
+}
+
 void HudRenderer::menu(const Simulation& sim,double time) const {
     const auto ui=uiViewport();
     const int w=ui.width,h=ui.height;
@@ -74,6 +78,18 @@ void HudRenderer::draw(const Simulation& sim,int quality,int fps) const {
     const auto ui=uiViewport();
     const int w=ui.width,h=ui.height;
     BeginMode2D(ui.camera());
+
+    // Always-visible button: a mouse alternative to the M shortcut.
+    const Rectangle menuButton=menuButtonRect(ui);
+    const Vector2 mouse=GetMousePosition();
+    const bool menuHover=CheckCollisionPointRec(
+        {mouse.x/ui.scale,mouse.y/ui.scale},menuButton);
+    DrawRectangleRounded(menuButton,.18f,8,
+        menuHover?Color{80,90,105,245}:Color{36,43,56,225});
+    DrawRectangleLinesEx(menuButton,1.6f,menuHover?GOLD:LIGHTGRAY);
+    DrawText("MENU [M]",int(menuButton.x+34),int(menuButton.y+11),
+             20,menuHover?GOLD:RAYWHITE);
+
     const auto& car=sim.car();
     const auto& race=sim.race();
     const auto& telemetry=sim.telemetry();
