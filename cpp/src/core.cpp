@@ -35,20 +35,19 @@ const std::array<VehicleProfile, 4>& profiles() {
 }
 
 Track::Track() {
-    // Clockwise circuit: fast opening straight, a genuine 180-degree
-    // hairpin at the eastern tip, then long sweeping southern/western turns.
-    // Each hairpin leg is separated by 1800 world units (32.4 rendered m),
-    // leaving clearance for the enlarged 350-unit roadway and barriers.
+    // Preserve the 180-degree eastern hairpin, with two separate arms.
+    // The remaining course uses longer, tangent-aligned sweepers rather
+    // than abrupt alternating changes of direction.
     const std::vector<Vec2> raw{
         {8500,2400}, {11200,2380}, {14000,2400}, {17000,2400},
         {18900,2400}, {19700,2480}, {20250,2800}, {20450,3350},
         {20250,3900}, {19700,4180}, {18900,4200}, {17400,4200},
-        {16000,4300}, {14900,5100}, {15100,6500}, {16800,7600},
-        {19100,7900}, {21100,9100}, {21600,11300}, {21000,13700},
-        {19100,15300}, {16500,16200}, {13800,16600}, {11100,15900},
-        {9000,16500}, {6600,16500}, {4400,15100}, {2800,12900},
-        {2500,10700}, {3100,8300}, {4200,5900}, {5600,4000},
-        {7100,2750}
+        {16100,4350}, {15100,5050}, {14700,6200}, {15100,7550},
+        {16400,8750}, {18200,9900}, {19600,11600}, {19600,13200},
+        {18300,14700}, {16300,16000}, {14100,16700}, {11900,16500},
+        {9800,16000}, {7700,16500}, {5500,15800}, {3700,14300},
+        {2900,12200}, {2900,10300}, {3700,8300}, {4550,6500},
+        {5800,4600}, {7200,3100}
     };
     center_.reserve(raw.size() * subdivisions);
     for (std::size_t i = 0; i < raw.size(); ++i) {
@@ -88,6 +87,20 @@ Track::Track() {
     const int pitStart = int(n) - std::max(3, int(500/stepLength));
     for (int k = 0; k < pitCount; ++k)
         pit_[std::size_t((pitStart+k) % int(n))] = true;
+}
+
+std::size_t Track::indexAtDistance(double distance) const {
+    if (!std::isfinite(distance))
+        throw std::invalid_argument("Non-finite track distance");
+    double wrapped=std::fmod(distance,length_);
+    if (wrapped<0) wrapped+=length_;
+    // Cumulative distances are measured from the start line; the last
+    // wraparound segment is represented by the final length_ entry.
+    const auto it=std::lower_bound(distances_.begin(),distances_.end(),wrapped);
+    if(it==distances_.end()) return center_.size()-1;
+    const auto i=std::size_t(it-distances_.begin());
+    if(i==0) return 0;
+    return wrapped-distances_[i-1]<distances_[i]-wrapped ? i-1 : i;
 }
 
 Vec2 Track::point(std::size_t index, double offset) const {
