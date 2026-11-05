@@ -393,12 +393,12 @@ void formulaOne(Color paint,Color glass,bool braking) {
         // Rear wing endplates and support pylons.
         box(-1.48f,.68f,side*.55f,.30f,.52f,.035f,carbon);
         rod({-1.12f,.30f,side*.18f},{-1.40f,.66f,side*.18f},.035f,carbon);
-        // Floor edge and tiny bargeboard.
-        box(-.12f,.13f,side*.56f,.95f,.045f,.035f,carbon);
-        panel({.55f,.18f,side*.42f},{.05f,.48f,side*.44f},
-              {-.48f,.20f,side*.46f},{-.10f,.14f,side*.47f},
-              tone(paint,.82f));
+        // Clean sidepod silhouette without detached decorative bars.
     }
+    // Central exhaust outlet integrated into the rear diffuser.
+    box(-1.60f,.245f,0,.16f,.11f,.22f,carbon);
+    rod({-1.66f,.245f,0},{-1.78f,.245f,0},.075f,{145,151,160,255});
+    rod({-1.78f,.245f,0},{-1.795f,.245f,0},.055f,{28,32,39,255});
     // Rear diffuser and a broad, two-element rear wing.
     box(-1.43f,.15f,0,.35f,.08f,.88f,carbon);
     box(-1.57f,.83f,0,.30f,.045f,1.28f,carbon);
@@ -437,11 +437,11 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
             wheelHeight=std::clamp(wheelHeight,-.075f,.075f);
             const float wheelY=r+.015f+wheelHeight;
             const float innerZ=side*(track-.25f);
-            const Vector3 upperA{x-.17f,.43f,innerZ};
-            const Vector3 upperB{x+.17f,.43f,innerZ};
+            const Vector3 upperA{x-.17f,.32f,innerZ};
+            const Vector3 upperB{x+.17f,.32f,innerZ};
             const Vector3 upperHub{x,wheelY+.105f,side*(track-.015f)};
-            const Vector3 lowerA{x-.19f,.18f,innerZ};
-            const Vector3 lowerB{x+.19f,.18f,innerZ};
+            const Vector3 lowerA{x-.19f,.205f,innerZ};
+            const Vector3 lowerB{x+.19f,.205f,innerZ};
             const Vector3 lowerHub{x,wheelY-.105f,side*(track-.015f)};
             // Two arms converge at each upright joint: proper triangular
             // upper and lower wishbones, with their inner pivots on brackets.
@@ -450,10 +450,10 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
             rod(lowerA,lowerHub,.022f,{145,153,164,255});
             rod(lowerB,lowerHub,.022f,{145,153,164,255});
             // Short mounts visibly connect the wishbone pivots to the chassis.
-            rod({x-.17f,.43f,side*.34f},upperA,.025f,carbon);
-            rod({x+.17f,.43f,side*.34f},upperB,.025f,carbon);
-            rod({x-.19f,.18f,side*.34f},lowerA,.027f,carbon);
-            rod({x+.19f,.18f,side*.34f},lowerB,.027f,carbon);
+            rod({x-.17f,.32f,side*.34f},upperA,.025f,carbon);
+            rod({x+.17f,.32f,side*.34f},upperB,.025f,carbon);
+            rod({x-.19f,.205f,side*.34f},lowerA,.027f,carbon);
+            rod({x+.19f,.205f,side*.34f},lowerB,.027f,carbon);
             // The upright links both ball joints and moves with the wheel.
             rod(upperHub,lowerHub,.027f,{75,83,95,255});
             DrawSphere(upperHub,.025f,{185,193,203,255});
@@ -461,7 +461,7 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
             // Blue coil-over: its lower end follows the wheel's vertical travel.
             const float springX=x+.12f;
             const float springZ=side*(track-.13f);
-            const float springTop=.43f, springBottom=wheelY-.12f;
+            const float springTop=.34f, springBottom=wheelY-.12f;
             for(int segment=0;segment<48;++segment) {
                 const float t0=float(segment)/48.f,t1=float(segment+1)/48.f;
                 const float a0=t0*6.f*2*PI,a1=t1*6.f*2*PI;
