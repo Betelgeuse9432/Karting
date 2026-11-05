@@ -46,13 +46,22 @@ void Effects::update(const Simulation& sim, double dt) {
                         .65, .65, 0});
         }
     }
-    if (car.brake>.5 && car.brakeHeat>.35 && car.speed>150 &&
-        std::uniform_int_distribution<int>(0,12)(generator_)==0) {
-        const auto pos=car.position+forward*p.frontAxle;
-        particles_.push_back({pos,elevation(pos)+12,
-                    velocity(generator_)*65,velocity(generator_)*65,
-                    40+std::abs(velocity(generator_))*55,
-                    .34,.34,2});
+    if (car.brake>.35 && car.brakeHeat>.2 && car.speed>120 &&
+        std::uniform_int_distribution<int>(0,2)(generator_)==0) {
+        // Sparks leave the body sideways instead of drifting through the car.
+        for (const int direction : {-1, 1}) {
+            for (int burst=0; burst<2; ++burst) {
+                const double outward=direction*(105+std::abs(velocity(generator_))*95);
+                const double along=-18+velocity(generator_)*75;
+                const auto pos=car.position+forward*(p.frontAxle*.35) +
+                               side*(direction*(p.halfWheelTrack+3));
+                particles_.push_back({pos,elevation(pos)+12,
+                    side.x*outward+forward.x*along,
+                    side.y*outward+forward.y*along,
+                    55+std::abs(velocity(generator_))*90,
+                    .48,.48,2});
+            }
+        }
     }
     if (!car.throttle && car.speed>260 &&
         std::uniform_int_distribution<int>(0,25)(generator_)==0) {
