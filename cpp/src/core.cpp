@@ -268,8 +268,6 @@ void Simulation::update(const Controls& controls,double dt) {
     if (v>0.5) nextSpeed-=aBrake*dt;
     else if (controls.brake) nextSpeed-=250*dt;
     nextSpeed-=nextSpeed*(controls.accelerate?.18:.5)*dt;
-    if (controls.handbrake)
-        nextSpeed-=std::copysign(std::min(std::abs(nextSpeed),370*dt),nextSpeed);
     nextSpeed-=nextSpeed*p.grassDrag*off*dt;
     nextSpeed-=slope*1200*dt;
     const double speedLimit=p.topSpeed*(boostActive?1.18:1.0);
