@@ -184,6 +184,14 @@ void gt3(Color paint,Color glass,Color dark,bool braking) {
     cockpit(.40f,-.79f,.10f,-.58f,.47f,.79f,.43f,.33f,
             glass,tone(paint,.78f));
 
+    // Fine clear-coat highlights and panel seams on the broad bonnet.
+    for(float side:{-1.f,1.f}) {
+        DrawLine3D({.94f,.426f,side*.43f},{.30f,.475f,side*.48f},
+                   {255,255,255,42});
+        DrawLine3D({-.18f,.481f,side*.555f},{.72f,.448f,side*.555f},
+                   {12,15,20,150});
+    }
+
     // Twin bonnet extraction vents inspired by the Mercedes-AMG GT3.
     // They sit flush on the flat bonnet, one on each side of the centreline.
     for(float side:{-1.f,1.f}) {
@@ -329,6 +337,19 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
         if(x==front) rlRotatef(float(-car.steering*RAD2DEG),0,1,0);
         DrawCylinderEx({0,0,-width*.5f},{0,0,width*.5f},r,r,slot==2||slot==3?24:16,
                        {27,30,36,255});
+        // Fine circumferential grooves and angled tread cuts add rubber detail.
+        for(int band=0;band<5;++band) {
+            const float treadZ=-width*.38f+float(band)*width*.19f;
+            for(int segment=0;segment<32;++segment) {
+                const float a0=2*PI*float(segment)/32.f+float(car.wheelRotation);
+                const float a1=a0+.13f;
+                const float r0=r*.985f,r1=r*.978f;
+                DrawLine3D({std::cos(a0)*r0,std::sin(a0)*r0,treadZ},
+                           {std::cos(a1)*r1,std::sin(a1)*r1,
+                            treadZ+width*.055f},
+                           {13,15,19,255});
+            }
+        }
         const float z=side*(width*.5f+.008f);
         rod({0,0,z},{0,0,z+side*.017f},
             r*.52f,{90,96,107,255});
