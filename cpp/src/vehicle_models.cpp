@@ -360,15 +360,66 @@ void rally(Color paint,Color glass,Color dark,bool braking) {
     box(.25f,.18f,0,.72f,.045f,.72f,{92,98,105,255});
 }
 
+
+void formulaOne(Color paint,Color glass,Color dark,bool braking) {
+    const Color carbon{22,26,32,255};
+    const Color blue{25,115,255,255};
+    const Color tyre{24,26,31,255};
+    const Color lamp{235,242,248,255};
+
+    // Narrow pointed nose, raised chassis and sculpted sidepods.
+    bodyShell({{-1.62f,.19f,.28f,.25f},
+               {-1.28f,.18f,.38f,.34f},
+               {-.78f,.18f,.43f,.39f},
+               {-.25f,.19f,.39f,.38f},
+               { .42f,.18f,.36f,.40f},
+               { .92f,.17f,.30f,.36f},
+               {1.34f,.15f,.24f,.25f}},
+              paint,tone(paint,.70f));
+    // Open cockpit with a visible driver and halo.
+    box(-.28f,.40f,0,.70f,.12f,.38f,carbon);
+    DrawSphere({-.02f,.66f,0},.19f,{238,190,62,255});
+    DrawSphere({.015f,.69f,0},.145f,glass);
+    rod({-.35f,.60f,-.23f},{.22f,.77f,-.19f},.022f,carbon);
+    rod({-.35f,.60f,.23f},{.22f,.77f,.19f},.022f,carbon);
+    rod({.22f,.77f,-.19f},{.22f,.77f,.19f},.022f,carbon);
+    // Sidepods and cooling inlets.
+    for(float side:{-1.f,1.f}) {
+        box(-.02f,.31f,side*.40f,.90f,.22f,.28f,paint);
+        box(.42f,.37f,side*.535f,.30f,.12f,.018f,carbon);
+        box(-.48f,.27f,side*.43f,.42f,.045f,.025f,blue);
+        // Front wing: layered flaps and endplates.
+        box(1.48f,.15f,side*.48f,.36f,.045f,.12f,carbon);
+        box(1.53f,.20f,side*.48f,.27f,.025f,.11f,paint);
+        box(1.42f,.17f,side*.69f,.32f,.31f,.035f,carbon);
+        // Rear wing endplates and support pylons.
+        box(-1.48f,.68f,side*.55f,.30f,.52f,.035f,carbon);
+        rod({-1.12f,.30f,side*.18f},{-1.40f,.66f,side*.18f},.035f,carbon);
+        // Floor edge and tiny bargeboard.
+        box(-.12f,.13f,side*.56f,.95f,.045f,.035f,carbon);
+        panel({.55f,.18f,side*.42f},{.05f,.48f,side*.44f},
+              {-.48f,.20f,side*.46f},{-.10f,.14f,side*.47f},
+              tone(paint,.82f));
+    }
+    // Rear diffuser and a broad, two-element rear wing.
+    box(-1.43f,.15f,0,.35f,.08f,.88f,carbon);
+    box(-1.57f,.83f,0,.30f,.045f,1.28f,carbon);
+    box(-1.53f,.89f,0,.25f,.025f,1.22f,paint);
+    // Small front suspension fairing and nose tip.
+    box(1.55f,.22f,0,.18f,.07f,.20f,carbon);
+    box(1.62f,.25f,0,.09f,.035f,.12f,paint);
+    (void)tyre;
+}
+
 void wheels(const Car& car,const VehicleProfile& p,int index) {
     // GT3 wheel centres sit close to the actual front and rear wheel arches.
     const float axleVisualScale=index==3?1.12f:1.0f;
     const float front=float(p.frontAxle*kWorldScale*axleVisualScale);
     const float rear=float(p.rearAxle*kWorldScale*axleVisualScale);
-    constexpr std::array<float,5> sizes{{.155f,.265f,.205f,.195f,.180f}};
-    constexpr std::array<float,5> widths{{.19f,.26f,.22f,.21f,.21f}};
-    constexpr std::array<float,5> tracks{{.45f,.65f,.48f,.58f,.58f}};
-    const std::size_t slot=std::size_t(std::clamp(index,0,4));
+    constexpr std::array<float,6> sizes{{.155f,.265f,.205f,.195f,.180f,.245f}};
+    constexpr std::array<float,6> widths{{.19f,.26f,.22f,.21f,.21f,.29f}};
+    constexpr std::array<float,6> tracks{{.45f,.65f,.48f,.58f,.58f,.67f}};
+    const std::size_t slot=std::size_t(std::clamp(index,0,5));
     const float r=sizes[slot],width=widths[slot];
     const float track=std::max(float(p.halfWheelTrack*kWorldScale),tracks[slot]);
 
@@ -386,6 +437,29 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
         rlPushMatrix();
         rlTranslatef(x,r+.015f+wheelHeight,side*track);
         if(x==front) rlRotatef(float(-car.steering*RAD2DEG),0,1,0);
+        if(slot==5) {
+            // Double wishbones: both triangles follow the live wheel travel.
+            const float innerZ=-side*.27f;
+            const Vector3 hub{0,0,0};
+            rod({-.20f,.17f,innerZ},{-.035f,.075f,0},.018f,{105,112,122,255});
+            rod({ .18f,.17f,innerZ},{-.035f,.075f,0},.018f,{105,112,122,255});
+            rod({-.20f,-.14f,innerZ},{ .025f,-.035f,0},.021f,{105,112,122,255});
+            rod({ .18f,-.14f,innerZ},{ .025f,-.035f,0},.021f,{105,112,122,255});
+            // Blue coil-over spring, compressed/extended with the wheel.
+            const float springX=.105f;
+            const float springZ=-side*.16f;
+            for(int turn=0;turn<7;++turn) {
+                const float y0=-.105f+float(turn)*.032f;
+                const float y1=y0+.032f;
+                const float a0=float(turn)*1.35f;
+                const float a1=float(turn+1)*1.35f;
+                DrawLine3D({springX+std::cos(a0)*.045f,y0,springZ+std::sin(a0)*.045f},
+                           {springX+std::cos(a1)*.045f,y1,springZ+std::sin(a1)*.045f},
+                           {25,115,255,255});
+            }
+            rod({springX,.13f,springZ},{springX,-.13f,springZ},.018f,{55,65,78,255});
+            (void)hub;
+        }
         DrawCylinderEx({0,0,-width*.5f},{0,0,width*.5f},r,r,slot==2||slot==3?24:16,
                        {27,30,36,255});
         // Fine circumferential grooves and angled tread cuts add rubber detail.
@@ -445,6 +519,9 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
         wec(paint,glass,dark,car.brake>.1);
         rlPopMatrix();
         break;
+    case 5:
+        formulaOne(paint,glass,dark,car.brake>.1);
+        break;
     case 4:
         // Scale the rally hatch to a compact real-world footprint.
         rlPushMatrix();
@@ -455,8 +532,8 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
     default: gt3(paint,glass,dark,car.brake>.1);break;
     }
     // Restrained clear-coat highlights help every vehicle read as painted metal.
-    const float highlightY=index==1?.82f:index==2?.445f:index==3?.285f:index==4?.80f:.205f;
-    const float highlightZ=index==1?.47f:index==2?.49f:index==3?.34f:index==4?.48f:.20f;
+    const float highlightY=index==1?.82f:index==2?.445f:index==3?.285f:index==4?.80f:index==5?.39f:.205f;
+    const float highlightZ=index==1?.47f:index==2?.49f:index==3?.34f:index==4?.48f:index==5?.36f:.20f;
     for(float side:{-1.f,1.f}) {
         DrawLine3D({.62f,highlightY,side*highlightZ},
                    {-.48f,highlightY-.012f,side*highlightZ*.94f},
