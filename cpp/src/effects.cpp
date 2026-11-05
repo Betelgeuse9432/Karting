@@ -25,9 +25,12 @@ void Effects::update(const Simulation& sim, double dt) {
         return car.position + forward * (k<2?p.rearAxle:p.frontAxle) +
                side*((k%2==0?-1:1)*p.halfWheelTrack);
     };
+    // Match the GT3 model's actual exhaust-tip coordinates (-1.385m, +/-0.245m).
+    // The previous anchor used the rear axle offset and placed the flames inside
+    // the bodywork, where the car hid them.
     const auto exhaustPosition=[&](int direction) {
-        return car.position+forward*(p.rearAxle-10) +
-               side*(direction*std::max(10.0,p.halfWheelTrack*.55));
+        return car.position+forward*(-1.405/kWorldScale) +
+               side*(direction*.245/kWorldScale);
     };
     for (int k=0;k<4;++k) {
         const auto wheel=wheelPosition(k);
@@ -69,16 +72,16 @@ void Effects::update(const Simulation& sim, double dt) {
         }
     }
     // A short twin-exhaust backfire when the driver lifts off the throttle.
-    // The particles stay attached to their exhaust outlets as the car moves.
+    // Keep each flame locked to the matching exhaust tip as the car moves.
     if (previousThrottle_ && !car.throttle && car.speed>180) {
         for (const int direction : {-1,1}) {
             const auto pos=exhaustPosition(direction);
             const double flicker=std::abs(velocity(generator_));
-            particles_.push_back({pos,elevation(pos)+13,
+            particles_.push_back({pos,elevation(pos)+.255/kWorldScale,
                 -forward.x*(205+flicker*105),
                 -forward.y*(205+flicker*105),
                 10+flicker*35,.30,.30,1,direction});
-            particles_.push_back({pos+forward*(-3),elevation(pos)+13,
+            particles_.push_back({pos+forward*(-2),elevation(pos)+.255/kWorldScale,
                 -forward.x*(235+flicker*95),
                 -forward.y*(235+flicker*95),
                 6+flicker*28,.23,.23,3,direction});
@@ -89,7 +92,7 @@ void Effects::update(const Simulation& sim, double dt) {
         if ((particle.kind==1 || particle.kind==3) && particle.exhaustSide!=0) {
             const auto pos=exhaustPosition(particle.exhaustSide);
             particle.location=pos;
-            particle.height=elevation(pos)+13;
+            particle.height=elevation(pos)+.255/kWorldScale;
         } else {
             particle.location=particle.location+Vec2{particle.dx,particle.dy}*dt;
             particle.height+=particle.dz*dt;
