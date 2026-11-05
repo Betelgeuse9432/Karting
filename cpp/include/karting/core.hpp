@@ -10,7 +10,16 @@
 namespace karting {
 
 constexpr double kPi = 3.14159265358979323846;
-constexpr double kWorldScale = 0.018;
+constexpr double kWorldScale = 0.018; // rendering metres per physics world unit
+
+// Preserve the existing arcade speed numbers and the HUD's 0.3 km/h unit.
+// Translate the car through the world at the matching physical metres/second.
+// Example: speed=1000 => 300 km/h => 83.33 renderer metres per second.
+constexpr double kKmHPerSpeedUnit = 0.3;
+constexpr double kTravelScale = kKmHPerSpeedUnit / (3.6 * kWorldScale);
+constexpr double toKmH(double simulationSpeed) {
+    return simulationSpeed * kKmHPerSpeedUnit;
+}
 
 struct Vec2 {
     double x = 0.0;
