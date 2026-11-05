@@ -9,8 +9,6 @@
 
 namespace karting {
 namespace {
-constexpr int width=1100;
-constexpr int height=720;
 constexpr const char* recordFile="record_karting_cpp.txt";
 
 Color lerp(Color a,Color b,float amount) {
@@ -95,6 +93,7 @@ void Game::showFault(const std::string& subsystem,const std::string& message) {
 }
 
 void Game::renderMenu(double time) {
+    const int width=GetScreenWidth(),height=GetScreenHeight();
     const Color top{20,22,35,255},bottom{49,54,65,255};
     DrawRectangleGradientV(0,0,width,height,top,bottom);
     const float t=float(time*.35);
@@ -122,6 +121,7 @@ void Game::renderMenu(double time) {
 }
 
 void Game::renderRace() {
+    const int width=GetScreenWidth(),height=GetScreenHeight();
     const auto& weather=sim_.weather();
     const float n=float(weather.nightLevel),r=float(weather.rainLevel);
     const Color daylightTop{92,157,243,255};
@@ -184,14 +184,19 @@ void Game::renderRace() {
             DrawRectangle(0,0,width,height,Fade({90,110,135,255},r*.08f));
     }
     safe("hud",[&]{ hud_.draw(sim_,quality_,GetFPS()); });
-    if (paused_) {
-        DrawRectangle(0,height/2-38,width,76,Fade(BLACK,.78f));
-        DrawText("PHYSIQUE EN PAUSE  -  R pour recommencer",
-                 width/2-328,height/2-13,24,RED);
+    if (paused_ || !faultMessage_.empty()) {
+        const auto ui=uiViewport();
+        BeginMode2D(ui.camera());
+        if (paused_) {
+            DrawRectangle(0,ui.height/2-38,ui.width,76,Fade(BLACK,.78f));
+            DrawText("PHYSIQUE EN PAUSE  -  R pour recommencer",
+                     ui.width/2-328,ui.height/2-13,24,RED);
+        }
+        if (!faultMessage_.empty())
+            DrawText(TextFormat("Module desactive : %.100s",faultMessage_.c_str()),
+                     18,ui.height-199,15,RED);
+        EndMode2D();
     }
-    if (!faultMessage_.empty())
-        DrawText(TextFormat("Module desactive : %.100s",faultMessage_.c_str()),
-                 18,height-199,15,RED);
 }
 
 void Game::render() {
@@ -203,8 +208,10 @@ void Game::render() {
 }
 
 int Game::run() {
-    SetConfigFlags(FLAG_MSAA_4X_HINT);
-    InitWindow(width,height,"Karting V6 - C++20 / raylib");
+    SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_WINDOW_RESIZABLE);
+    InitWindow(1280,720,"Karting V6 - C++20 / raylib");
+    SetWindowMinSize(960,600);
+    MaximizeWindow();
     SetTargetFPS(60);
     try {
         world_.initialize(sim_.track());
