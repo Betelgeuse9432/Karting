@@ -19,10 +19,10 @@ void close(double actual,double expected,double tolerance,const char* message) {
 
 void testCircuit() {
     const Track track;
-    require(track.size()==34*Track::subdivisions,
-            "Hairpin circuit has 34 Catmull-Rom control points");
-    require(track.lapLength()>60000 && track.lapLength()<73000,
-            "Hairpin circuit preserves a long lap");
+    require(track.size()==42*Track::subdivisions,
+            "Four-sector circuit has 42 Catmull-Rom control points");
+    require(track.lapLength()>69000 && track.lapLength()<75000,
+            "Four-sector circuit preserves a long lap");
     const auto start=track.startPosition();
     require(start.x>0 && start.x<Track::worldWidth &&
             start.y>0 && start.y<Track::worldHeight,
@@ -76,6 +76,21 @@ void testCircuit() {
     const Vec2 exitPoint=track.point(10*Track::subdivisions);
     require(length(entryPoint-exitPoint)>Track::wall*2+100,
             "Hairpin arms have separate collision and scenery clearances");
+    // Four sectors should exhibit direction changes beyond the hairpin,
+    // rather than falling back to a featureless oval.
+    int leftTurns=0,rightTurns=0;
+    const auto& route=track.center();
+    for(std::size_t i=12*Track::subdivisions;
+        i+Track::subdivisions<route.size()-Track::subdivisions;
+        i+=Track::subdivisions) {
+        const Vec2 a=route[i]-route[i-Track::subdivisions];
+        const Vec2 b=route[i+Track::subdivisions]-route[i];
+        const double signedTurn=a.x*b.y-a.y*b.x;
+        if(signedTurn>1e4) ++leftTurns;
+        if(signedTurn< -1e4) ++rightTurns;
+    }
+    require(leftTurns>=4 && rightTurns>=4,
+            "Technical sectors contain turns in both directions");
     for(const Vec2 p:track.center())
         require(p.x>0 && p.x<Track::worldWidth &&
                 p.y>0 && p.y<Track::worldHeight,
