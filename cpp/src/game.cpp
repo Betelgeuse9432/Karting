@@ -58,35 +58,6 @@ void drawVisibleSky(const Camera3D& camera,int width,int height,
     if(horizon<=-100.f) return;
     const float tau=6.28318530718f;
 
-    // Layered mountains are sky background only; calculate their profile
-    // from camera bearings, clipped to the visible viewport.
-    const int layers=quality==1?1:2;
-    for(int layer=0;layer<layers;++layer) {
-        const float amplitude=layer==0?58.f:32.f;
-        Color ridge=layer==0?Color{91,110,135,255}:
-                              Color{63,105,81,255};
-        ridge=lerp(ridge,skyBottom,.22f);
-        ridge=lerp(ridge,{12,18,32,255},night*.68f);
-        ridge=lerp(ridge,{92,101,111,255},rain*.45f);
-        const auto ridgeHeight=[&](float x) {
-            const float bearing=yaw+std::atan((x-width*.5f)/
-                                             (width*.5f)*halfHorizontal);
-            return horizon-amplitude*(.50f+
-                  .24f*std::sin(bearing*3.0f+layer*1.2f)+
-                  .15f*std::sin(bearing*7.0f+.4f)+
-                  .10f*std::sin(bearing*13.0f+layer));
-        };
-        const float floor=std::clamp(horizon,0.f,float(height));
-        for(int x=0;x<width;x+=16) {
-            const float x1=float(std::min(width,x+16));
-            const float y0=ridgeHeight(float(x)),y1=ridgeHeight(x1);
-            if(y0>=float(height) && y1>=float(height)) continue;
-            if(floor<=0.f) continue;
-            DrawTriangle({float(x),floor},{x1,floor},{x1,y1},ridge);
-            DrawTriangle({float(x),floor},{x1,y1},{float(x),y0},ridge);
-        }
-    }
-
     const float opacity=(1.f-night*.78f)*(1.f-rain*.55f);
     if(opacity<.03f) return;
     const Color body=Fade(lerp({232,239,247,255},
