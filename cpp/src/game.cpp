@@ -26,7 +26,7 @@ Controls controlsFromKeyboard() {
             IsKeyDown(KEY_DOWN)||IsKeyDown(KEY_S),
             int(IsKeyDown(KEY_RIGHT)||IsKeyDown(KEY_D))-
             int(IsKeyDown(KEY_LEFT)||IsKeyDown(KEY_Q)||IsKeyDown(KEY_A)),
-            IsKeyPressed(KEY_SPACE)};
+            false};
 }
 
 // Read M as a typed character as well as a physical key.
@@ -140,6 +140,7 @@ void Game::reset() {
     clock_.reset();
     effects_.clear();
     paused_=false;
+    boostQueued_=false;
     disabled_.clear();
     faultMessage_.clear();
     followAngle_=sim_.car().heading;
@@ -349,11 +350,15 @@ int Game::run() {
             else handleRace();
 
             if (!menu_ && !paused_) {
-                const Controls keys=controlsFromKeyboard();
+                if (IsKeyPressed(KEY_SPACE)) boostQueued_=true;
+                Controls keys=controlsFromKeyboard();
+                keys.boostPressed=boostQueued_;
                 for (int step=clock_.consume(frame);step>0;--step) {
                     const double previousRecord=sim_.race().bestLap;
                     try {
                         sim_.update(keys,FixedClock::step);
+                        keys.boostPressed=false;
+                        boostQueued_=false;
                     } catch(const std::exception& e) {
                         showFault("physics",e.what());
                         paused_=true;
