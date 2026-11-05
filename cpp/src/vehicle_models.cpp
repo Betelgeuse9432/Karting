@@ -396,6 +396,14 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
         break;
     default: gt3(paint,glass,dark,car.brake>.1);break;
     }
+    // Restrained clear-coat highlights help every vehicle read as painted metal.
+    const float highlightY=index==1?.82f:index==2?.445f:index==3?.285f:.205f;
+    const float highlightZ=index==1?.47f:index==2?.49f:index==3?.34f:.20f;
+    for(float side:{-1.f,1.f}) {
+        DrawLine3D({.62f,highlightY,side*highlightZ},
+                   {-.48f,highlightY-.012f,side*highlightZ*.94f},
+                   {255,255,255,36});
+    }
     rlPopMatrix();
     wheels(car,profile,index);
     rlPopMatrix();
