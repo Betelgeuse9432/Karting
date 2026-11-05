@@ -83,11 +83,17 @@ et les collisions sur le PC réel, surtout en virage à haute vitesse.
 
 ## Grand circuit et environnement enrichi
 
-Le circuit initial d'environ **21 400 unités** a été remplacé par un parcours
-d'environ **54 900 unités**, soit **2,56 fois plus long**. Il utilise 72
-points de contrôle interpolés, avec des courbes longues, des sections
-techniques et un relief continu. La mini-carte se met automatiquement
-à l'échelle de la nouvelle piste. Les limites du monde ont été agrandies.
+Le grand circuit a été remodelé en **33 points de contrôle** avec une
+**épingle à 180°** à l'est (entrée et sortie sur deux voies séparées),
+de grandes courbes dans les secteurs sud et ouest, ainsi qu'une longue
+ligne droite avant l'épingle. Le parcours mesure environ **65 729 unités**
+(contre 54 900 précédemment). La mini-carte s'adapte automatiquement.
+
+La largeur totale d'asphalte passe de **300 à 350 unités** (+16,7 %).
+Les barrières ont été déplacées de 242 à 275 unités du centre pour
+préserver la marge de sécurité. Les bordures, les stands et les collisions
+utilisent ces nouvelles dimensions. Les réglages de puissance, la caméra
+et les commandes validés dans la version précédente sont inchangés.
 
 Après calibration des distances en mètres 3D, le premier réglage moteur
 s'est révélé trop agressif. Les moteurs ont donc été **fortement ralentis** :
