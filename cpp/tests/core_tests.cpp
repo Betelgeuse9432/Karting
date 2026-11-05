@@ -18,10 +18,10 @@ void close(double actual,double expected,double tolerance,const char* message) {
 
 void testCircuit() {
     const Track track;
-    require(track.size()==72*Track::subdivisions,
-            "New circuit has 72 Catmull-Rom control points");
-    require(track.lapLength()>50000 && track.lapLength()<65000,
-            "Long circuit has a realistic controlled lap length");
+    require(track.size()==33*Track::subdivisions,
+            "Hairpin circuit has 33 Catmull-Rom control points");
+    require(track.lapLength()>60000 && track.lapLength()<73000,
+            "Hairpin circuit preserves a long lap");
     const auto start=track.startPosition();
     require(start.x>0 && start.x<Track::worldWidth &&
             start.y>0 && start.y<Track::worldHeight,
@@ -31,6 +31,30 @@ void testCircuit() {
     const auto near=track.info(start);
     require(near.distance<1e-6,"Start line is on the track");
     require(!near.grass,"No grass at start");
+    require(Track::halfWidth==175 && Track::wall==275,
+            "Road widened with matching barrier clearance");
+    require(!track.info(track.point(0,Track::halfWidth-8)).grass,
+            "Outer road lane remains drivable");
+    require(track.info(track.point(0,Track::halfWidth+Track::kerb+45)).grass,
+            "Grass begins past the wider road shoulder");
+
+    // At the hairpin the vehicle approaches eastward, pivots and exits west.
+    const auto tangent=[&](std::size_t pointIndex) {
+        const auto& c=track.center();
+        return c[(pointIndex+1)%c.size()]-
+               c[(pointIndex+c.size()-1)%c.size()];
+    };
+    const Vec2 entry=tangent(4*Track::subdivisions);
+    const Vec2 apex=tangent(7*Track::subdivisions);
+    const Vec2 exit=tangent(10*Track::subdivisions);
+    require(dot(entry,exit)<-.9*length(entry)*length(exit),
+            "Hairpin reverses travel direction by roughly 180 degrees");
+    require(dot(entry,apex)<.2*length(entry)*length(apex),
+            "Hairpin includes a strong perpendicular apex");
+    const Vec2 entryPoint=track.point(4*Track::subdivisions);
+    const Vec2 exitPoint=track.point(10*Track::subdivisions);
+    require(length(entryPoint-exitPoint)>Track::wall*2+100,
+            "Hairpin arms have separate collision and scenery clearances");
     for(const Vec2 p:track.center())
         require(p.x>0 && p.x<Track::worldWidth &&
                 p.y>0 && p.y<Track::worldHeight,
