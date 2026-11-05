@@ -1,5 +1,6 @@
 #pragma once
 #include "karting/core.hpp"
+#include "karting/frustum.hpp"
 #include "raylib.h"
 #include <array>
 #include <deque>
@@ -48,12 +49,12 @@ class WorldRenderer {
 public:
     void initialize(const Track& track);
     void draw(const Track& track, const Weather& weather, int quality,
-              Vector3 cameraPosition, double time) const;
+              const Camera3D& camera, double time) const;
 private:
     void drawTerrain(const Weather& weather,int quality,
-                     Vector3 cameraPosition) const;
+                     const ViewFrustum& frustum, Vector3 cameraPosition) const;
     void drawScenery(const Weather& weather,int quality,
-                     Vector3 cameraPosition,double time) const;
+                     const ViewFrustum& frustum, Vector3 cameraPosition,double time) const;
     std::vector<SceneryProp> scenery_;
 };
 
