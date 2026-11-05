@@ -2,7 +2,7 @@ name: C++ raylib build and tests
 
 on:
   push:
-    branches: [cpp-raylib]
+    branches: [cpp-raylib, main-cpp]
   pull_request:
     paths:
       - "cpp/**"
@@ -15,9 +15,6 @@ jobs:
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
       - name: Configure pure C++ tests
         run: cmake -S cpp -B cpp/build-core -DCMAKE_BUILD_TYPE=Release -DKARTING_BUILD_GAME=OFF
       - name: Compile C++20 core

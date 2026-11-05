@@ -1,6 +1,6 @@
 # Karting V6 en C++20 + raylib
 
-Cette branche **cpp-raylib** dérive de **dev**. Le jeu natif est dans cpp/, et le code Python d'origine reste en lecture pour faciliter les comparaisons. Il ne s'exécute pas depuis le binaire C++.
+Ce dossier contient la version native **C++20 / raylib** de Karting, utilisée sur les branches `cpp-raylib` et `main-cpp`. Les anciens fichiers du jeu Python ont été retirés de ces deux branches ; ils restent consultables dans l'historique Git et les branches historiques.
 
 ## Démarrer sous Windows (PowerShell)
 
@@ -243,7 +243,7 @@ cpp/
   tests/core_tests.cpp         tests autonomes sans bibliothèque graphique
 ```
 
-Le **moteur logique ne contient aucun include raylib**. Le rendu dessine des objets 3D par GPU ; il n'utilise pas le moteur logiciel Pygame de l'ancienne version. Les sous-systèmes visuels peuvent être désactivés indépendamment en cas d'exception.
+Le **moteur logique ne contient aucun include raylib**. Le rendu dessine des objets 3D par GPU ; il ne dépend pas de Pygame. Les sous-systèmes visuels peuvent être désactivés indépendamment en cas d'exception.
 
 ## État de migration
 
