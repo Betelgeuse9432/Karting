@@ -114,15 +114,47 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
             paint(Track::halfWidth+Track::kerb+5,
                   Track::halfWidth+Track::kerb+7,YELLOW);
         }
-        if (quality>0 && d2<38*38) {
+        // Solid safety barriers only on selected exposed sections.
+        // The rest of the lap stays open, with grass runoff.
+        const double progress=double(i)/double(count);
+        const bool barrierZone=
+            (progress>.075 && progress<.155) ||
+            (progress>.385 && progress<.465) ||
+            (progress>.690 && progress<.755);
+        if (barrierZone && d2<58*58) {
             for (int side:{-1,1}) {
                 if (side>0 && track.isPitIndex(i)) continue;
-                const auto a=worldPoint(track.point(i,side*Track::wall),18);
-                const auto b=worldPoint(track.point(j,side*Track::wall),18);
-                const auto a2=worldPoint(track.point(i,side*Track::wall),25);
-                const auto b2=worldPoint(track.point(j,side*Track::wall),25);
-                DrawLine3D(a,b,shaded(LIGHTGRAY,1-.5f*night));
-                DrawLine3D(a2,b2,shaded(GRAY,1-.5f*night));
+                const double offset=side*(Track::wall-5);
+                const auto baseA=worldPoint(track.point(i,offset),1);
+                const auto baseB=worldPoint(track.point(j,offset),1);
+                const auto topA=worldPoint(track.point(i,offset),1+1.15/kWorldScale);
+                const auto topB=worldPoint(track.point(j,offset),1+1.15/kWorldScale);
+                quad(baseA,baseB,topB,topA,
+                     shaded({174,179,187,255},1-.48f*night));
+                const auto capA=worldPoint(track.point(i,offset),1+1.15/kWorldScale);
+                const auto capB=worldPoint(track.point(j,offset),1+1.15/kWorldScale);
+                DrawLine3D(capA,capB,shaded(WHITE,1-.5f*night));
+            }
+        }
+
+        // Tyre stacks protect a few corner exits, not the whole circuit.
+        const bool tyreZone=
+            (progress>.125 && progress<.145) ||
+            (progress>.425 && progress<.445) ||
+            (progress>.715 && progress<.735);
+        if (tyreZone && quality>0 && d2<48*48 && i%std::max<std::size_t>(1,step*5)==0) {
+            for (int side:{-1,1}) {
+                if (side>0 && track.isPitIndex(i)) continue;
+                const auto p=worldPoint(track.point(i,side*(Track::wall+18)),1);
+                const float tireHeight=.42f;
+                const Color tire=shaded({25,27,31,255},1-.35f*night);
+                DrawCylinderEx(p,{p.x,p.y+tireHeight,p.z},.38f,.38f,10,tire);
+                DrawCylinderEx({p.x,p.y+tireHeight,p.z},
+                               {p.x,p.y+2*tireHeight,p.z},.38f,.38f,10,tire);
+                DrawCylinderEx({p.x,p.y+2*tireHeight,p.z},
+                               {p.x,p.y+3*tireHeight,p.z},.38f,.38f,10,tire);
+                DrawCylinderEx({p.x,p.y+3*tireHeight,p.z},
+                               {p.x,p.y+4*tireHeight,p.z},.38f,.38f,10,tire);
             }
         }
         i+=step;
