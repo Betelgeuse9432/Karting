@@ -67,6 +67,26 @@ void testCarAcceleration() {
     }
 }
 
+void testSpeedDistanceCalibration() {
+    // The speedometer and rendered displacement use the same physical unit.
+    close(3.6*kWorldScale*kTravelScale,kKmHPerSpeedUnit,1e-12,
+          "Speedometer and world-distance calibration must agree");
+    close(toKmH(1000.0),300.0,1e-9,"Speedometer 300 km/h reference");
+
+    Simulation sim;
+    sim.selectVehicle(2);
+    for(int i=0;i<10;++i)
+        sim.update({true,false,0,false},1.0/60.0);
+    const Vec2 before=sim.car().position;
+    sim.update({true,false,0,false},1.0/60.0);
+    const double worldDistance=length(sim.car().position-before);
+    const double observedKmH=worldDistance*kWorldScale*60.0*3.6;
+    close(observedKmH,std::abs(toKmH(sim.car().speed)),1e-5,
+          "Displayed speed equals world motion on starting straight");
+    require(std::isfinite(sim.car().heading),
+            "Speed calibration preserves finite steering");
+}
+
 void testGripRainAndDrift() {
     Simulation dry,rain,braking;
     dry.selectVehicle(2);
@@ -140,11 +160,12 @@ int main() {
         testCircuit();
         testProfiles();
         testCarAcceleration();
+        testSpeedDistanceCalibration();
         testGripRainAndDrift();
         testFixedTiming();
         testResetAndParameters();
         testBarrier();
-        std::cout<<"7 suites de tests C++ reussies.\n";
+        std::cout<<"8 suites de tests C++ reussies.\n";
         return 0;
     } catch (const std::exception& e) {
         std::cerr<<"TEST FAILED: "<<e.what()<<'\n';
