@@ -35,13 +35,23 @@ private:
     double emitTime_ = 0;
 };
 
+struct SceneryProp {
+    Vec2 position{};
+    float size=1.f;
+    float yaw=0.f;
+    int kind=0;
+    int color=0;
+};
+
 class WorldRenderer {
 public:
     void initialize(const Track& track);
     void draw(const Track& track, const Weather& weather, int quality,
               Vector3 cameraPosition, double time) const;
 private:
-    std::vector<Vec2> trees_;
+    void drawScenery(const Weather& weather,int quality,
+                     Vector3 cameraPosition,double time) const;
+    std::vector<SceneryProp> scenery_;
 };
 
 class VehicleRenderer {
