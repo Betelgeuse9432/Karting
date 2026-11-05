@@ -84,7 +84,9 @@ void Game::follow(double dt) {
     camera_.up={0,1,0};
     camera_.projection=CAMERA_PERSPECTIVE;
     const float speedRatio=float(std::abs(car.speed)/spec.topSpeed);
-    camera_.fovy=64.f+speedRatio*9.f;
+    // Mild peripheral expansion at speed, no camera orbit changes.
+    const float t=std::clamp(speedRatio,0.f,1.f);
+    camera_.fovy=64.f+14.f*(t*t*(3.f-2.f*t));
 }
 
 void Game::showFault(const std::string& subsystem,const std::string& message) {
@@ -183,6 +185,26 @@ void Game::renderRace() {
         if (quality_>0)
             DrawRectangle(0,0,width,height,Fade({90,110,135,255},r*.08f));
     }
+    // Subtle peripheral streaks above ~55% of top speed.
+    // Only screen edges are affected: braking points and HUD stay readable.
+    const float speedRatio=float(std::clamp(
+        std::abs(sim_.car().speed)/sim_.profile().topSpeed,0.0,1.0));
+    const float intensity=std::clamp((speedRatio-.55f)/.45f,0.f,1.f);
+    if (intensity>.01f && quality_>0) {
+        const int lines=quality_==1?6:10;
+        for (int i=0;i<lines;++i) {
+            const float phase=std::fmod(float(gameTime_)*(1.2f+speedRatio*2.8f)
+                                          +float(i)*.618034f,1.f);
+            const float y=phase*height;
+            const float x=width*(.035f+.08f*float(i%3)/3.f);
+            const float len=(12.f+24.f*intensity)*(height/720.f);
+            const Color streak=Fade(RAYWHITE,.13f*intensity*(1.f-r*.5f));
+            DrawLineEx({x,y},{x+len*.30f,y-len},1.1f,streak);
+            DrawLineEx({float(width)-x,y},
+                       {float(width)-x-len*.30f,y-len},1.1f,streak);
+        }
+    }
+
     safe("hud",[&]{ hud_.draw(sim_,quality_,GetFPS()); });
     if (paused_ || !faultMessage_.empty()) {
         const auto ui=uiViewport();
