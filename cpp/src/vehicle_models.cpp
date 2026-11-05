@@ -365,49 +365,51 @@ void gt3(Color paint,Color glass,Color dark,bool braking) {
 }
 
 void wec(Color paint,Color glass,Color dark,bool braking) {
-    // Clean, rounded Hypercar silhouette. Front is +X.
-    // One continuous body profile: no boxy side pods or stacked body pieces.
-    const Color carbon{25,29,35,255};
-    const Color tail=braking?Color{255,42,36,255}:Color{145,24,30,255};
-    const Color lamp{235,241,224,255};
+    // Simple WEC Hypercar silhouette. Front is +X, rear is -X.
+    const Color carbon{24,28,34,255};
+    const Color glassDark=tone(glass,.72f);
+    const Color headlamp{235,243,232,255};
+    const Color tail=braking?Color{255,38,32,255}:Color{135,22,28,255};
 
-    bodyShell({{-1.46f,.105f,.20f,.31f},
-               {-1.30f,.105f,.27f,.39f},
-               {-1.02f,.11f,.33f,.43f},
-               {-.67f,.12f,.36f,.44f},
-               {-.28f,.12f,.35f,.42f},
-               { .24f,.11f,.31f,.40f},
-               { .70f,.095f,.25f,.37f},
-               {1.08f,.085f,.19f,.32f},
-               {1.34f,.075f,.14f,.25f},
-               {1.48f,.07f,.105f,.16f}},
+    // One continuous, gently rounded body profile.
+    bodyShell({{-1.43f,.085f,.19f,.30f},
+               {-1.20f,.09f,.26f,.39f},
+               {-.82f,.10f,.31f,.43f},
+               {-.38f,.105f,.32f,.42f},
+               { .18f,.10f,.28f,.39f},
+               { .67f,.09f,.23f,.36f},
+               {1.08f,.075f,.18f,.31f},
+               {1.38f,.065f,.13f,.23f},
+               {1.48f,.06f,.105f,.16f}},
               paint,tone(paint,.76f));
 
-    // A single low canopy, blended into the upper body.
-    cockpit(.34f,-.78f,-.055f,-.58f,.345f,.69f,.285f,.19f,
-            glass,tone(paint,.88f));
+    // Compact integrated canopy: lower roof, short windscreen and rear glass.
+    cockpit(.31f,-.73f,-.045f,-.54f,.315f,.66f,.275f,.185f,
+            glassDark,tone(paint,.88f));
 
-    // Essential Hypercar details only: slim splitter, dorsal fin and wing.
-    box(1.43f,.105f,0,.25f,.035f,.91f,carbon);
-    box(-1.43f,.105f,0,.16f,.045f,.84f,carbon);
-    panel({-.96f,.34f,-.012f},{-.25f,.35f,-.012f},
-          {-.59f,.48f,-.012f},{-.91f,.43f,-.012f},carbon);
-    panel({-.96f,.34f,.012f},{-.25f,.35f,.012f},
-          {-.59f,.48f,.012f},{-.91f,.43f,.012f},carbon);
+    // Small front splitter and simple flat floor.
+    box(1.43f,.075f,0,.25f,.035f,.88f,carbon);
+    box(-1.40f,.075f,0,.18f,.045f,.84f,carbon);
 
-    // Small integrated front and rear light signatures.
+    // Two subtle side skirts, kept as straight elements.
     for(float side:{-1.f,1.f}) {
-        box(1.445f,.165f,side*.205f,.018f,.035f,.115f,lamp);
-        box(-1.455f,.205f,side*.285f,.018f,.032f,.13f,tail);
-        // Short aerodynamic floor edge, kept straight and understated.
-        box(-.02f,.125f,side*.405f,1.43f,.035f,.035f,carbon);
+        box(-.08f,.115f,side*.405f,1.30f,.055f,.055f,carbon);
+        // Minimal front and rear light units.
+        box(1.405f,.16f,side*.205f,.025f,.035f,.13f,headlamp);
+        box(-1.435f,.195f,side*.265f,.025f,.035f,.14f,tail);
     }
 
-    // Two simple supports and a thin, wide endurance-racing rear wing.
+    // One low central fin, with no oversized roof scoop or extra decoration.
+    panel({-.34f,.30f,-.012f},{-1.22f,.27f,-.012f},
+          {-1.04f,.43f,-.012f},{-.55f,.40f,-.012f},carbon);
+    panel({-.34f,.30f,.012f},{-1.22f,.27f,.012f},
+          {-1.04f,.43f,.012f},{-.55f,.40f,.012f},carbon);
+
+    // Low twin supports and a thin, restrained rear wing.
     for(float side:{-1.f,1.f})
-        rod({-1.16f,.30f,side*.27f},
-            {-1.30f,.54f,side*.31f},.018f,carbon);
-    rearWing(-1.34f,.55f,1.02f,.14f,carbon);
+        rod({-1.02f,.27f,side*.27f},
+            {-1.18f,.48f,side*.30f},.018f,carbon);
+    rearWing(-1.25f,.50f,.98f,.14f,carbon);
 }
 
 void wheels(const Car& car,const VehicleProfile& p,int index) {
@@ -466,7 +468,15 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
     case 0: kart(paint);break;
     case 1: offRoad(paint,glass,dark,car.brake>.1);break;
     case 2: gt3(paint,glass,dark,car.brake>.1);break;
-    case 3: wec(paint,glass,dark,car.brake>.1);break;
+    case 3:
+        // Nathan's adjusted hypercar body: wheels and driving physics
+        // retain their original reference positions.
+        rlPushMatrix();
+        rlTranslatef(0,.035f,0);
+        rlScalef(.96f,.96f,1.0f);
+        wec(paint,glass,dark,car.brake>.1);
+        rlPopMatrix();
+        break;
     default: gt3(paint,glass,dark,car.brake>.1);break;
     }
     rlPopMatrix();
