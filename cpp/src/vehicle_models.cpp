@@ -163,60 +163,76 @@ void offRoad(Color paint,Color glass,Color dark,bool braking) {
 }
 
 void gt3(Color paint,Color glass,Color dark,bool braking) {
-    // BMW M4 GT3-inspired silhouette: tall squared-off nose, long bonnet,
-    // muscular arches, compact greenhouse and a wide GT rear wing.
-    const Color carbon{24,28,34,255};
-    const Color grille{10,13,18,255};
-    bodyShell({{-1.13f,.14f,.40f,.43f},
-               {-.82f,.15f,.52f,.55f},
-               {-.28f,.15f,.53f,.52f},
-               { .38f,.14f,.43f,.49f},
-               { .88f,.12f,.32f,.43f},
-               {1.16f,.105f,.23f,.34f}},paint,tone(paint,.72f));
-    cockpit(.35f,-.78f,.00f,-.55f,.51f,.91f,.39f,.28f,
-            glass,tone(paint,.82f));
-    // Signature twin kidney grille, framed in dark carbon at the nose.
-    box(1.174f,.255f,0,.035f,.235f,.47f,carbon);
-    box(1.195f,.255f,-.125f,.025f,.205f,.105f,grille);
-    box(1.195f,.255f,.125f,.025f,.205f,.105f,grille);
-    for(int bar=0;bar<5;++bar) {
-        const float y=.17f+bar*.041f;
-        box(1.211f,y,0,.012f,.012f,.43f,{72,78,87,255});
-    }
-    // Low, angular LED headlamps and pronounced front splitter.
-    for(float side:{-1.f,1.f}) {
-        const float z=side*.50f;
-        box(1.13f,.385f,side*.265f,.055f,.075f,.19f,
-            {225,238,245,255});
-        box(1.17f,.13f,side*.40f,.20f,.045f,.28f,carbon);
-        // Wide GT3 wheel arches and deep side skirts.
-        box(-.70f,.43f,side*.47f,.57f,.17f,.16f,tone(paint,.88f));
-        box(-.13f,.18f,z,.86f,.09f,.13f,carbon);
-        box(-.58f,.34f,side*.555f,.30f,.075f,.025f,grille);
-        box(-.40f,.37f,side*.565f,.13f,.025f,.018f,
-            {115,124,134,255});
-        box(.39f,.79f,side*.35f,.12f,.075f,.085f,dark);
-        // Rear lamps and vertical diffuser fins.
-        box(-1.13f,.36f,side*.34f,.035f,.075f,.19f,
-            braking?RED:Color{139,25,29,255});
-        box(-1.12f,.18f,side*.30f,.13f,.09f,.16f,carbon);
-        rod({-1.01f,.46f,side*.31f},
-            {-1.01f,.63f,side*.31f},.019f,carbon);
-    }
-    box(1.22f,.105f,0,.25f,.045f,1.08f,carbon); // front splitter
-    box(-1.17f,.12f,0,.22f,.09f,.98f,carbon); // rear diffuser
-    // Two visible exhaust outlets beneath the rear bumper.
-    for(float side:{-1.f,1.f}) {
-        rod({-1.19f,.245f,side*.22f},{-1.29f,.245f,side*.22f},
-            .052f,{116,122,130,255});
-        rod({-1.29f,.245f,side*.22f},{-1.305f,.245f,side*.22f},
-            .038f,{34,38,44,255});
-    }
-    rearWing(-1.12f,.68f,1.12f,.19f,carbon);
-    for(float z:{-.25f,-.13f,0.f,.13f,.25f})
-        box(.72f,.37f,z,.24f,.022f,.05f,carbon); // bonnet vents
-}
+    // BMW M4 GT3: broad shoulders, long bonnet, low greenhouse and planted stance.
+    const Color carbon{22,25,31,255};
+    const Color grille{7,10,15,255};
+    const Color intake{12,15,20,255};
+    const Color headlamp{225,238,245,255};
 
+    // Wide, muscular body with a relatively flat bonnet and a full rear haunch.
+    bodyShell({{-1.30f,.13f,.34f,.39f},
+               {-1.12f,.14f,.43f,.51f},
+               {-.78f,.15f,.47f,.57f},
+               {-.25f,.15f,.48f,.57f},
+               { .35f,.14f,.44f,.55f},
+               { .78f,.13f,.39f,.54f},
+               {1.08f,.12f,.31f,.48f},
+               {1.25f,.11f,.24f,.39f}},paint,tone(paint,.70f));
+
+    // A lower, wider cabin. The long windscreen flows into a compact roof.
+    cockpit(.40f,-.79f,.10f,-.58f,.47f,.79f,.43f,.33f,
+            glass,tone(paint,.78f));
+
+    // Front bumper, deep lower intake and the twin BMW kidney grilles.
+    box(1.245f,.245f,0,.055f,.25f,.72f,carbon);
+    box(1.278f,.265f,-.145f,.025f,.205f,.145f,grille);
+    box(1.278f,.265f,.145f,.025f,.205f,.145f,grille);
+    for(int bar=0;bar<5;++bar) {
+        const float y=.185f+bar*.039f;
+        box(1.292f,y,0,.012f,.010f,.57f,{70,77,86,255});
+    }
+    box(1.245f,.115f,0,.24f,.045f,1.18f,carbon); // wide splitter
+    box(1.18f,.205f,0,.10f,.105f,.84f,intake); // lower air intake
+
+    for(float side:{-1.f,1.f}) {
+        // Long, narrow LED signatures rather than square headlights.
+        box(1.19f,.405f,side*.365f,.075f,.055f,.20f,headlamp);
+        box(1.20f,.365f,side*.365f,.04f,.018f,.22f,{65,165,220,255});
+
+        // Pronounced front/rear arches, extending over the wide GT3 tyres.
+        box(.48f,.405f,side*.535f,.56f,.19f,.12f,tone(paint,.88f));
+        box(-.83f,.425f,side*.555f,.61f,.20f,.13f,tone(paint,.88f));
+        box(.02f,.19f,side*.565f,1.18f,.10f,.10f,carbon); // deep sill
+        box(-.25f,.34f,side*.626f,.32f,.075f,.025f,intake);
+        box(-.06f,.36f,side*.64f,.15f,.025f,.018f,
+            {112,122,133,255}); // side vent trim
+        box(.50f,.70f,side*.39f,.13f,.065f,.09f,dark); // mirrors
+
+        // Rear light bar and lower bumper details.
+        box(-1.285f,.365f,side*.365f,.025f,.065f,.20f,
+            braking?RED:Color{155,24,31,255});
+        box(-1.25f,.205f,side*.32f,.14f,.10f,.19f,carbon);
+        // Exhaust tips sit low and outboard at the rear.
+        rod({-1.26f,.255f,side*.245f},{-1.37f,.255f,side*.245f},
+            .052f,{135,141,149,255});
+        rod({-1.37f,.255f,side*.245f},{-1.385f,.255f,side*.245f},
+            .037f,{31,35,42,255});
+    }
+
+    // Subtle bonnet creases and vents give the front some real car volume.
+    for(float side:{-1.f,1.f}) {
+        box(.78f,.475f,side*.235f,.42f,.018f,.035f,tone(paint,1.16f));
+        for(int vent=0;vent<3;++vent)
+            box(.30f,.486f,side*(.20f+vent*.055f),.16f,.012f,.018f,carbon);
+    }
+
+    // Rear deck, diffuser and a wide but low GT wing.
+    box(-1.20f,.17f,0,.20f,.10f,1.02f,carbon);
+    box(-1.22f,.12f,0,.23f,.045f,1.12f,carbon);
+    rearWing(-1.20f,.66f,1.20f,.18f,carbon);
+    for(float z:{-.39f,-.20f,0.f,.20f,.39f})
+        box(-1.12f,.16f,z,.18f,.075f,.025f,{48,54,62,255});
+}
 void wec(Color paint,Color glass,Color dark,bool braking) {
     // Simple WEC Hypercar silhouette. Front is +X, rear is -X.
     const Color carbon{24,28,34,255};
