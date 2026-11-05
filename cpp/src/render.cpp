@@ -114,46 +114,57 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
             paint(Track::halfWidth+Track::kerb+5,
                   Track::halfWidth+Track::kerb+7,YELLOW);
         }
-        // Selective barriers: low metal walls on exposed sections,
-        // with open grass runoff everywhere else.
+        // Barriers follow the geometry: only the outside of corners,
+        // plus short sections directly in front of spectator grandstands.
+        const Vec2 incoming=center[i]-center[(i+count-1)%count];
+        const Vec2 outgoing=center[j]-center[i];
+        const double directionScale=std::max(1e-8,length(incoming)*length(outgoing));
+        const double turn= (incoming.x*outgoing.y-incoming.y*outgoing.x)/directionScale;
+        const bool isCorner=std::abs(turn)>.002;
+        const int outsideSide=turn>0?-1:1;
+
+        bool publicZone=false;
+        for(std::size_t stand=95;stand<330;stand+=20) {
+            if(i>=stand && i<stand+10) { publicZone=true; break; }
+        }
+
+        // Selected corner exits use tyre walls instead of metal barriers.
         const double progress=double(i)/double(count);
-        const bool barrierZone=
-            (progress>.075 && progress<.155) ||
-            (progress>.385 && progress<.465) ||
-            (progress>.690 && progress<.755);
-        // At tyre zones, the tyre stacks replace the metal wall entirely.
-        const bool tyreZone=
+        const bool tyreSection=
             (progress>.125 && progress<.145) ||
             (progress>.425 && progress<.445) ||
             (progress>.715 && progress<.735);
-        if (barrierZone && !tyreZone && d2<58*58) {
-            for (int side:{-1,1}) {
-                if (side>0 && track.isPitIndex(i)) continue;
-                const double offset=side*(Track::wall-5);
-                const auto baseA=worldPoint(track.point(i,offset),1);
-                const auto baseB=worldPoint(track.point(j,offset),1);
-                const auto topA=worldPoint(track.point(i,offset),1+.58f/kWorldScale);
-                const auto topB=worldPoint(track.point(j,offset),1+.58f/kWorldScale);
-                quad(baseA,baseB,topB,topA,
-                     shaded({174,179,187,255},1-.48f*night));
-                DrawLine3D(topA,topB,shaded(WHITE,1-.5f*night));
-            }
-        }
 
-        // Short, continuous two-tyre-high walls. These are barriers in
-        // their own right, not tyres placed in front of a metal wall.
-        if (tyreZone && quality>0 && d2<48*48 && i%2==0) {
+        if (d2<58*58) {
             for (int side:{-1,1}) {
                 if (side>0 && track.isPitIndex(i)) continue;
-                const auto p=worldPoint(track.point(i,side*(Track::wall-5)),1);
-                const float tireHeight=.28f;
-                const float radius=.34f;
-                const Color tire=shaded({25,27,31,255},1-.35f*night);
-                DrawCylinderEx(p,{p.x,p.y+tireHeight,p.z},
-                               radius,radius,12,tire);
-                DrawCylinderEx({p.x,p.y+tireHeight,p.z},
-                               {p.x,p.y+2*tireHeight,p.z},
-                               radius,radius,12,tire);
+                const bool outsideCorner=isCorner && side==outsideSide;
+                const bool spectatorSide=publicZone && side==-1;
+                if(!outsideCorner && !spectatorSide) continue;
+
+                const bool useTyres=tyreSection && outsideCorner;
+                if(useTyres) {
+                    if(quality>0 && i%2==0) {
+                        const auto p=worldPoint(track.point(i,side*(Track::wall-5)),1);
+                        const float tireHeight=.28f;
+                        const float radius=.34f;
+                        const Color tire=shaded({25,27,31,255},1-.35f*night);
+                        DrawCylinderEx(p,{p.x,p.y+tireHeight,p.z},
+                                       radius,radius,12,tire);
+                        DrawCylinderEx({p.x,p.y+tireHeight,p.z},
+                                       {p.x,p.y+2*tireHeight,p.z},
+                                       radius,radius,12,tire);
+                    }
+                } else {
+                    const double offset=side*(Track::wall-5);
+                    const auto baseA=worldPoint(track.point(i,offset),1);
+                    const auto baseB=worldPoint(track.point(j,offset),1);
+                    const auto topA=worldPoint(track.point(i,offset),1+.58f/kWorldScale);
+                    const auto topB=worldPoint(track.point(j,offset),1+.58f/kWorldScale);
+                    quad(baseA,baseB,topB,topA,
+                         shaded({174,179,187,255},1-.48f*night));
+                    DrawLine3D(topA,topB,shaded(WHITE,1-.5f*night));
+                }
             }
         }
         i+=step;
