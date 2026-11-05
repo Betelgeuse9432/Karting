@@ -149,9 +149,9 @@ void Game::reset() {
 
 void Game::handleMenu() {
     if (IsKeyPressed(KEY_LEFT)||IsKeyPressed(KEY_Q)||IsKeyPressed(KEY_A))
-        sim_.selectVehicle((sim_.vehicleIndex()+3)%4);
+        sim_.selectVehicle((sim_.vehicleIndex()+4)%5);
     else if (IsKeyPressed(KEY_RIGHT)||IsKeyPressed(KEY_D))
-        sim_.selectVehicle((sim_.vehicleIndex()+1)%4);
+        sim_.selectVehicle((sim_.vehicleIndex()+1)%5);
     if (IsKeyPressed(KEY_UP))
         sim_.selectVehicle(sim_.vehicleIndex(),(sim_.colorIndex()+5)%6);
     else if (IsKeyPressed(KEY_DOWN)||IsKeyPressed(KEY_C))
