@@ -194,43 +194,153 @@ void gt3(Color paint,Color glass,Color dark,bool braking) {
 }
 
 void wec(Color paint,Color glass,Color dark,bool braking) {
-    // Long, very low prototype. The rear wing must NOT eclipse the road.
-    bodyShell({{-1.43f,.10f,.24f,.36f},
-               {-1.09f,.11f,.32f,.45f},
-               {-.52f,.12f,.34f,.41f},
-               { .15f,.10f,.29f,.39f},
-               { .92f,.09f,.20f,.36f},
-               {1.46f,.075f,.11f,.23f}},paint,tone(paint,.72f));
-    // Independent raised shoulders make the silhouette read as a prototype.
+    // Porsche 963-inspired Hypercar proportions. Front is +X, rear is -X.
+    // This is a procedural model: all geometry stays independent from physics.
+    const Color carbon{22,25,31,255};
+    const Color carbonHi{43,48,57,255};
+    const Color pearl{232,235,229,255};
+    const Color accent{38,190,207,255};
+    const Color lamp{224,246,247,255};
+    const Color tail=braking?Color{255,35,28,255}:Color{128,20,27,255};
+
+    // Main monocoque: low nose, broad front shoulders, pinched waist,
+    // high rear haunches and a tapered tail.
+    bodyShell({{-1.52f,.075f,.20f,.31f},
+               {-1.24f,.085f,.27f,.43f},
+               {-.82f,.095f,.31f,.46f},
+               {-.40f,.090f,.29f,.42f},
+               { .18f,.085f,.25f,.39f},
+               { .78f,.075f,.20f,.35f},
+               {1.23f,.065f,.145f,.29f},
+               {1.53f,.055f,.095f,.20f}},
+              paint,tone(paint,.70f));
+
+    // Separate sculpted fenders create the wide 963 shoulders.
     for(float side:{-1.f,1.f}) {
         rlPushMatrix();
-        rlTranslatef(0,0,side*.37f);
-        bodyShell({{-1.29f,.11f,.31f,.16f},
-                   {-.94f,.11f,.40f,.18f},
-                   {-.31f,.11f,.26f,.16f},
-                   {.64f,.09f,.25f,.15f},
-                   {1.31f,.08f,.13f,.08f}},
-                  tone(paint,1.06f),tone(paint,.78f));
+        rlTranslatef(0,0,side*.34f);
+        bodyShell({{-1.30f,.09f,.29f,.12f},
+                   {-.98f,.10f,.43f,.19f},
+                   {-.70f,.10f,.40f,.20f},
+                   {-.38f,.09f,.28f,.17f},
+                   { .45f,.08f,.25f,.15f},
+                   { .91f,.07f,.22f,.12f},
+                   {1.31f,.06f,.13f,.07f}},
+                  tone(paint,1.08f),tone(paint,.76f));
         rlPopMatrix();
-        box(-.78f,.30f,side*.44f,.40f,.045f,.14f,dark);
-        box(-.64f,.15f,side*.44f,.68f,.07f,.12f,dark);
-        box(1.40f,.18f,side*.30f,.055f,.054f,.20f,
-            {237,237,209,255});
-        box(-1.42f,.25f,side*.31f,.06f,.048f,.18f,
-            braking?RED:Color{126,21,26,255});
-        rod({-1.37f,.30f,side*.33f},
-            {-1.37f,.49f,side*.33f},.018f,dark);
+
+        // Sidepod lower edge and carbon floor.
+        box(-.12f,.115f,side*.405f,.98f,.075f,.105f,carbon);
+        box(-.17f,.205f,side*.447f,.70f,.10f,.018f,
+            tone(paint,.82f));
+
+        // Deep sidepod cooling inlet, with a bright leading lip.
+        box(-.43f,.285f,side*.456f,.34f,.105f,.018f,carbon);
+        box(-.43f,.337f,side*.468f,.29f,.014f,.012f,accent);
+        for(int vent=0;vent<4;++vent)
+            box(-.54f+vent*.067f,.286f,side*.470f,
+                .018f,.068f,.012f,carbonHi);
+
+        // Front wheel arch crown and rear haunch highlight.
+        box(.79f,.205f,side*.355f,.47f,.045f,.13f,
+            tone(paint,1.13f));
+        box(-.88f,.205f,side*.395f,.43f,.045f,.13f,
+            tone(paint,1.10f));
+
+        // Mirrors on slim stalks.
+        rod({.18f,.48f,side*.29f},{.29f,.54f,side*.49f},
+            .014f,carbon);
+        box(.31f,.55f,side*.50f,.16f,.075f,.105f,carbon);
+        box(.33f,.57f,side*.552f,.075f,.018f,.012f,accent);
+
+        // Front corner dive planes and small canards.
+        panel({1.05f,.19f,side*.34f},
+              {1.38f,.13f,side*.31f},
+              {1.20f,.24f,side*.48f},
+              {1.03f,.23f,side*.43f},carbon);
+        panel({1.19f,.18f,side*.43f},
+              {1.43f,.12f,side*.36f},
+              {1.31f,.18f,side*.49f},
+              {1.20f,.21f,side*.48f},tone(paint,.78f));
+
+        // Headlight signature: two compact LED blades per corner.
+        box(1.405f,.175f,side*.205f,.055f,.036f,.135f,carbon);
+        box(1.438f,.183f,side*.205f,.018f,.014f,.105f,lamp);
+        box(1.405f,.145f,side*.205f,.025f,.012f,.085f,accent);
+
+        // Rear lamp strip and rear corner aero.
+        box(-1.48f,.205f,side*.205f,.035f,.035f,.17f,tail);
+        box(-1.34f,.17f,side*.35f,.20f,.045f,.12f,carbon);
     }
-    cockpit(.29f,-.77f,-.07f,-.56f,.37f,.75f,.29f,.18f,
-            glass,tone(paint,.78f));
-    // Shallow dorsal fin, with no full-height vertical panel.
-    panel({-.91f,.43f,-.014f},{-.20f,.44f,-.014f},
-          {-.60f,.63f,-.014f},{-.90f,.57f,-.014f},dark);
-    panel({-.91f,.43f,.014f},{-.20f,.44f,.014f},
-          {-.60f,.63f,.014f},{-.90f,.57f,.014f},dark);
-    rearWing(-1.43f,.53f,.95f,.13f,dark);
-    box(1.45f,.10f,0,.22f,.05f,.95f,dark); // floor
-    box(-1.44f,.11f,0,.18f,.07f,.89f,dark);
+
+    // Low, wide front splitter with end fences.
+    box(1.48f,.065f,0,.30f,.035f,.91f,carbon);
+    box(1.58f,.082f,0,.10f,.018f,.83f,carbonHi);
+    for(float side:{-1.f,1.f}) {
+        box(1.42f,.11f,side*.405f,.19f,.12f,.025f,carbon);
+        rod({1.37f,.10f,side*.43f},{1.23f,.18f,side*.43f},
+            .012f,carbonHi);
+    }
+
+    // Contrasting custom-livery centre stripe, broken around the cockpit.
+    box(.69f,.205f,0,.88f,.012f,.105f,pearl);
+    box(1.20f,.145f,0,.54f,.012f,.095f,pearl);
+    box(.98f,.218f,0,.23f,.014f,.025f,accent);
+
+    // Cockpit canopy, dark panoramic glass and raised roof.
+    cockpit(.34f,-.79f,-.08f,-.58f,.335f,.755f,.285f,.185f,
+            tone(glass,1.12f),tone(paint,.83f));
+    box(-.13f,.766f,0,.36f,.025f,.245f,tone(paint,1.12f));
+    // Windscreen lower frame and roof centre accent.
+    rod({.34f,.34f,-.285f},{.34f,.34f,.285f},.012f,carbonHi);
+    box(-.13f,.784f,0,.42f,.012f,.025f,accent);
+
+    // Roof air scoop, with dark opening and two cooling slots.
+    box(-.47f,.755f,0,.30f,.085f,.145f,carbon);
+    box(-.32f,.802f,0,.12f,.012f,.105f,carbonHi);
+    for(int slot=0;slot<3;++slot)
+        box(-.52f+slot*.055f,.803f,0,.018f,.008f,.075f,accent);
+
+    // Central dorsal fin: a long, tapered blade rather than a flat wall.
+    panel({-.30f,.30f,-.018f},{-1.30f,.27f,-.018f},
+          {-1.12f,.57f,-.018f},{-.55f,.48f,-.018f},carbon);
+    panel({-.30f,.30f,.018f},{-1.30f,.27f,.018f},
+          {-1.12f,.57f,.018f},{-.55f,.48f,.018f},carbon);
+    rod({-.38f,.31f,0},{-1.22f,.29f,0},.012f,accent);
+
+    // Rear deck, engine-cover vents and a full-width diffuser.
+    box(-1.08f,.155f,0,.60f,.045f,.56f,tone(paint,.83f));
+    for(int vent=0;vent<7;++vent) {
+        const float z=-.24f+vent*.08f;
+        box(-.99f,.184f,z,.31f,.012f,.018f,carbon);
+    }
+    box(-1.48f,.075f,0,.30f,.045f,.92f,carbon);
+    for(int fin=0;fin<7;++fin) {
+        const float z=-.39f+fin*.13f;
+        panel({-1.57f,.045f,z},
+              {-1.18f,.045f,z},
+              {-1.20f,.16f,z+.025f},
+              {-1.53f,.14f,z+.025f},carbonHi);
+    }
+    box(-1.53f,.205f,0,.055f,.025f,.72f,tail);
+
+    // Rear wing: two swan-neck supports, broad blade and endplates.
+    for(float side:{-1.f,1.f}) {
+        rod({-.98f,.30f,side*.29f},{-1.12f,.66f,side*.31f},
+            .025f,carbon);
+        rod({-1.18f,.30f,side*.29f},{-1.12f,.66f,side*.31f},
+            .022f,carbonHi);
+        box(-1.13f,.55f,side*.49f,.24f,.34f,.025f,carbon);
+        box(-1.13f,.55f,side*.505f,.12f,.19f,.009f,accent);
+    }
+    rearWing(-1.13f,.69f,1.12f,.24f,carbon);
+    box(-1.13f,.715f,0,.17f,.012f,.72f,carbonHi);
+
+    // Small identification panels and tow points complete the prototype look.
+    box(.88f,.235f,0,.22f,.012f,.055f,accent);
+    box(-1.38f,.13f,0,.10f,.018f,.055f,pearl);
+    for(float side:{-1.f,1.f})
+        box(1.30f,.095f,side*.16f,.075f,.018f,.035f,pearl);
 }
 
 void wheels(const Car& car,const VehicleProfile& p,int index) {
