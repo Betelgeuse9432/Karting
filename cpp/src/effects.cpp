@@ -71,13 +71,13 @@ void Effects::update(const Simulation& sim, double dt) {
                            side*(direction*std::max(10.0,p.halfWheelTrack*.55));
             const double flicker=std::abs(velocity(generator_));
             particles_.push_back({pos,elevation(pos)+13,
-                -forward.x*(145+flicker*75),
-                -forward.y*(145+flicker*75),
-                8+flicker*28,.20,.20,1});
+                -forward.x*(205+flicker*105),
+                -forward.y*(205+flicker*105),
+                10+flicker*35,.30,.30,1});
             particles_.push_back({pos+forward*(-3),elevation(pos)+13,
-                -forward.x*(175+flicker*65),
-                -forward.y*(175+flicker*65),
-                4+flicker*20,.12,.12,3});
+                -forward.x*(235+flicker*95),
+                -forward.y*(235+flicker*95),
+                6+flicker*28,.23,.23,3});
         }
     }
     previousThrottle_=car.throttle;
@@ -119,17 +119,17 @@ void Effects::draw3D(const Camera3D& camera) const {
             const float length=std::sqrt(float(p.dx*p.dx+p.dy*p.dy));
             const float dirX=length>0.001f?float(p.dx)/length:0.0f;
             const float dirY=length>0.001f?float(p.dy)/length:0.0f;
-            const Vector3 tip={pos.x+dirX*.24f,
-                               pos.y+float(p.dz)*.0012f,
-                               pos.z+dirY*.24f};
+            const Vector3 tip={pos.x+dirX*.48f,
+                               pos.y+float(p.dz)*.0018f,
+                               pos.z+dirY*.48f};
             if (p.kind==1) {
-                DrawCylinderEx(pos,tip,.075f*age,.012f*age,7,
+                DrawCylinderEx(pos,tip,.13f*age,.018f*age,7,
                                Fade(ORANGE,age));
-                DrawSphere(pos,.065f*age,Fade(RED,age));
+                DrawSphere(pos,.105f*age,Fade(RED,age));
             } else {
-                DrawCylinderEx(pos,tip,.035f*age,.004f*age,6,
+                DrawCylinderEx(pos,tip,.065f*age,.008f*age,6,
                                Fade(YELLOW,age));
-                DrawSphere(pos,.035f*age,Fade(WHITE,age));
+                DrawSphere(pos,.055f*age,Fade(WHITE,age));
             }
         }
     }
