@@ -33,14 +33,6 @@ void panel(Vector3 a,Vector3 b,Vector3 c,Vector3 d,Color color) {
     DrawTriangle3D(d,c,a,color);
 }
 
-void ellipsoid(float x,float y,float z,float sx,float sy,float sz,Color color) {
-    rlPushMatrix();
-    rlTranslatef(x,y,z);
-    rlScalef(sx,sy,sz);
-    DrawSphere({0,0,0},1.0f,color);
-    rlPopMatrix();
-}
-
 struct Section {
     float x;
     float bottom;
@@ -288,17 +280,6 @@ void wec(Color paint,Color glass,Color dark,bool braking) {
         box(1.42f,.11f,side*.405f,.19f,.12f,.025f,carbon);
         rod({1.37f,.10f,side*.43f},{1.23f,.18f,side*.43f},
             .012f,carbonHi);
-    }
-
-    // Rounded upper body volumes: soften the flat panel transitions and
-    // give the hood and rear haunches a more sculpted prototype silhouette.
-    ellipsoid(.83f,.205f,0,.62f,.105f,.285f,tone(paint,1.035f));
-    ellipsoid(-1.00f,.205f,0,.46f,.105f,.355f,tone(paint,.96f));
-    for(float side:{-1.f,1.f}) {
-        ellipsoid(.76f,.235f,side*.355f,.48f,.145f,.175f,
-                  tone(paint,1.08f));
-        ellipsoid(-.91f,.235f,side*.385f,.43f,.145f,.17f,
-                  tone(paint,1.045f));
     }
 
     // Contrasting custom-livery centre stripe, broken around the cockpit.
