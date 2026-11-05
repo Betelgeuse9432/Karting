@@ -94,7 +94,7 @@ private:
     bool menu_ = true;
     bool paused_ = false;
     bool boostQueued_ = false;
-    int quality_ = 1;
+    int quality_ = 2;
     double gameTime_ = 0;
     double followAngle_ = 0;
     double cameraHeight_ = 0;
