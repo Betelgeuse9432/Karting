@@ -50,6 +50,20 @@ public:
               int vehicleIndex, int colorIndex, bool night) const;
 };
 
+// Logical HUD dimensions preserve the original 1100x720 layout at any
+// desktop resolution, while 3D renders directly to the native window.
+struct UiViewport {
+    float scale=1.f;
+    int width=1100;
+    int height=720;
+    Camera2D camera() const {
+        Camera2D value{};
+        value.zoom=scale;
+        return value;
+    }
+};
+UiViewport uiViewport();
+
 class HudRenderer {
 public:
     void draw(const Simulation& sim, int quality, int fps) const;
