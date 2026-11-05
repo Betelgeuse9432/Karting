@@ -71,7 +71,9 @@ public:
     static constexpr double kerb = 22;
     static constexpr double wall = 242;
     static constexpr double pitWidth = 150;
-    static constexpr int subdivisions = 45;
+    static constexpr int subdivisions = 24;
+    static constexpr double worldWidth = 24000;
+    static constexpr double worldHeight = 20000;
 
     Track();
     const std::vector<Vec2>& center() const { return center_; }
