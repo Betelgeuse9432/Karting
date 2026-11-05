@@ -8,6 +8,7 @@ void Effects::clear() {
     marks_.clear();
     particles_.clear();
     lastSkidding_=false;
+    previousThrottle_=false;
     emitTime_=0;
     for (auto& p:previous_) p={};
 }
@@ -63,12 +64,23 @@ void Effects::update(const Simulation& sim, double dt) {
             }
         }
     }
-    if (!car.throttle && car.speed>260 &&
-        std::uniform_int_distribution<int>(0,25)(generator_)==0) {
-        const auto pos=car.position+forward*(p.rearAxle-8);
-        particles_.push_back({pos,elevation(pos)+16,
-                    -forward.x*90,-forward.y*90,0,.17,.17,1});
+    // A short twin-exhaust backfire when the driver lifts off the throttle.
+    if (previousThrottle_ && !car.throttle && car.speed>180) {
+        for (const int direction : {-1,1}) {
+            const auto pos=car.position+forward*(p.rearAxle-10) +
+                           side*(direction*std::max(10.0,p.halfWheelTrack*.55));
+            const double flicker=std::abs(velocity(generator_));
+            particles_.push_back({pos,elevation(pos)+13,
+                -forward.x*(145+flicker*75),
+                -forward.y*(145+flicker*75),
+                8+flicker*28,.20,.20,1});
+            particles_.push_back({pos+forward*(-3),elevation(pos)+13,
+                -forward.x*(175+flicker*65),
+                -forward.y*(175+flicker*65),
+                4+flicker*20,.12,.12,3});
+        }
     }
+    previousThrottle_=car.throttle;
     for (auto& particle:particles_) {
         particle.location=particle.location+Vec2{particle.dx,particle.dy}*dt;
         particle.height+=particle.dz*dt;
@@ -99,10 +111,22 @@ void Effects::draw3D(const Camera3D& camera) const {
         if (p.kind==0)
             DrawSphere(pos,(1.0f-age)*.24f+.09f,
                        Fade(LIGHTGRAY,age*.55f));
-        else if (p.kind==1)
-            DrawSphere(pos,.16f*age,Fade(ORANGE,age));
-        else
-            DrawSphere(pos,.08f*age,Fade(YELLOW,age));
+        else {
+            const Vector2 direction=Vector2Normalize(
+                {float(p.dx),float(p.dy)});
+            const Vector3 tip={pos.x+direction.x*.24f,
+                               pos.y+float(p.dz)*.0012f,
+                               pos.z+direction.y*.24f};
+            if (p.kind==1) {
+                DrawCylinderEx(pos,tip,.075f*age,.012f*age,7,
+                               Fade(ORANGE,age));
+                DrawSphere(pos,.065f*age,Fade(RED,age));
+            } else {
+                DrawCylinderEx(pos,tip,.035f*age,.004f*age,6,
+                               Fade(YELLOW,age));
+                DrawSphere(pos,.035f*age,Fade(WHITE,age));
+            }
+        }
     }
 }
 
