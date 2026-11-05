@@ -33,6 +33,8 @@ private:
     std::vector<Particle> particles_;
     std::array<Vec2,4> previous_{};
     bool lastSkidding_ = false;
+    double previousThrottle_ = 0;
+    double backfireCooldown_ = 0;
     double emitTime_ = 0;
 };
 
