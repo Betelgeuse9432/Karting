@@ -199,14 +199,8 @@ void gt3(Color paint,Color glass,Color dark,bool braking) {
         box(1.19f,.405f,side*.365f,.075f,.055f,.20f,headlamp);
         box(1.20f,.365f,side*.365f,.04f,.018f,.22f,{65,165,220,255});
 
-        // Pronounced front/rear arches, extending over the wide GT3 tyres.
-        box(.48f,.405f,side*.535f,.56f,.19f,.12f,tone(paint,.88f));
-        box(-.83f,.425f,side*.555f,.61f,.20f,.13f,tone(paint,.88f));
-        box(.02f,.19f,side*.565f,1.18f,.10f,.10f,carbon); // deep sill
-        box(-.25f,.34f,side*.626f,.32f,.075f,.025f,intake);
-        box(-.06f,.36f,side*.64f,.15f,.025f,.018f,
-            {112,122,133,255}); // side vent trim
-        box(.50f,.70f,side*.39f,.13f,.065f,.09f,dark); // mirrors
+        // A single low side skirt, aligned with the body edge.
+        box(.02f,.17f,side*.555f,1.18f,.055f,.07f,carbon);
 
         // Rear light bar and lower bumper details.
         box(-1.285f,.365f,side*.365f,.025f,.065f,.20f,
@@ -219,19 +213,7 @@ void gt3(Color paint,Color glass,Color dark,bool braking) {
             .037f,{31,35,42,255});
     }
 
-    // Subtle bonnet creases and vents give the front some real car volume.
-    for(float side:{-1.f,1.f}) {
-        box(.78f,.475f,side*.235f,.42f,.018f,.035f,tone(paint,1.16f));
-        for(int vent=0;vent<3;++vent)
-            box(.30f,.486f,side*(.20f+vent*.055f),.16f,.012f,.018f,carbon);
-    }
-
-    // Rear deck, diffuser and a wide but low GT wing.
-    box(-1.20f,.17f,0,.20f,.10f,1.02f,carbon);
-    box(-1.22f,.12f,0,.23f,.045f,1.12f,carbon);
-    rearWing(-1.20f,.66f,1.20f,.18f,carbon);
-    for(float z:{-.39f,-.20f,0.f,.20f,.39f})
-        box(-1.12f,.16f,z,.18f,.075f,.025f,{48,54,62,255});
+    // Keep the rear body clean: no decorative blocks or floating wing pieces.
 }
 void wec(Color paint,Color glass,Color dark,bool braking) {
     // Simple WEC Hypercar silhouette. Front is +X, rear is -X.
@@ -282,7 +264,7 @@ void wec(Color paint,Color glass,Color dark,bool braking) {
 }
 
 void wheels(const Car& car,const VehicleProfile& p,int index) {
-    // Give the WEC a longer visual wheelbase without changing its physics.
+    // GT3 wheel centres sit close to the actual front and rear wheel arches.
     const float axleVisualScale=index==3?1.12f:1.0f;
     const float front=float(p.frontAxle*kWorldScale*axleVisualScale);
     const float rear=float(p.rearAxle*kWorldScale*axleVisualScale);
