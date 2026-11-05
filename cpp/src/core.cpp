@@ -35,19 +35,28 @@ const std::array<VehicleProfile, 4>& profiles() {
 }
 
 Track::Track() {
-    // Preserve the 180-degree eastern hairpin, with two separate arms.
-    // The remaining course uses longer, tangent-aligned sweepers rather
-    // than abrupt alternating changes of direction.
+    // Four distinct driving sectors. The starting straight and original
+    // eastern 180-degree hairpin (points 0..11) are intentionally unchanged.
+    // After that: flowing high-speed esses, a double-apex southern complex,
+    // a technical west section and a faster final run to the start.
+    // The closed Catmull-Rom spline remains free of intersections.
     const std::vector<Vec2> raw{
+        // Sector 1: start straight and signature 180-degree hairpin.
         {8500,2400}, {11200,2380}, {14000,2400}, {17000,2400},
         {18900,2400}, {19700,2480}, {20250,2800}, {20450,3350},
         {20250,3900}, {19700,4180}, {18900,4200}, {17400,4200},
-        {16100,4350}, {15100,5050}, {14700,6200}, {15100,7550},
-        {16400,8750}, {18200,9900}, {19600,11600}, {19600,13200},
-        {18300,14700}, {16300,16000}, {14100,16700}, {11900,16500},
-        {9800,16000}, {7700,16500}, {5500,15800}, {3700,14300},
-        {2900,12200}, {2900,10300}, {3700,8300}, {4550,6500},
-        {5800,4600}, {7200,3100}
+        // Sector 2: fast esses on the east, then a tightening bend.
+        {15900,4350}, {14850,5000}, {14650,6150}, {15400,7400},
+        {17200,8100}, {18800,7600}, {20300,8100}, {21100,9700},
+        {20900,11500},
+        // Sector 3: double apex, short acceleration and southern sweep.
+        {19600,12600}, {18400,11900}, {17100,12450}, {16400,13900},
+        {17800,15400}, {17200,16700}, {14800,17100},
+        {12900,16200}, {11100,14600}, {9600,15300},
+        // Sector 4: western flowing bends, slower technical S, return.
+        {8000,16600}, {6100,16100}, {4700,14900}, {3900,13200},
+        {4300,11300}, {5500,10100}, {5000,8650}, {3900,7900},
+        {3850,6650}, {5100,4650}, {7200,3100}
     };
     center_.reserve(raw.size() * subdivisions);
     for (std::size_t i = 0; i < raw.size(); ++i) {
