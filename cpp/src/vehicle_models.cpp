@@ -200,8 +200,24 @@ void gt3(Color paint,Color glass,Color dark,bool braking) {
         box(1.19f,.405f,side*.365f,.075f,.055f,.20f,headlamp);
         box(1.20f,.365f,side*.365f,.04f,.018f,.22f,{65,165,220,255});
 
-        // A single low side skirt, aligned with the body edge.
-        box(.02f,.17f,side*.555f,1.18f,.055f,.07f,carbon);
+        // Recessed wheel openings: dark inner liners and a curved arch lip.
+        // The tyres sit inside the body width instead of sticking out of the arches.
+        for(float axle:{-.864f,.90f}) {
+            const float archZ=side*.515f;
+            for(int segment=0;segment<12;++segment) {
+                const float a0=3.14159265f*segment/12.0f;
+                const float a1=3.14159265f*(segment+1)/12.0f;
+                const Vector3 p0{axle+std::cos(a0)*.235f,
+                                 .22f+std::sin(a0)*.235f,archZ};
+                const Vector3 p1{axle+std::cos(a1)*.235f,
+                                 .22f+std::sin(a1)*.235f,archZ};
+                rod(p0,p1,.018f,carbon);
+            }
+            box(axle,.205f,side*.485f,.34f,.12f,.025f,carbon);
+        }
+
+        // A single low side skirt, tucked between the wheel openings.
+        box(.02f,.15f,side*.505f,.48f,.045f,.045f,carbon);
 
         // Rear light bar and lower bumper details.
         box(-1.285f,.365f,side*.365f,.025f,.065f,.20f,
@@ -271,7 +287,7 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
     const float rear=float(p.rearAxle*kWorldScale*axleVisualScale);
     constexpr std::array<float,4> sizes{{.155f,.265f,.205f,.195f}};
     constexpr std::array<float,4> widths{{.19f,.26f,.22f,.21f}};
-    constexpr std::array<float,4> tracks{{.45f,.65f,.60f,.58f}};
+    constexpr std::array<float,4> tracks{{.45f,.65f,.48f,.58f}};
     const std::size_t slot=std::size_t(std::clamp(index,0,3));
     const float r=sizes[slot],width=widths[slot];
     const float track=std::max(float(p.halfWheelTrack*kWorldScale),tracks[slot]);
