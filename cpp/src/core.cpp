@@ -35,36 +35,16 @@ const std::array<VehicleProfile, 4>& profiles() {
 }
 
 Track::Track() {
-    // Spa-Francorchamps layout: La Source hairpin, the Eau Rouge /
-    // Raidillon climb, Kemmel straight, Les Combes chicane, Bruxelles,
-    // Pouhon, Fagnes, Stavelot, Blanchimont and the Bus Stop chicane.
-    // The extra control points keep the fast sections long and the slow
-    // corners visibly tight instead of turning the circuit into an oval.
+    // One continuous closed circuit inspired by Spa-Francorchamps.
+    // The route is deliberately a simple loop: no crossing, junction or
+    // shared road section. It keeps a long straight and a sequence of
+    // tighter and faster bends around the lap.
     const std::vector<Vec2> raw{
-        // La Source and the start/finish straight
-        {7000,6900},{7440,6750},{7700,6350},{7500,6000},
-        {7000,5900},{6500,5850},
-        // Eau Rouge and Raidillon: tight bottom, then climbing left-right
-        {6100,5700},{5700,5350},{5450,4850},{5200,4450},
-        {4850,4200},{4550,3850},
-        // Kemmel: long, almost straight run to Les Combes
-        {4100,3450},{3600,3050},{3100,2650},{2600,2250},
-        // Les Combes chicane and the Bruxelles hairpin
-        {2200,2100},{1950,2250},{1850,2600},{2050,2900},
-        {2450,3000},{2750,3250},{2820,3650},{2600,3950},
-        // No-name / Pouhon: long sweeping double-left
-        {2200,4250},{1850,4650},{1900,5100},{2250,5450},
-        {2750,5600},{3250,5550},{3650,5300},
-        // Fagnes chicane, Campus and Stavelot
-        {3950,5000},{4350,4850},{4650,5050},{4750,5400},
-        {5050,5650},{5500,5700},{5900,5500},
-        // Blanchimont: fast sweeping return towards the final chicane
-        {6250,5150},{6550,4650},{6800,4150},{7000,3650},
-        {7150,3150},{7250,2650},
-        // Bus Stop chicane and return to La Source
-        {7100,2300},{6800,2150},{6550,2350},{6600,2700},
-        {6900,3000},{7200,3350},{7400,3900},{7550,4550},
-        {7650,5200},{7600,5700},{7350,6200},{7000,6600}
+        {6900,6500},{7550,6250},{7800,5650},{7350,5200},
+        {6600,4950},{5850,4350},{5050,3650},{4250,2950},
+        {3450,2350},{2750,2050},{2250,2450},{2100,3150},
+        {2450,3900},{3150,4650},{4050,5250},{5000,5650},
+        {5850,5800},{6500,5550},{7000,5850},{7150,6250}
     };
     center_.reserve(raw.size() * subdivisions);
     for (std::size_t i = 0; i < raw.size(); ++i) {
