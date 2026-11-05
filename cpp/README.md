@@ -89,10 +89,22 @@ points de contrôle interpolés, avec des courbes longues, des sections
 techniques et un relief continu. La mini-carte se met automatiquement
 à l'échelle de la nouvelle piste. Les limites du monde ont été agrandies.
 
-Les quatre véhicules gagnent environ **8 à 9 % de vitesse maximale** et
-environ **5 % de puissance motrice**, en conservant leur accélération
-directe, leurs commandes et leurs comportements de dérive. Aucune boîte
-de vitesses n'est introduite.
+Après calibration des distances en mètres 3D, le premier réglage moteur
+s'est révélé trop agressif. Les moteurs ont donc été **rééquilibrés** :
+la puissance, la vitesse de montée des gaz et la vitesse de pointe ont été
+réduites. Les plafonds affichés sont désormais :
+
+| Véhicule | Pointe théorique | Puissance moteur (unités du jeu) |
+| --- | ---: | ---: |
+| Kart | 165 km/h | 850 |
+| 4x4 | 171 km/h | 700 |
+| GT3 | 204 km/h | 980 |
+| WEC | 231 km/h | 1 150 |
+
+Le déplacement 3D reste calibré sur les km/h réels, sans modifier la
+direction, les commandes, les modèles ou le décor. Le comportement doit être
+validé en course, particulièrement dans les virages serrés.
+Aucune boîte de vitesses n'est introduite.
 
 Le décor est construit dans `src/scenery.cpp` et rendu dans
 `src/render.cpp` :
