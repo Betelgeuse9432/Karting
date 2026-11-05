@@ -210,14 +210,14 @@ void gt3(Color paint,Color glass,Color dark,bool braking) {
     }
 
     // Front bumper, deep lower intake and the twin BMW kidney grilles.
-    box(1.245f,.245f,0,.055f,.25f,.72f,suspensionCarbon);
+    box(1.245f,.245f,0,.055f,.25f,.72f,carbon);
     box(1.278f,.265f,-.145f,.025f,.205f,.145f,grille);
     box(1.278f,.265f,.145f,.025f,.205f,.145f,grille);
     for(int bar=0;bar<5;++bar) {
         const float y=.185f+bar*.039f;
         box(1.292f,y,0,.012f,.010f,.57f,{70,77,86,255});
     }
-    box(1.245f,.115f,0,.24f,.045f,1.18f,suspensionCarbon); // wide splitter
+    box(1.245f,.115f,0,.24f,.045f,1.18f,carbon); // wide splitter
     box(1.18f,.205f,0,.10f,.105f,.84f,intake); // lower air intake
 
     for(float side:{-1.f,1.f}) {
@@ -236,18 +236,18 @@ void gt3(Color paint,Color glass,Color dark,bool braking) {
                                  .22f+std::sin(a0)*.235f,archZ};
                 const Vector3 p1{axle+std::cos(a1)*.235f,
                                  .22f+std::sin(a1)*.235f,archZ};
-                rod(p0,p1,.010f,suspensionCarbon);
+                rod(p0,p1,.010f,carbon);
             }
-            box(axle,.205f,side*.535f,.34f,.12f,.018f,suspensionCarbon);
+            box(axle,.205f,side*.535f,.34f,.12f,.018f,carbon);
         }
 
         // A single low side skirt, tucked between the wheel openings.
-        box(.02f,.15f,side*.535f,.48f,.045f,.025f,suspensionCarbon);
+        box(.02f,.15f,side*.535f,.48f,.045f,.025f,carbon);
 
         // Rear light bar and lower bumper details.
         box(-1.285f,.365f,side*.365f,.025f,.065f,.20f,
             braking?RED:Color{155,24,31,255});
-        box(-1.25f,.205f,side*.32f,.14f,.10f,.19f,suspensionCarbon);
+        box(-1.25f,.205f,side*.32f,.14f,.10f,.19f,carbon);
         // Exhaust tips sit low and outboard at the rear.
         rod({-1.26f,.255f,side*.245f},{-1.37f,.255f,side*.245f},
             .052f,{135,141,149,255});
@@ -258,8 +258,8 @@ void gt3(Color paint,Color glass,Color dark,bool braking) {
     // A proper M4 GT3 rear wing, with two supports visibly attached to the rear deck.
     for(float side:{-1.f,1.f})
         rod({-.94f,.365f,side*.285f},
-            {-1.13f,.685f,side*.325f},.032f,suspensionCarbon);
-    rearWing(-1.19f,.705f,1.12f,.245f,suspensionCarbon);
+            {-1.13f,.685f,side*.325f},.032f,carbon);
+    rearWing(-1.19f,.705f,1.12f,.245f,carbon);
 }
 void wec(Color paint,Color glass,Color dark,bool braking) {
     // Simple WEC Hypercar silhouette. Front is +X, rear is -X.
@@ -285,12 +285,12 @@ void wec(Color paint,Color glass,Color dark,bool braking) {
             glassDark,tone(paint,.88f));
 
     // Small front splitter and simple flat floor.
-    box(1.43f,.075f,0,.25f,.035f,.88f,suspensionCarbon);
-    box(-1.40f,.075f,0,.18f,.045f,.84f,suspensionCarbon);
+    box(1.43f,.075f,0,.25f,.035f,.88f,carbon);
+    box(-1.40f,.075f,0,.18f,.045f,.84f,carbon);
 
     // Two subtle side skirts, kept as straight elements.
     for(float side:{-1.f,1.f}) {
-        box(-.08f,.115f,side*.405f,1.30f,.055f,.055f,suspensionCarbon);
+        box(-.08f,.115f,side*.405f,1.30f,.055f,.055f,carbon);
         // Minimal front and rear light units.
         box(1.405f,.16f,side*.205f,.025f,.035f,.13f,headlamp);
         box(-1.435f,.195f,side*.265f,.025f,.035f,.14f,tail);
@@ -298,15 +298,15 @@ void wec(Color paint,Color glass,Color dark,bool braking) {
 
     // One low central fin, with no oversized roof scoop or extra decoration.
     panel({-.34f,.30f,-.012f},{-1.22f,.27f,-.012f},
-          {-1.04f,.43f,-.012f},{-.55f,.40f,-.012f},suspensionCarbon);
+          {-1.04f,.43f,-.012f},{-.55f,.40f,-.012f},carbon);
     panel({-.34f,.30f,.012f},{-1.22f,.27f,.012f},
-          {-1.04f,.43f,.012f},{-.55f,.40f,.012f},suspensionCarbon);
+          {-1.04f,.43f,.012f},{-.55f,.40f,.012f},carbon);
 
     // Low twin supports and a thin, restrained rear wing.
     for(float side:{-1.f,1.f})
         rod({-1.02f,.27f,side*.27f},
-            {-1.18f,.48f,side*.30f},.018f,suspensionCarbon);
-    rearWing(-1.25f,.50f,.98f,.14f,suspensionCarbon);
+            {-1.18f,.48f,side*.30f},.018f,carbon);
+    rearWing(-1.25f,.50f,.98f,.14f,carbon);
 }
 
 
@@ -326,24 +326,24 @@ void rally(Color paint,Color glass,Color dark,bool braking) {
     for(float side:{-1.f,1.f}) {
         // Flared arches, rally mud flaps and sturdy side skirts.
         for(float x:{-.68f,.64f}) {
-            box(x,.48f,side*.51f,.48f,.18f,.13f,suspensionCarbon);
+            box(x,.48f,side*.51f,.48f,.18f,.13f,carbon);
             box(x-.03f,.29f,side*.55f,.19f,.25f,.035f,
                 {35,38,43,255});
         }
-        box(-.02f,.31f,side*.52f,.72f,.10f,.09f,suspensionCarbon);
+        box(-.02f,.31f,side*.52f,.72f,.10f,.09f,carbon);
         box(.34f,1.08f,side*.46f,.18f,.10f,.09f,dark);
         // Roof rails and a small intake scoop.
         rod({-.62f,1.47f,side*.29f},{.45f,1.47f,side*.29f},
-            .025f,suspensionCarbon);
-        box(-.18f,1.49f,0,.34f,.13f,.23f,suspensionCarbon);
+            .025f,carbon);
+        box(-.18f,1.49f,0,.34f,.13f,.23f,carbon);
         // Door number panel and sill accent.
         box(-.05f,.77f,side*.536f,.35f,.25f,.018f,
             tone(WHITE,.92f));
         box(-.05f,.77f,side*.55f,.23f,.18f,.012f,paint);
     }
     // Rally-style front lamps and broad protective bumpers.
-    box(1.08f,.36f,0,.13f,.22f,.82f,suspensionCarbon);
-    box(1.15f,.20f,0,.20f,.045f,1.12f,suspensionCarbon);
+    box(1.08f,.36f,0,.13f,.22f,.82f,carbon);
+    box(1.15f,.20f,0,.20f,.045f,1.12f,carbon);
     for(float side:{-1.f,1.f}) {
         box(1.13f,.62f,side*.27f,.05f,.10f,.17f,lamp);
         box(1.14f,.48f,side*.37f,.04f,.08f,.12f,
@@ -354,8 +354,8 @@ void rally(Color paint,Color glass,Color dark,bool braking) {
     // Compact rear wing with two upright supports.
     for(float side:{-1.f,1.f})
         rod({-.72f,.78f,side*.30f},{-.91f,1.18f,side*.34f},
-            .035f,suspensionCarbon);
-    rearWing(-.99f,1.20f,.92f,.19f,suspensionCarbon);
+            .035f,carbon);
+    rearWing(-.99f,1.20f,.92f,.19f,carbon);
     // Visible underbody skid plate.
     box(.25f,.18f,0,.72f,.045f,.72f,{92,98,105,255});
 }
@@ -375,40 +375,41 @@ void formulaOne(Color paint,Color glass,bool braking) {
                {1.34f,.15f,.24f,.25f}},
               paint,tone(paint,.70f));
     // Open cockpit with a visible driver and halo.
-    box(-.28f,.40f,0,.70f,.12f,.38f,suspensionCarbon);
+    box(-.28f,.40f,0,.70f,.12f,.38f,carbon);
     DrawSphere({-.02f,.66f,0},.19f,{238,190,62,255});
     DrawSphere({.015f,.69f,0},.145f,glass);
-    rod({-.35f,.60f,-.23f},{.22f,.77f,-.19f},.022f,suspensionCarbon);
-    rod({-.35f,.60f,.23f},{.22f,.77f,.19f},.022f,suspensionCarbon);
-    rod({.22f,.77f,-.19f},{.22f,.77f,.19f},.022f,suspensionCarbon);
+    rod({-.35f,.60f,-.23f},{.22f,.77f,-.19f},.022f,carbon);
+    rod({-.35f,.60f,.23f},{.22f,.77f,.19f},.022f,carbon);
+    rod({.22f,.77f,-.19f},{.22f,.77f,.19f},.022f,carbon);
     // Sidepods and cooling inlets.
     for(float side:{-1.f,1.f}) {
         box(-.02f,.31f,side*.40f,.90f,.22f,.28f,paint);
-        box(.42f,.37f,side*.535f,.30f,.12f,.018f,suspensionCarbon);
+        box(.42f,.37f,side*.535f,.30f,.12f,.018f,carbon);
         box(-.48f,.27f,side*.43f,.42f,.045f,.025f,blue);
         // Front wing: layered flaps and endplates.
-        box(1.48f,.15f,side*.48f,.36f,.045f,.12f,suspensionCarbon);
+        box(1.48f,.15f,side*.48f,.36f,.045f,.12f,carbon);
         box(1.53f,.20f,side*.48f,.27f,.025f,.11f,paint);
-        box(1.42f,.17f,side*.69f,.32f,.31f,.035f,suspensionCarbon);
+        box(1.42f,.17f,side*.69f,.32f,.31f,.035f,carbon);
         // Rear wing endplates and support pylons.
-        box(-1.48f,.68f,side*.55f,.30f,.52f,.035f,suspensionCarbon);
-        rod({-1.12f,.30f,side*.18f},{-1.40f,.66f,side*.18f},.035f,suspensionCarbon);
+        box(-1.48f,.68f,side*.55f,.30f,.52f,.035f,carbon);
+        rod({-1.12f,.30f,side*.18f},{-1.40f,.66f,side*.18f},.035f,carbon);
         // Floor edge and tiny bargeboard.
-        box(-.12f,.13f,side*.56f,.95f,.045f,.035f,suspensionCarbon);
+        box(-.12f,.13f,side*.56f,.95f,.045f,.035f,carbon);
         panel({.55f,.18f,side*.42f},{.05f,.48f,side*.44f},
               {-.48f,.20f,side*.46f},{-.10f,.14f,side*.47f},
               tone(paint,.82f));
     }
     // Rear diffuser and a broad, two-element rear wing.
-    box(-1.43f,.15f,0,.35f,.08f,.88f,suspensionCarbon);
-    box(-1.57f,.83f,0,.30f,.045f,1.28f,suspensionCarbon);
+    box(-1.43f,.15f,0,.35f,.08f,.88f,carbon);
+    box(-1.57f,.83f,0,.30f,.045f,1.28f,carbon);
     box(-1.53f,.89f,0,.25f,.025f,1.22f,paint);
     // Small front suspension fairing and nose tip.
-    box(1.55f,.22f,0,.18f,.07f,.20f,suspensionCarbon);
+    box(1.55f,.22f,0,.18f,.07f,.20f,carbon);
     box(1.62f,.25f,0,.09f,.035f,.12f,paint);
 }
 
 void wheels(const Car& car,const VehicleProfile& p,int index) {
+    const Color carbon{22,26,32,255};
     // GT3 wheel centres sit close to the actual front and rear wheel arches.
     const float axleVisualScale=index==3?1.12f:1.0f;
     const float front=float(p.frontAxle*kWorldScale*axleVisualScale);
@@ -432,7 +433,7 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
             (elevation(wheelWorld)-elevation(car.position))*kWorldScale);
         if(slot==2) wheelHeight=std::clamp(wheelHeight,-.045f,.045f);
         if(slot==5) {
-            const Color suspensionCarbon{22,26,32,255};
+            const Color carbon{22,26,32,255};
             wheelHeight=std::clamp(wheelHeight,-.075f,.075f);
             const float wheelY=r+.015f+wheelHeight;
             const float innerZ=side*(track-.25f);
@@ -449,10 +450,10 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
             rod(lowerA,lowerHub,.022f,{145,153,164,255});
             rod(lowerB,lowerHub,.022f,{145,153,164,255});
             // Short mounts visibly connect the wishbone pivots to the chassis.
-            rod({x-.17f,.43f,side*.34f},upperA,.025f,suspensionCarbon);
-            rod({x+.17f,.43f,side*.34f},upperB,.025f,suspensionCarbon);
-            rod({x-.19f,.18f,side*.34f},lowerA,.027f,suspensionCarbon);
-            rod({x+.19f,.18f,side*.34f},lowerB,.027f,suspensionCarbon);
+            rod({x-.17f,.43f,side*.34f},upperA,.025f,carbon);
+            rod({x+.17f,.43f,side*.34f},upperB,.025f,carbon);
+            rod({x-.19f,.18f,side*.34f},lowerA,.027f,carbon);
+            rod({x+.19f,.18f,side*.34f},lowerB,.027f,carbon);
             // The upright links both ball joints and moves with the wheel.
             rod(upperHub,lowerHub,.027f,{75,83,95,255});
             DrawSphere(upperHub,.025f,{185,193,203,255});
