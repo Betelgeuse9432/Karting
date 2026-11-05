@@ -49,6 +49,8 @@ public:
     void draw(const Track& track, const Weather& weather, int quality,
               Vector3 cameraPosition, double time) const;
 private:
+    void drawTerrain(const Weather& weather,int quality,
+                     Vector3 cameraPosition) const;
     void drawScenery(const Weather& weather,int quality,
                      Vector3 cameraPosition,double time) const;
     std::vector<SceneryProp> scenery_;
