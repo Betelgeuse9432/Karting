@@ -203,7 +203,7 @@ void gt3(Color paint,Color glass,Color dark,bool braking) {
         // Recessed wheel openings: dark inner liners and a curved arch lip.
         // The tyres sit inside the body width instead of sticking out of the arches.
         for(float axle:{-.864f,.90f}) {
-            const float archZ=side*.515f;
+            const float archZ=side*.555f;
             for(int segment=0;segment<12;++segment) {
                 const float a0=3.14159265f*segment/12.0f;
                 const float a1=3.14159265f*(segment+1)/12.0f;
@@ -211,13 +211,13 @@ void gt3(Color paint,Color glass,Color dark,bool braking) {
                                  .22f+std::sin(a0)*.235f,archZ};
                 const Vector3 p1{axle+std::cos(a1)*.235f,
                                  .22f+std::sin(a1)*.235f,archZ};
-                rod(p0,p1,.018f,carbon);
+                rod(p0,p1,.010f,carbon);
             }
-            box(axle,.205f,side*.485f,.34f,.12f,.025f,carbon);
+            box(axle,.205f,side*.535f,.34f,.12f,.018f,carbon);
         }
 
         // A single low side skirt, tucked between the wheel openings.
-        box(.02f,.15f,side*.505f,.48f,.045f,.045f,carbon);
+        box(.02f,.15f,side*.535f,.48f,.045f,.025f,carbon);
 
         // Rear light bar and lower bumper details.
         box(-1.285f,.365f,side*.365f,.025f,.065f,.20f,
@@ -230,7 +230,11 @@ void gt3(Color paint,Color glass,Color dark,bool braking) {
             .037f,{31,35,42,255});
     }
 
-    // Keep the rear body clean: no decorative blocks or floating wing pieces.
+    // A proper M4 GT3 rear wing, with two supports visibly attached to the rear deck.
+    for(float side:{-1.f,1.f})
+        rod({-.94f,.365f,side*.285f},
+            {-1.13f,.685f,side*.325f},.032f,carbon);
+    rearWing(-1.19f,.705f,1.12f,.245f,carbon);
 }
 void wec(Color paint,Color glass,Color dark,bool braking) {
     // Simple WEC Hypercar silhouette. Front is +X, rear is -X.
