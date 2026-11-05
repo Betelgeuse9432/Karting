@@ -235,7 +235,9 @@ void WorldRenderer::initialize(const Track& track) {
         const Vec2 after=track.center()[(i+3)%n];
         const float yaw=-std::atan2(float(after.y-before.y),
                                     float(after.x-before.x))*RAD2DEG;
-        scenery_.push_back({p,size,yaw,kind,color});
+        const Vector3 ground{float(p.x*kWorldScale),
+                             groundY(p.x,p.y),float(p.y*kWorldScale)};
+        scenery_.push_back({p,size,yaw,kind,color,ground});
     };
 
     // Roadsides: grandstands cluster around interesting corners,
@@ -351,7 +353,7 @@ void WorldRenderer::drawScenery(const Weather& weather,int quality,
     const float distance=quality==0?55.f:quality==1?82.f:120.f;
     const float range2=distance*distance;
     for(const SceneryProp& obj:scenery_) {
-        const Vector3 origin=worldPoint(obj.position);
+        const Vector3 origin=obj.groundPosition;
         const float dx=origin.x-cameraPosition.x,dz=origin.z-cameraPosition.z;
         const float d2=dx*dx+dz*dz;
         if(d2>range2)continue;
@@ -359,8 +361,7 @@ void WorldRenderer::drawScenery(const Weather& weather,int quality,
            &&d2>38.f*38.f)continue;
         rlPushMatrix();
         // Terrain contact: props' bases are 0.19m below the former road level.
-        rlTranslatef(origin.x,groundY(obj.position.x,obj.position.y),
-                     origin.z);
+        rlTranslatef(origin.x,origin.y,origin.z);
         rlRotatef(obj.yaw,0,1,0);
         const float scale=obj.size;
         switch(obj.kind) {
