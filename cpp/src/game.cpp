@@ -1,4 +1,5 @@
 #include "karting/game.hpp"
+#include <array>
 #include <algorithm>
 #include <cmath>
 #include <exception>
