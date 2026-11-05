@@ -387,9 +387,11 @@ int Game::run() {
             render();
         }
     } catch (...) {
+        world_.shutdown();
         CloseWindow();
         throw;
     }
+    world_.shutdown();
     CloseWindow();
     return 0;
 }
