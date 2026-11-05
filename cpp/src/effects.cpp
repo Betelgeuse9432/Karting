@@ -36,7 +36,7 @@ void Effects::update(const Simulation& sim, double dt) {
         const auto wheel=wheelPosition(k);
         if (skid && lastSkidding_ && telemetry.wheelsOutside<2) {
             marks_.push_back({previous_[k],wheel,0});
-            if (marks_.size()>1400) marks_.pop_front();
+            if (marks_.size()>2200) marks_.pop_front();
         }
         previous_[k]=wheel;
     }
@@ -102,7 +102,7 @@ void Effects::update(const Simulation& sim, double dt) {
     }
     particles_.erase(std::remove_if(particles_.begin(),particles_.end(),
                         [](const Particle& p){return p.life<=0;}),particles_.end());
-    if (particles_.size()>350)
+    if (particles_.size()>600)
         particles_.erase(particles_.begin(),particles_.begin()+std::ptrdiff_t(particles_.size()-350));
     for (auto& m:marks_) m.age+=dt;
     while(!marks_.empty() && marks_.front().age>30) marks_.pop_front();
