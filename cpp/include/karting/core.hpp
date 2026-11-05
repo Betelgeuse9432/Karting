@@ -39,7 +39,7 @@ struct Controls {
     bool accelerate = false;
     bool brake = false;
     int steer = 0;
-    bool handbrake = false;
+    bool boostPressed = false;
 };
 
 struct Car {
@@ -137,6 +137,9 @@ public:
     const Weather& weather() const { return weather_; }
     const Race& race() const { return race_; }
     const Telemetry& telemetry() const { return telemetry_; }
+    double boostTimeRemaining() const { return boostTimeRemaining_; }
+    int boostsRemaining() const { return boostsRemaining_; }
+    bool boostActive() const { return boostTimeRemaining_ > 0.0; }
     const VehicleProfile& profile() const { return profiles().at(vehicleIndex_); }
     int vehicleIndex() const { return vehicleIndex_; }
     int colorIndex() const { return colorIndex_; }
@@ -153,6 +156,8 @@ private:
     Weather weather_{};
     Race race_{};
     Telemetry telemetry_{};
+    double boostTimeRemaining_ = 0.0;
+    int boostsRemaining_ = 2;
     int vehicleIndex_ = 2;
     int colorIndex_ = 3;
 };
