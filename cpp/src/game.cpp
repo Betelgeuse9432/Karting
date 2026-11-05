@@ -166,7 +166,7 @@ void Game::renderRace() {
     };
     BeginMode3D(camera_);
     safe("world",[&]{
-        world_.draw(sim_.track(),weather,quality_,camera_.position,gameTime_);
+        world_.draw(sim_.track(),weather,quality_,camera_,gameTime_);
     });
     safe("effects",[&]{ effects_.draw3D(camera_); });
     safe("vehicle",[&]{
