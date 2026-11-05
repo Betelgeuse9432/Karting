@@ -35,25 +35,6 @@ static void quad(Vector3 a,Vector3 b,Vector3 c,Vector3 d,Color color) {
     DrawTriangle3D(d,c,a,color);
 }
 
-void WorldRenderer::initialize(const Track& track) {
-    trees_.clear();
-    std::mt19937 rng(7);
-    std::uniform_real_distribution<double> noise(-310,310);
-    for (std::size_t i=0;i<track.size();i+=13) {
-        for (int side:{-1,1}) {
-            const auto p=track.point(i,side*(Track::wall+170)+noise(rng));
-            if (p.x>100 && p.y>100 && p.x<9500 && p.y<8200 &&
-                track.info(p).distance>Track::wall+35)
-                trees_.push_back(p);
-        }
-    }
-    std::uniform_real_distribution<double> x(0,9800), y(0,8700);
-    for (int i=0;i<180;++i) {
-        const Vec2 p{x(rng),y(rng)};
-        if (track.info(p).distance>Track::wall+140) trees_.push_back(p);
-    }
-}
-
 void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
                          Vector3 cameraPosition,double time) const {
     const float rain=float(weather.rainLevel);
@@ -62,7 +43,10 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
     const auto kerbRed=shaded({223,37,37,255},1-0.25f*night);
     const auto kerbWhite=shaded({230,228,218,255},1-0.4f*night);
     const auto grass=shaded({53,153,57,255},1-0.1f*rain-0.55f*night);
-    DrawPlane({88.2f,-2.6f,78.3f},{190,174},grass);
+    DrawPlane({float(Track::worldWidth*kWorldScale*.5),-3.4f,
+               float(Track::worldHeight*kWorldScale*.5)},
+              {float(Track::worldWidth*kWorldScale),
+               float(Track::worldHeight*kWorldScale)},grass);
 
     const auto count=track.size();
     const float farDistance=quality==0?47.f:quality==1?63.f:81.f;
@@ -176,29 +160,8 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
         }
     }
 
-    // Tree positions were generated once, instead of walking the circuit
-    // and calling nearest-point search on every rendered frame.
-    for (const auto& p:trees_) {
-        const auto origin=worldPoint(p);
-        const float dx=origin.x-cameraPosition.x,dz=origin.z-cameraPosition.z;
-        const float distance2=dx*dx+dz*dz;
-        const float treeFar=quality==0?28.f:quality==1?39.f:50.f;
-        if (distance2>treeFar*treeFar) continue;
-        const float size=0.80f+float((int(p.x+p.y)%9))/15.f;
-        const auto foliage=shaded({42,127,51,255},1-0.60f*night);
-        DrawCylinderEx(origin,{origin.x,origin.y+size*.95f,origin.z},
-                       .08f*size,.06f*size,5,
-                       shaded({98,67,44,255},1-.5f*night));
-        if (quality==0 || distance2>25*25) {
-            DrawSphere({origin.x,origin.y+size*1.35f,origin.z},
-                       .48f*size,foliage);
-        } else {
-            DrawSphere({origin.x,origin.y+size*1.25f,origin.z},
-                       .5f*size,foliage);
-            DrawSphere({origin.x-.21f*size,origin.y+size*1.65f,origin.z},
-                       .35f*size,shaded(foliage,1.1f));
-        }
-    }
+    // Static scenery is generated once and culled before drawing.
+    drawScenery(weather,quality,cameraPosition,time);
 }
 
 } // namespace karting
