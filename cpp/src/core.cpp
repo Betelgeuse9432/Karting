@@ -281,8 +281,14 @@ void Simulation::update(const Controls& controls,double dt) {
     car_.heading+=dAngle;
     const Vec2 carForward{std::cos(car_.heading),std::sin(car_.heading)};
     const Vec2 carSide{-carForward.y,carForward.x};
+    // Convert the existing arcade speed to actual distance in the rendered
+    // world. Previously the HUD reported ~300 km/h while movement was
+    // ~65 km/h in rendered metres. Keep yaw dynamics unchanged so the
+    // steering doesn't become 4.6x more twitchy; fast corners now require
+    // the expected larger turning radius.
     car_.position=car_.position+(carForward*car_.speed+
-                                  carSide*car_.lateralSpeed)*dt;
+                                  carSide*car_.lateralSpeed)*
+                                 (dt*kTravelScale);
     car_.position.x=std::clamp(car_.position.x,0.0,Track::worldWidth);
     car_.position.y=std::clamp(car_.position.y,0.0,Track::worldHeight);
     const double impact=track_.collide(car_,dt);
@@ -300,7 +306,8 @@ void Simulation::update(const Controls& controls,double dt) {
     car_.roll+=(rollTarget-car_.roll)*std::min(1.0,6*dt);
     const double wingTarget=.1+.25*std::abs(car_.speed)/p.topSpeed+.9*car_.brake;
     car_.wing+=(wingTarget-car_.wing)*std::min(1.0,10*dt);
-    car_.wheelRotation+=car_.speed*dt/10*.35;
+    // Rotate wheel rims by travelled metres, not the old arbitrary speed.
+    car_.wheelRotation+=(car_.speed*kWorldScale*kTravelScale*dt)/.20;
     telemetry_={off,frontSlip,rearSlip,std::abs(car_.lateralSpeed)>12,
                 before.pits,grip,impact,slope};
     race_.tick(track_,car_,off,dt);
