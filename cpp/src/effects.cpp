@@ -14,12 +14,16 @@ void Effects::clear() {
     backfireArmed_=false;
     emitTime_=0;
     for (auto& p:previous_) p={};
+    previousHeight_.fill(0.0);
 }
 
 void Effects::update(const Simulation& sim, double dt) {
     const auto& car=sim.car();
     const auto& p=sim.profile();
     const auto& telemetry=sim.telemetry();
+    const auto roadHeight=[&](Vec2 pos) {
+        return sim.track().roadHeightAt(pos,car.roadIndex);
+    };
     const bool skid=telemetry.drifting || telemetry.rearSlip ||
                     telemetry.frontSlip || car.brake>.9;
     const Vec2 forward{std::cos(car.heading),std::sin(car.heading)};
@@ -31,10 +35,12 @@ void Effects::update(const Simulation& sim, double dt) {
     for (int k=0;k<4;++k) {
         const auto wheel=wheelPosition(k);
         if (skid && lastSkidding_ && telemetry.wheelsOutside<2) {
-            marks_.push_back({previous_[k],wheel,0});
+            marks_.push_back({previous_[k],wheel,0,
+                              previousHeight_[k],roadHeight(wheel)});
             if (marks_.size()>1400) marks_.pop_front();
         }
         previous_[k]=wheel;
+        previousHeight_[k]=roadHeight(wheel);
     }
     lastSkidding_=skid;
 
@@ -44,7 +50,7 @@ void Effects::update(const Simulation& sim, double dt) {
         emitTime_=0;
         for (int rearWheel:{0,1}) {
             const auto pos=wheelPosition(rearWheel);
-            particles_.push_back({pos,elevation(pos)+13,
+            particles_.push_back({pos,roadHeight(pos)+13,
                         velocity(generator_)*28,velocity(generator_)*28,
                         17+std::abs(velocity(generator_))*27,
                         .65, .65, 0});
@@ -60,7 +66,7 @@ void Effects::update(const Simulation& sim, double dt) {
                        side*(direction*(p.halfWheelTrack+16));
         for(int i=0;i<2;++i) {
             const double flicker=velocity(generator_);
-            particles_.push_back({pos,elevation(pos)+8,
+            particles_.push_back({pos,roadHeight(pos)+8,
                 -forward.x*(55+20*i)+side.x*direction*(65+20*flicker),
                 -forward.y*(55+20*i)+side.y*direction*(65+20*flicker),
                 8+std::abs(flicker)*14,
@@ -83,7 +89,7 @@ void Effects::update(const Simulation& sim, double dt) {
             // rear bumper at both visible exhaust outlets.
             const Vec2 pos=car.position+forward*(-1.43/kWorldScale)+
                            side*(direction*.25/kWorldScale);
-            particles_.push_back({pos,elevation(pos)+.255/kWorldScale,
+            particles_.push_back({pos,roadHeight(pos)+.255/kWorldScale,
                 -forward.x*85,-forward.y*85,0,
                 .24,.24,1});
         }
@@ -109,7 +115,12 @@ void Effects::update(const Simulation& sim, double dt) {
 void Effects::draw3D(const Camera3D& camera) const {
     const auto position=camera.position;
     for (const auto& mark:marks_) {
-        const auto a=worldPoint(mark.start,2),b=worldPoint(mark.end,2);
+        const auto a=Vector3{float(mark.start.x*kWorldScale),
+                             float((mark.startHeight+2)*kWorldScale),
+                             float(mark.start.y*kWorldScale)};
+        const auto b=Vector3{float(mark.end.x*kWorldScale),
+                             float((mark.endHeight+2)*kWorldScale),
+                             float(mark.end.y*kWorldScale)};
         const float dx=a.x-position.x,dz=a.z-position.z;
         if (dx*dx+dz*dz>50*50) continue;
         DrawLine3D(a,b,{30,30,32,255});
