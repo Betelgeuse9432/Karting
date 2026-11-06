@@ -408,15 +408,81 @@ void formulaOne(Color paint,Color glass,bool braking) {
     box(1.87f,.25f,0,.09f,.035f,.12f,paint);
 }
 
+void trophyTruck(Color paint,Color glass,bool braking,bool second) {
+    const Color cage{34,39,44,255};
+    const Color chassis{53,59,65,255};
+    const Color alloy{155,163,170,255};
+    const Color lamp=braking?Color{255,42,35,255}:Color{235,226,184,255};
+    const float width=second?1.02f:.96f;
+    // Tall, wide-fendered body with short overhangs and a raised belly.
+    bodyShell({{-1.22f,.43f,.91f,.67f},
+               {-.92f,.43f,1.05f,.83f},
+               {-.48f,.43f,1.08f,.87f},
+               {.28f,.43f,1.02f,.86f},
+               {.82f,.43f,.96f,.80f},
+               {1.18f,.43f,.86f,.70f},
+               {1.38f,.43f,.72f,.58f}},
+              paint,tone(paint,.68f));
+    // Open tubular cabin and high-strength roll cage.
+    cockpit(.38f,-.76f,.12f,-.48f,.91f,1.48f,.52f,.43f,
+            glass,tone(paint,.86f));
+    for(float side:{-1.f,1.f}) {
+        rod({-.86f, .82f,side*.48f},{-.48f,1.58f,side*.43f},.045f,cage);
+        rod({-.48f,1.58f,side*.43f},{ .47f,1.58f,side*.43f},.045f,cage);
+        rod({ .47f,1.58f,side*.43f},{ .83f,.82f,side*.48f},.045f,cage);
+        rod({-.86f,.82f,side*.48f},{ .83f,.82f,side*.48f},.035f,cage);
+        rod({-.45f,1.55f,side*.42f},{ .48f,.94f,side*.52f},.032f,cage);
+        box(.05f,.56f,side*.57f,.82f,.12f,.055f,chassis);
+        // Front and rear fender flares.
+        for(float x:{-.78f,.88f})
+            box(x,.70f,side*.66f,.58f,.18f,.13f,tone(paint,.72f));
+        box(1.34f,.53f,side*.48f,.13f,.22f,.18f,cage);
+        box(-1.22f,.54f,side*.48f,.13f,.20f,.18f,cage);
+        // Exposed long-travel suspension arms and coil-over dampers.
+        for(float x:{-.94f,.94f}) {
+            const Vector3 hub{x,.43f,side*.88f};
+            rod({x-.30f,.35f,side*.35f},hub,.035f,alloy);
+            rod({x+.30f,.35f,side*.35f},hub,.035f,alloy);
+            rod({x,.88f,side*.38f},{x,.59f,side*.78f},.025f,{65,133,205,255});
+            const Vector3 springTop{x,.91f,side*.42f};
+            const Vector3 springBottom{x,.57f,side*.79f};
+            for(int coil=0;coil<18;++coil) {
+                const float t0=float(coil)/18.f,t1=float(coil+1)/18.f;
+                const float a0=t0*6.0f*2*PI,a1=t1*6.0f*2*PI;
+                const Vector3 p0{springTop.x+std::cos(a0)*.045f,
+                    springTop.y+(springBottom.y-springTop.y)*t0,
+                    springTop.z+(springBottom.z-springTop.z)*t0+std::sin(a0)*.045f};
+                const Vector3 p1{springTop.x+std::cos(a1)*.045f,
+                    springTop.y+(springBottom.y-springTop.y)*t1,
+                    springTop.z+(springBottom.z-springTop.z)*t1+std::sin(a1)*.045f};
+                DrawLine3D(p0,p1,{25,115,255,255});
+            }
+        }
+    }
+    // Front grille, LED bar, skid plate, rear spare and roof-mounted intake.
+    box(1.37f,.59f,0,.12f,.25f,.72f,cage);
+    box(1.44f,.69f,0,.025f,.07f,.58f,lamp);
+    box(1.02f,.36f,0,.65f,.12f,1.08f,alloy);
+    box(-.15f,1.50f,0,.36f,.10f,.27f,cage);
+    rod({-.98f,.91f,-.10f},{-1.27f,.91f,-.10f},.34f,{29,32,37,255});
+    box(-1.27f,.91f,0,.10f,.38f,.39f,alloy);
+    box(-1.31f,.57f,0,.12f,.16f,1.02f,cage);
+    for(float side:{-1.f,1.f}) {
+        box(-1.25f,.75f,side*.35f,.05f,.12f,.20f,braking?RED:Color{170,30,28,255});
+        box(1.38f,.76f,side*.32f,.035f,.10f,.18f,lamp);
+    }
+    (void)width;
+}
+
 void wheels(const Car& car,const VehicleProfile& p,int index) {
     const Color carbon{22,26,32,255};
     // GT3 wheel centres sit close to the actual front and rear wheel arches.
     const float axleVisualScale=index==3?1.12f:1.0f;
     const float front=float(p.frontAxle*kWorldScale*axleVisualScale);
     const float rear=float(p.rearAxle*kWorldScale*axleVisualScale);
-    constexpr std::array<float,6> sizes{{.155f,.265f,.205f,.195f,.180f,.220f}};
-    constexpr std::array<float,6> widths{{.19f,.26f,.22f,.21f,.21f,.245f}};
-    constexpr std::array<float,6> tracks{{.45f,.65f,.48f,.58f,.58f,.63f}};
+    constexpr std::array<float,8> sizes{{.155f,.265f,.205f,.195f,.180f,.220f,.315f,.325f}};
+    constexpr std::array<float,8> widths{{.19f,.26f,.22f,.21f,.21f,.245f,.34f,.36f}};
+    constexpr std::array<float,8> tracks{{.45f,.65f,.48f,.58f,.58f,.63f,.88f,.92f}};
     const std::size_t slot=std::size_t(std::clamp(index,0,5));
     const float r=sizes[slot],width=widths[slot];
     const float track=std::max(float(p.halfWheelTrack*kWorldScale),tracks[slot]);
@@ -544,6 +610,12 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
         formulaOne(paint,glass,car.brake>.1);
         rlPopMatrix();
         break;
+    case 6:
+        trophyTruck(paint,glass,car.brake>.1,false);
+        break;
+    case 7:
+        trophyTruck(paint,glass,car.brake>.1,true);
+        break;
     case 4:
         // Scale the rally hatch to a compact real-world footprint.
         rlPushMatrix();
@@ -554,8 +626,8 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
     default: gt3(paint,glass,dark,car.brake>.1);break;
     }
     // Restrained clear-coat highlights help every vehicle read as painted metal.
-    const float highlightY=index==1?.82f:index==2?.445f:index==3?.285f:index==4?.80f:index==5?.39f:.205f;
-    const float highlightZ=index==1?.47f:index==2?.49f:index==3?.34f:index==4?.48f:index==5?.36f:.20f;
+    const float highlightY=index==1?.82f:index==2?.445f:index==3?.285f:index==4?.80f:index==5?.39f:index>=6?.94f:.205f;
+    const float highlightZ=index==1?.47f:index==2?.49f:index==3?.34f:index==4?.48f:index==5?.36f:index>=6?.62f:.20f;
     for(float side:{-1.f,1.f}) {
         DrawLine3D({.62f,highlightY,side*highlightZ},
                    {-.48f,highlightY-.012f,side*highlightZ*.94f},
