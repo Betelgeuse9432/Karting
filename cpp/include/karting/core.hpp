@@ -55,6 +55,9 @@ struct Car {
     double pitch = 0;
     double wing = 0.1;
     double wheelRotation = 0;
+    double jumpHeight = 0;
+    double verticalSpeed = 0;
+    double jumpCooldown = 0;
 };
 
 struct TrackInfo {
