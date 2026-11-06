@@ -13,6 +13,100 @@ UiViewport uiViewport() {
                   int(std::round(physicalHeight/scale))};
 }
 
+void HudRenderer::modeMenu(int selectedMode,double time) const {
+    const auto ui=uiViewport();
+    const int w=ui.width,h=ui.height;
+    BeginMode2D(ui.camera());
+
+    DrawText("GAME VROUM",w/2-190,58,48,GOLD);
+    DrawText("CHOISIS TON TERRAIN DE JEU",w/2-250,119,27,RAYWHITE);
+    DrawText("Deux disciplines. Deux ambiances. Une seule envie : attaquer.", 
+             w/2-300,158,18,LIGHTGRAY);
+
+    const Rectangle circuit{float(w/2-430),225,390,300};
+    const Rectangle baja{float(w/2+40),225,390,300};
+    const Color idle{35,42,55,255};
+    const Color active{57,67,82,255};
+    DrawRectangleRounded(circuit,.055f,10,selectedMode==0?active:idle);
+    DrawRectangleRounded(baja,.055f,10,selectedMode==1?active:idle);
+    DrawRectangleLinesEx(circuit,selectedMode==0?4.f:1.5f,
+                         selectedMode==0?GOLD:Color{91,101,117,255});
+    DrawRectangleLinesEx(baja,selectedMode==1?4.f:1.5f,
+                         selectedMode==1?GOLD:Color{91,101,117,255});
+
+    // Stylised circuit card: asphalt ribbon, kerbs and start/finish markings.
+    DrawRectangleRounded({circuit.x+28,circuit.y+27,334,132},.08f,8,
+                         {21,26,35,255});
+    DrawLineEx({circuit.x+75,circuit.y+93},{circuit.x+135,circuit.y+55},17,
+               {105,111,121,255});
+    DrawLineEx({circuit.x+135,circuit.y+55},{circuit.x+245,circuit.y+65},17,
+               {105,111,121,255});
+    DrawLineEx({circuit.x+245,circuit.y+65},{circuit.x+298,circuit.y+119},17,
+               {105,111,121,255});
+    DrawLineEx({circuit.x+298,circuit.y+119},{circuit.x+190,circuit.y+135},17,
+               {105,111,121,255});
+    DrawLineEx({circuit.x+190,circuit.y+135},{circuit.x+75,circuit.y+93},17,
+               {105,111,121,255});
+    DrawLineEx({circuit.x+75,circuit.y+93},{circuit.x+135,circuit.y+55},2,WHITE);
+    DrawText("PISTE",int(circuit.x+28),circuit.y+181,29,GOLD);
+    DrawText("GT3  /  ASPHALTE  /  CIRCUIT",int(circuit.x+28),
+             circuit.y+222,19,RAYWHITE);
+    DrawText("Freinages, trajectoires et vitesse",int(circuit.x+28),
+             circuit.y+254,16,LIGHTGRAY);
+
+    // Desert card: dune silhouettes, a jump ramp and a Trophy Truck outline.
+    DrawRectangleRounded({baja.x+28,baja.y+27,334,132},.08f,8,
+                         {35,31,29,255});
+    DrawTriangle({baja.x+28,baja.y+148},{baja.x+145,baja.y+66},
+                 {baja.x+235,baja.y+148},{160,111,62,255});
+    DrawTriangle({baja.x+135,baja.y+148},{baja.x+255,baja.y+82},
+                 {baja.x+362,baja.y+148},{190,135,73,255});
+    DrawLineEx({baja.x+65,baja.y+135},{baja.x+270,baja.y+135},3,
+               {235,190,126,255});
+    DrawRectangleRounded({baja.x+145,baja.y+93,105,28},.18f,6,
+                         {28,31,35,255});
+    DrawCircle(int(baja.x+165),baja.y+126,17,{20,22,25,255});
+    DrawCircle(int(baja.x+232),baja.y+126,17,{20,22,25,255});
+    DrawText("HORS-PISTE",int(baja.x+28),baja.y+181,29,
+             {238,177,104,255});
+    DrawText("TROPHY BAJA  /  SABLE  /  SAUTS",int(baja.x+28),
+             baja.y+222,19,RAYWHITE);
+    DrawText("Deux Trophy Trucks et suspensions longues",int(baja.x+28),
+             baja.y+254,16,LIGHTGRAY);
+
+    const char* hint=selectedMode==0
+        ?"PISTE GT3 SELECTIONNEE"
+        :"TROPHY BAJA SELECTIONNE";
+    DrawText(hint,w/2-145,h-111,18,GOLD);
+    DrawText("GAUCHE / DROITE : choisir     ENTREE : valider",
+             w/2-270,h-72,19,RAYWHITE);
+    DrawText(TextFormat("GAME VROUM  |  MENU %02d",int(time*2)%100),
+             20,h-28,14,GRAY);
+    EndMode2D();
+}
+
+void HudRenderer::bajaPreview(double time) const {
+    const auto ui=uiViewport();
+    const int w=ui.width,h=ui.height;
+    BeginMode2D(ui.camera());
+    DrawText("TROPHY BAJA",w/2-175,74,42,{238,177,104,255});
+    DrawText("LE DESERT ARRIVE DANS GAME VROUM",w/2-260,132,23,RAYWHITE);
+
+    DrawRectangleRounded({w/2-390,h/2-115,780,260},.045f,10,
+                         {39,35,31,255});
+    DrawRectangleLinesEx({float(w/2-390),float(h/2-115),780,260},2,
+                         {190,132,75,255});
+    DrawText("PROCHAINE ETAPE : LE MONDE BAJA",w/2-285,h/2-75,25,GOLD);
+    DrawText("- Deux Trophy Trucks selectionnables",w/2-300,h/2-22,20,RAYWHITE);
+    DrawText("- Un camion adverse pilote par l'IA",w/2-300,h/2+16,20,RAYWHITE);
+    DrawText("- Desert, dunes, bosses et grands sauts",w/2-300,h/2+54,20,RAYWHITE);
+    DrawText("- Chassis tubulaire et suspensions visibles",w/2-300,h/2+92,20,RAYWHITE);
+    DrawText("ENTREE ou ECHAP : retour au choix du mode",
+             w/2-250,h-65,18,LIGHTGRAY);
+    (void)time;
+    EndMode2D();
+}
+
 void HudRenderer::menu(const Simulation& sim,double time) const {
     const auto ui=uiViewport();
     const int w=ui.width,h=ui.height;
