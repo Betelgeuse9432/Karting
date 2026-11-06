@@ -487,6 +487,7 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
     const float r=sizes[slot],width=widths[slot];
     const float track=std::max(float(p.halfWheelTrack*kWorldScale),tracks[slot]);
 
+    const bool baja=index>=6;
     const Vec2 forward{std::cos(car.heading),std::sin(car.heading)};
     const Vec2 lateral{-forward.y,forward.x};
     for(float x:{rear,front}) for(float side:{-1.f,1.f}) {
