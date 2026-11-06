@@ -91,6 +91,15 @@ public:
     std::size_t size() const { return center_.size(); }
     double lapLength() const { return length_; }
     Vec2 point(std::size_t index, double offset = 0) const;
+    // Terrain height is a property of (x,y). Road deck height belongs to
+    // a particular track sample, so overlapping roads may have different Z.
+    double terrainHeight(Vec2 position) const;
+    double roadHeight(std::size_t index) const;
+    // Height-aware lookup for future stacked roads. 'preferredIndex' is a
+    // continuity hint; the existing 2D info() stays unchanged for now.
+    TrackInfo infoAtHeight(Vec2 world, double roadHeight,
+                           std::optional<std::size_t> preferredIndex =
+                               std::nullopt) const;
     std::size_t indexAtDistance(double distance) const;
     Vec2 startPosition() const;
     double startHeading() const;
