@@ -33,7 +33,7 @@ struct VehicleProfile {
     double frontAxle, rearAxle, halfWheelTrack;
     int defaultColor;
 };
-const std::array<VehicleProfile, 6>& profiles();
+const std::array<VehicleProfile, 8>& profiles();
 
 struct Controls {
     bool accelerate = false;
@@ -73,7 +73,8 @@ public:
     static constexpr double pitWidth = 150;
     static constexpr int subdivisions = 45;
 
-    Track();
+    explicit Track(bool baja = false);
+    bool isBaja() const { return baja_; }
     const std::vector<Vec2>& center() const { return center_; }
     const std::vector<Vec2>& normals() const { return normals_; }
     const std::vector<double>& heights() const { return heights_; }
@@ -94,6 +95,7 @@ private:
     std::vector<double> distances_;
     std::vector<bool> pit_;
     double length_ = 0;
+    bool baja_ = false;
 };
 
 struct Weather {
@@ -144,6 +146,8 @@ public:
     int vehicleIndex() const { return vehicleIndex_; }
     int colorIndex() const { return colorIndex_; }
     void selectVehicle(int index, int color = -1);
+    void setMode(bool baja);
+    bool isBaja() const { return track_.isBaja(); }
     void reset(bool preserveRecord = true);
     void setBestLap(double seconds);
     void update(const Controls& controls, double dt);
