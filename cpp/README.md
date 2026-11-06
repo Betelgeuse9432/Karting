@@ -2,6 +2,20 @@
 
 Ce dossier contient la version native **C++20 / raylib** de Karting, utilisée sur les branches `cpp-raylib` et `main-cpp`. Les anciens fichiers du jeu Python ont été retirés de ces deux branches ; ils restent consultables dans l'historique Git et les branches historiques.
 
+## Raccord terrain–chaussée
+
+La chaussée est calculée avec le relief exact **sous chaque sommet de route**
+(centre, bords et accotements), auquel s'ajoute seulement la surélévation
+progressive du pont. Cela évite qu'un bord d'asphalte soit enterré dans
+la colline tandis que l'autre flotte au-dessus du sol. Les portions
+ordinaires restent posées sur le terrain ; les rampes basses possèdent
+des talus latéraux et la travée haute garde son dégagement.
+
+Ce correctif ne change ni le tracé en XY, ni les hauteurs de la ligne
+centrale, ni les règles de conduite. Les collisions des deux niveaux
+restent distinctes. Le rendu et les FPS doivent encore être vérifiés
+sur la machine de jeu.
+
 ## Premier pont à deux niveaux
 
 Sur `cpp-raylib`, l'épingle orientale tourne désormais vers le nord et
