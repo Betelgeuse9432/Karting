@@ -535,19 +535,37 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
             // moving lower wishbone. The spring axis is outside the tyre.
             const Vector3 shockTop{x-.16f,.82f,side*.30f};
             const Vector3 shockBottom{x+.12f,.36f,side*(track-.28f)};
-            const Vector3 axis=Vector3Subtract(shockBottom,shockTop);
-            const Vector3 axisN=Vector3Normalize(axis);
-            Vector3 sideN=Vector3Normalize(Vector3CrossProduct(axisN,{0,0,1}));
-            if(Vector3Length(sideN)<.1f) sideN={1,0,0};
+            const Vector3 axis{shockBottom.x-shockTop.x,
+                                shockBottom.y-shockTop.y,
+                                shockBottom.z-shockTop.z};
+            const float axisLength=std::sqrt(axis.x*axis.x+
+                                             axis.y*axis.y+
+                                             axis.z*axis.z);
+            const Vector3 axisN{axis.x/axisLength,axis.y/axisLength,
+                                axis.z/axisLength};
+            Vector3 sideN{axisN.y,-axisN.x,0.0f};
+            const float sideLength=std::sqrt(sideN.x*sideN.x+
+                                             sideN.y*sideN.y);
+            if(sideLength>.001f) {
+                sideN.x/=sideLength;
+                sideN.y/=sideLength;
+            } else sideN={1,0,0};
             for(int coil=0;coil<44;++coil) {
                 const float t0=float(coil)/44.f,t1=float(coil+1)/44.f;
                 const float a0=t0*8.f*2*PI,a1=t1*8.f*2*PI;
                 const auto springPoint=[&](float t,float angle) {
-                    const Vector3 center=Vector3Add(shockTop,Vector3Scale(axis,t));
-                    const Vector3 offset=Vector3Add(
-                        Vector3Scale(sideN,std::cos(angle)*.043f),
-                        Vector3Scale({0,0,1},std::sin(angle)*.043f));
-                    return Vector3Add(center,offset);
+                    const Vector3 center{
+                        shockTop.x+axis.x*t,
+                        shockTop.y+axis.y*t,
+                        shockTop.z+axis.z*t
+                    };
+                    const Vector3 offset{
+                        sideN.x*std::cos(angle)*.043f,
+                        sideN.y*std::cos(angle)*.043f,
+                        std::sin(angle)*.043f
+                    };
+                    return Vector3{center.x+offset.x,center.y+offset.y,
+                                   center.z+offset.z};
                 };
                 DrawLine3D(springPoint(t0,a0),springPoint(t1,a1),
                            {25,115,255,255});
