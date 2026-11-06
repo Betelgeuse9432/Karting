@@ -95,6 +95,9 @@ public:
     // a particular track sample, so overlapping roads may have different Z.
     double terrainHeight(Vec2 position) const;
     double roadHeight(std::size_t index) const;
+    // Replace only the deck altitude profile, not the XY spline or terrain.
+    // Used later for ramps, bridges and underpasses; default equals terrain.
+    void setRoadHeightProfile(std::vector<double> heights);
     // Height-aware lookup for future stacked roads. 'preferredIndex' is a
     // continuity hint; the existing 2D info() stays unchanged for now.
     TrackInfo infoAtHeight(Vec2 world, double roadHeight,
