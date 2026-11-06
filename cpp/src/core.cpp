@@ -97,8 +97,8 @@ Track::Track() {
             t=std::clamp(t,0.0,1.0);
             return t*t*(3.0-2.0*t);
         };
-        const double rise=470.0*smooth((control-10.0)/4.0)*
-                                (1.0-smooth((control-15.0)/4.0));
+        const double rise=470.0*smooth((control-9.0)/5.0)*
+                                (1.0-smooth((control-14.5)/7.0));
         heights_.push_back(ground+rise);
         bridgeRise_.push_back(rise);
         if (i) length_ += length(center_[i] - center_[i-1]);
