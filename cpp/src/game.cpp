@@ -156,13 +156,10 @@ void Game::handleMenu() {
     if (menuScreen_==MenuScreen::Mode) {
         if (left||right) selectedMode_=1-selectedMode_;
         if (confirm) {
-            menuScreen_=selectedMode_==0?MenuScreen::Vehicle:MenuScreen::BajaPreview;
+            sim_.setMode(selectedMode_==1);
+            world_.initialize(sim_.track());
+            menuScreen_=MenuScreen::Vehicle;
         }
-        return;
-    }
-
-    if (menuScreen_==MenuScreen::BajaPreview) {
-        if (back||confirm) menuScreen_=MenuScreen::Mode;
         return;
     }
 
@@ -170,8 +167,10 @@ void Game::handleMenu() {
         menuScreen_=MenuScreen::Mode;
         return;
     }
-    if (left) sim_.selectVehicle((sim_.vehicleIndex()+5)%6);
-    else if (right) sim_.selectVehicle((sim_.vehicleIndex()+1)%6);
+    const int first=sim_.isBaja()?6:0;
+    const int count=sim_.isBaja()?2:6;
+    if (left) sim_.selectVehicle(first+(sim_.vehicleIndex()-first+count-1)%count);
+    else if (right) sim_.selectVehicle(first+(sim_.vehicleIndex()-first+1)%count);
     if (IsKeyPressed(KEY_UP))
         sim_.selectVehicle(sim_.vehicleIndex(),(sim_.colorIndex()+5)%6);
     else if (IsKeyPressed(KEY_DOWN)||IsKeyPressed(KEY_C))
@@ -229,11 +228,6 @@ void Game::renderMenu(double time) {
         hud_.modeMenu(selectedMode_,time);
         return;
     }
-    if (menuScreen_==MenuScreen::BajaPreview) {
-        hud_.bajaPreview(time);
-        return;
-    }
-
     const float t=float(time*.35);
     const float base=float(elevation({0,0})*kWorldScale);
     Camera3D preview{};
