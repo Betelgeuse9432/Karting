@@ -2,6 +2,28 @@
 
 Ce dossier contient la version native **C++20 / raylib** de Karting, utilisée sur les branches `cpp-raylib` et `main-cpp`. Les anciens fichiers du jeu Python ont été retirés de ces deux branches ; ils restent consultables dans l'historique Git et les branches historiques.
 
+## Architecture de la carte : terrain et chaussée distincts
+
+La représentation conserve **exactement le tracé actuel**. La carte expose
+désormais deux altitudes indépendantes :
+
+- `Track::terrainHeight(position)` : hauteur du sol selon la position XY.
+- `Track::roadHeight(index)` : hauteur du tablier à un échantillon donné
+  de la route, égale au terrain par défaut.
+- `Track::setRoadHeightProfile(...)` : permet de fournir un profil de hauteur
+  spécifique à la route, après validation du nombre d'échantillons et des valeurs.
+- `Track::infoAtHeight(position, altitude, hint)` : recherche la portion de
+  chaussée en tenant compte de la distance en trois dimensions, avec un indice
+  optionnel de continuité pour départager les égalités.
+
+Cette API prépare les routes superposées, rampes et ponts. **Elle ne modifie
+pas encore** la boucle de conduite, les collisions ou le rendu de la route :
+ceux-ci utilisent toujours les méthodes historiques, afin de garantir un
+résultat visuel et comportemental inchangé. Le tracé ne comporte actuellement
+ni pont ni croisement. Une intégration verticale complète nécessitera ensuite
+de brancher le rendu, la voiture, le suivi de course et les collisions sur
+ces altitudes et indices de chaussée.
+
 ## Démarrer sous Windows (PowerShell)
 
 Pré-requis : **Git, CMake >= 3.21**, un compilateur C++20 (Visual Studio avec « Développement Desktop en C++ » ou MinGW-w64) et une connexion Internet au premier configure. CMake télécharge automatiquement **raylib 5.5** si elle n'est pas déjà installée.
