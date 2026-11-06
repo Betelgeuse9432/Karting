@@ -36,7 +36,7 @@ static void quad(Vector3 a,Vector3 b,Vector3 c,Vector3 d,Color color) {
     DrawTriangle3D(d,c,a,color);
 }
 
-static Texture2D makeSurfaceTexture(bool asphalt) {
+static Texture2D makeSurfaceTexture(bool asphalt,bool sand=false) {
     constexpr int size=512;
     Image image=GenImageColor(size,size,asphalt?Color{78,80,86,255}:Color{65,128,53,255});
     std::mt19937 rng(asphalt?173u:947u);
@@ -50,6 +50,11 @@ static Texture2D makeSurfaceTexture(bool asphalt) {
             c={static_cast<unsigned char>(value),
                static_cast<unsigned char>(std::clamp(value+grain(rng)/3,0,255)),
                static_cast<unsigned char>(std::clamp(value+grain(rng)/2,0,255)),255};
+        } else if(sand) {
+            const int value=std::clamp(174+n*2,125,220);
+            c={static_cast<unsigned char>(std::clamp(value+18,0,255)),
+               static_cast<unsigned char>(std::clamp(value,0,255)),
+               static_cast<unsigned char>(std::clamp(value-38+n/3,0,255)),255};
         } else {
             const int value=std::clamp(116+n*2,65,165);
             c={static_cast<unsigned char>(std::clamp(value/2+n/3,0,255)),
@@ -281,8 +286,8 @@ void drawTrackLandmarks(const Track& track, Vector3 camera, int quality,
 
 void WorldRenderer::initialize(const Track& track) {
     shutdown();
-    asphaltTexture_=makeSurfaceTexture(true);
-    grassTexture_=makeSurfaceTexture(false);
+    asphaltTexture_=makeSurfaceTexture(!track.isBaja(),track.isBaja());
+    grassTexture_=makeSurfaceTexture(false,track.isBaja());
     trees_.clear();
     std::mt19937 rng(7);
     std::uniform_real_distribution<double> noise(-310,310);
@@ -313,10 +318,12 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
     const float rain=float(weather.rainLevel);
     const float night=float(weather.nightLevel);
     draw3DLandscape(cameraPosition,quality,night,time);
-    const auto asphalt=shaded({84,86,95,255},1-0.35f*rain-0.52f*night);
+    const auto asphalt=shaded(track.isBaja()?Color{151,105,61,255}:Color{84,86,95,255},
+                               1-0.20f*rain-0.35f*night);
     const auto kerbRed=shaded({223,37,37,255},1-0.25f*night);
     const auto kerbWhite=shaded({230,228,218,255},1-0.4f*night);
-    const auto grass=shaded({53,153,57,255},1-0.1f*rain-0.55f*night);
+    const auto grass=shaded(track.isBaja()?Color{190,143,83,255}:Color{53,153,57,255},
+                            1-0.08f*rain-0.35f*night);
     // Build the visible terrain from the same elevation field as the road.
     // This removes the flat green "table" underneath the hilly circuit.
     const double tile=quality>=3?300.0:480.0;
@@ -388,9 +395,11 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
                      Fade(asphalt, .20f*rain+.28f*night));
         }
         const auto kerb=int(i/5)%2?kerbWhite:kerbRed;
-        paint(-Track::halfWidth-Track::kerb,-Track::halfWidth,kerb);
-        paint(Track::halfWidth,Track::halfWidth+Track::kerb,kerb);
-        if (i%18<9) paint(-2,2,shaded(WHITE,1-0.55f*night));
+        if (!track.isBaja()) {
+            paint(-Track::halfWidth-Track::kerb,-Track::halfWidth,kerb);
+            paint(Track::halfWidth,Track::halfWidth+Track::kerb,kerb);
+            if (i%18<9) paint(-2,2,shaded(WHITE,1-0.55f*night));
+        }
 
         if (track.isPitIndex(i) && track.isPitIndex(j)) {
             paint(Track::halfWidth+Track::kerb+5,
@@ -415,7 +424,7 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
             (progress>.425 && progress<.445) ||
             (progress>.715 && progress<.735);
 
-        if (d2<58*58) {
+        if (!track.isBaja() && d2<58*58) {
             for (int side:{-1,1}) {
                 if (side>0 && track.isPitIndex(i)) continue;
                 const bool outsideCorner=isCorner && side==outsideSide;
@@ -450,7 +459,7 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
     }
 
     // The start gantry, pit garages and ads are inexpensive 3D primitives.
-    if (quality>0) {
+    if (quality>0 && !track.isBaja()) {
         const auto p=track.point(0,-Track::halfWidth-25);
         const auto q=track.point(0,Track::halfWidth+25);
         const auto a=worldPoint(p), b=worldPoint(q);
@@ -475,7 +484,7 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
     }
 
     // Two long, covered grandstands grouped into recognisable spectator zones.
-    if (quality>0) {
+    if (quality>0 && !track.isBaja()) {
         drawGrandstand(track,count*0.22,cameraPosition,night,quality);
         drawGrandstand(track,count*0.68,cameraPosition,night,quality);
         // Sponsor billboards all around the circuit, alternating both sides.
@@ -534,7 +543,7 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
         }
     }
 
-    drawTrackLandmarks(track,cameraPosition,quality,night);
+    if (!track.isBaja()) drawTrackLandmarks(track,cameraPosition,quality,night);
 
     // Tree positions were generated once, instead of walking the circuit
     // and calling nearest-point search on every rendered frame.
@@ -544,6 +553,21 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
         const float distance2=dx*dx+dz*dz;
         const float treeFar=quality==0?28.f:quality==1?39.f:quality==2?50.f:62.f;
         if (distance2>treeFar*treeFar) continue;
+        if(track.isBaja()) {
+            const int rockKind=std::abs(int(p.x*.17+p.y*.29))%3;
+            const float rockSize=.45f+float(std::abs(int(p.x+p.y))%8)*.10f;
+            if(rockKind==0) {
+                DrawCylinderEx(origin,{origin.x,origin.y+rockSize*1.8f,origin.z},
+                    rockSize*.45f,rockSize*.18f,6,
+                    shaded({151,111,72,255},1-.30f*night));
+                DrawSphere({origin.x,origin.y+rockSize*.7f,origin.z},
+                    rockSize*.62f,shaded({177,133,83,255},1-.30f*night));
+            } else {
+                DrawSphere({origin.x,origin.y+rockSize*.35f,origin.z},
+                    rockSize,shaded({160,119,76,255},1-.30f*night));
+            }
+            continue;
+        }
         const int variation=std::abs(int(p.x*.13+p.y*.27))%4;
         const float size=(variation==2?1.18f:variation==1?.72f:0.88f)+
                          float(std::abs(int(p.x+p.y))%9)/18.f;
