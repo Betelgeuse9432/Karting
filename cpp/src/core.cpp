@@ -39,18 +39,17 @@ const std::array<VehicleProfile, 4>& profiles() {
 }
 
 Track::Track() {
-    // Four distinct driving sectors. The starting straight and original
-    // eastern 180-degree hairpin (points 0..11) are intentionally unchanged.
-    // After that: flowing high-speed esses, a double-apex southern complex,
-    // a technical west section and a faster final run to the start.
-    // The closed Catmull-Rom spline remains free of intersections.
+    // A north-turning eastern hairpin exits west, then sweeps back south
+    // across the approach straight on a raised bridge. Rest unchanged.
+    // The route crosses itself in XY but is separated by bridge altitude.
     const std::vector<Vec2> raw{
-        // Sector 1: start straight and signature 180-degree hairpin.
+        // Sector 1: original approach, opposite-turning northern hairpin.
         {8500,2400}, {11200,2380}, {14000,2400}, {17000,2400},
-        {18900,2400}, {19700,2480}, {20250,2800}, {20450,3350},
-        {20250,3900}, {19700,4180}, {18900,4200}, {17400,4200},
-        // Sector 2: fast esses on the east, then a tightening bend.
-        {15900,4350}, {14850,5000}, {14650,6150}, {15400,7400},
+        {18900,2400}, {19700,2320}, {20250,2000}, {20450,1450},
+        {20250,900}, {19700,620}, {18900,600}, {17400,600},
+        // Sector 2: curved raised approach crossing sector 1 near x=14700.
+        {15900,900}, {15100,1550}, {14700,2350}, {14650,3500},
+        {14850,5000}, {14650,6150}, {15400,7400},
         {17200,8100}, {18800,7600}, {20300,8100}, {21100,9700},
         {20900,11500},
         // Sector 3: double apex, short acceleration and southern sweep.
@@ -82,13 +81,26 @@ Track::Track() {
     const auto n = center_.size();
     normals_.reserve(n);
     heights_.reserve(n);
+    bridgeRise_.reserve(n);
     distances_.reserve(n);
     pit_.assign(n, false);
     for (std::size_t i = 0; i < n; ++i) {
         const Vec2 dir = center_[(i+1)%n] - center_[(i+n-1)%n];
         const double inverseLength = 1.0 / std::max(length(dir), 1e-8);
         normals_.push_back({-dir.y * inverseLength, dir.x * inverseLength});
-        heights_.push_back(elevation(center_[i]));
+        const double ground=elevation(center_[i]);
+        // Long, smooth approach and exit ramps. The road crosses the
+        // approach straight at the crest, ~8.5 m above the lower road.
+        // Smoothstep avoids sudden grade changes at either ramp end.
+        const double control=double(i)/subdivisions;
+        const auto smooth=[](double t) {
+            t=std::clamp(t,0.0,1.0);
+            return t*t*(3.0-2.0*t);
+        };
+        const double rise=470.0*smooth((control-10.0)/4.0)*
+                                (1.0-smooth((control-15.0)/4.0));
+        heights_.push_back(ground+rise);
+        bridgeRise_.push_back(rise);
         if (i) length_ += length(center_[i] - center_[i-1]);
         distances_.push_back(length_);
     }
@@ -128,12 +140,37 @@ double Track::terrainHeight(Vec2 position) const {
 double Track::roadHeight(std::size_t index) const {
     return heights_.at(index % heights_.size());
 }
+double Track::bridgeRise(std::size_t index) const {
+    return bridgeRise_.at(index % bridgeRise_.size());
+}
+double Track::roadHeightAt(Vec2 position,std::size_t nearIndex) const {
+    // Project onto the adjacent centreline segments, then interpolate
+    // their deck elevations. This stays on the correct layer at a crossing.
+    const std::size_t n=center_.size(), index=nearIndex%n;
+    double best=std::numeric_limits<double>::infinity();
+    double result=heights_[index];
+    for(const std::size_t first:{(index+n-1)%n,index}) {
+        const std::size_t second=(first+1)%n;
+        const Vec2 leg=center_[second]-center_[first];
+        const double t=std::clamp(dot(position-center_[first],leg)/
+                                   std::max(1e-9,dot(leg,leg)),0.0,1.0);
+        const Vec2 projection=center_[first]+leg*t;
+        const double d2=dot(position-projection,position-projection);
+        if(d2<best) {
+            best=d2;
+            result=heights_[first]+(heights_[second]-heights_[first])*t;
+        }
+    }
+    return result;
+}
 void Track::setRoadHeightProfile(std::vector<double> heights) {
     if(heights.size()!=heights_.size() ||
        !std::all_of(heights.begin(),heights.end(),
                     [](double h){return std::isfinite(h);}))
         throw std::invalid_argument("Invalid road height profile");
     heights_=std::move(heights);
+    for(std::size_t i=0;i<heights_.size();++i)
+        bridgeRise_[i]=heights_[i]-elevation(center_[i]);
 }
 
 // A future bridge can share X/Y with the road beneath it. Compare track
@@ -216,7 +253,7 @@ bool Track::wheelOutside(Vec2 world, std::size_t approxIndex) const {
              side<halfWidth+kerb+pitWidth);
 }
 double Track::collide(Car& car, double dt) const {
-    const auto nearest = info(car.position);
+    const auto nearest = infoAtHeight(car.position,car.height,car.roadIndex);
     const bool pitSide = pit_[nearest.index] && nearest.signedOffset>0;
     const double limit = pitSide ? halfWidth + kerb + pitWidth + 25 : wall - 18;
     if (nearest.distance <= limit) return 0;
@@ -258,7 +295,7 @@ std::optional<double> Race::tick(const Track& track,const Car& car,int outside,d
         warningTime=2.0;
     }
     outsideLastFrame=outside==4;
-    const auto spot=track.info(car.position);
+    const auto spot=track.infoAtHeight(car.position,car.height,car.roadIndex);
     const auto sector=int(spot.index*4/track.size());
     if (sector!=nextSector) return std::nullopt;
     std::optional<double> result;
@@ -289,6 +326,9 @@ void Simulation::selectVehicle(int index,int color) {
 void Simulation::reset(bool preserveRecord) {
     car_=Car{};
     car_.position=track_.startPosition();
+    roadIndex_=0;
+    car_.roadIndex=0;
+    car_.height=track_.roadHeight(0);
     car_.heading=track_.startHeading();
     race_.reset(preserveRecord);
     telemetry_=Telemetry{};
@@ -304,7 +344,7 @@ void Simulation::update(const Controls& controls,double dt) {
     const auto& p=profile();
     weather_.update(dt);
     const auto oldPosition=car_.position;
-    const auto before=track_.info(oldPosition);
+    const auto before=track_.infoAtHeight(oldPosition,car_.height,roadIndex_);
     const auto forward=Vec2{std::cos(car_.heading),std::sin(car_.heading)};
     const auto left=Vec2{-forward.y,forward.x};
     int off=0;
@@ -344,7 +384,8 @@ void Simulation::update(const Controls& controls,double dt) {
         motor*=rearGrip/rearUse;
     }
 
-    const double slope=(elevation(oldPosition+forward*6)-elevation(oldPosition))/6;
+    const double slope=(track_.roadHeightAt(oldPosition+forward*6,before.index)-
+                         track_.roadHeightAt(oldPosition-forward*6,before.index))/12;
     double nextSpeed=v+motor*dt;
     if (v>0.5) nextSpeed-=aBrake*dt;
     else if (controls.brake) nextSpeed-=250*dt;
@@ -375,6 +416,12 @@ void Simulation::update(const Controls& controls,double dt) {
                                  (dt*kTravelScale);
     car_.position.x=std::clamp(car_.position.x,0.0,Track::worldWidth);
     car_.position.y=std::clamp(car_.position.y,0.0,Track::worldHeight);
+    // Keep the car on its current vertical route through the crossover.
+    // The ordinary 2D nearest-line lookup would jump to the lower deck.
+    const auto next=track_.infoAtHeight(car_.position,car_.height,roadIndex_);
+    roadIndex_=next.index;
+    car_.roadIndex=roadIndex_;
+    car_.height=track_.roadHeightAt(car_.position,roadIndex_);
     const double impact=track_.collide(car_,dt);
     car_.brakeHeat=std::clamp(car_.brakeHeat+
             (car_.brake>.05 && car_.speed>0?
