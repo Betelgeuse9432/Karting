@@ -32,7 +32,12 @@ double bajaElevation(Vec2 p) {
         mound(2100,3600,115,18)+mound(4300,3000,145,24)+
         mound(6500,2200,125,17)+mound(8200,6000,170,22)+
         mound(5300,7100,190,16);
-    return elevation(p)*.32+rolling+ripples+rocks;
+    // Broad, asymmetric ramp profiles are part of the ground itself.
+    // The front axle climbs the face before the rear axle reaches the crest.
+    const double ramps=
+        mound(2550,1690,260,24)+mound(7050,1320,220,19)+
+        mound(8950,5750,280,27);
+    return elevation(p)*.18+rolling*.48+ripples*.34+rocks*.55+ramps;
 }
 
 const std::array<VehicleProfile, 8>& profiles() {
@@ -63,9 +68,11 @@ Track::Track(bool baja) : baja_(baja) {
     // technical complex and a fast final sweep back to the start.
     std::vector<Vec2> raw = baja_ ? std::vector<Vec2>{
         {900,5200},{1250,3900},{2200,2850},{3700,2450},
-        {5050,2850},{6350,2050},{7900,2250},{9100,3300},
-        {9400,4750},{8650,6250},{7300,7150},{5550,7250},
-        {3950,7150},{2500,7200},{1250,6700}
+        {5050,2850},{5800,2250},{6350,2050},{7100,1940},{7900,2250},
+        {8500,2700},{9100,3300},{9400,4050},{9400,4750},
+        {9000,5550},{8650,6250},{7900,6800},{7300,7150},
+        {6400,7350},{5550,7250},{4700,6900},{3950,7150},
+        {3100,7350},{2500,7200},{1800,7000},{1250,6700}
     } : std::vector<Vec2>{
         {1700,6500},{2300,7100},{3400,7350},{4400,7000},
         {5000,6250},{5700,5900},{6500,6100},{7300,6800},
@@ -354,14 +361,14 @@ void Simulation::update(const Controls& controls,double dt) {
         for(const double target:{.18,.48,.77}) {
             if(std::abs(progress-target)<.0035 && car_.jumpCooldown<=0.0 &&
                std::abs(car_.speed)>240.0) {
-                const double launchVariation=1.0+0.22*std::sin(double(jumpSpot.index)*.017);
-                car_.verticalSpeed=(105.0+std::abs(car_.speed)*.28)*launchVariation;
+                const double launchVariation=1.0+0.12*std::sin(double(jumpSpot.index)*.017);
+                car_.verticalSpeed=(42.0+std::abs(car_.speed)*.105)*launchVariation;
                 car_.jumpCooldown=2.7;
                 break;
             }
         }
         if(car_.jumpHeight>0.0 || car_.verticalSpeed>0.0) {
-            car_.verticalSpeed-=620.0*dt;
+            car_.verticalSpeed-=390.0*dt;
             car_.jumpHeight+=car_.verticalSpeed*dt;
             if(car_.jumpHeight<=0.0) {
                 car_.jumpHeight=0.0;
@@ -423,14 +430,14 @@ void Simulation::update(const Controls& controls,double dt) {
         for(const double target:{.18,.48,.77}) {
             if(std::abs(aiProgress-target)<.0035 && opponent_.jumpCooldown<=0.0 &&
                opponent_.speed>240.0) {
-                const double launchVariation=1.0+0.22*std::sin(double(aiJumpSpot.index)*.017);
-                opponent_.verticalSpeed=(105.0+opponent_.speed*.28)*launchVariation;
+                const double launchVariation=1.0+0.12*std::sin(double(aiJumpSpot.index)*.017);
+                opponent_.verticalSpeed=(42.0+opponent_.speed*.105)*launchVariation;
                 opponent_.jumpCooldown=2.7;
                 break;
             }
         }
         if(opponent_.jumpHeight>0.0 || opponent_.verticalSpeed>0.0) {
-            opponent_.verticalSpeed-=620.0*dt;
+            opponent_.verticalSpeed-=390.0*dt;
             opponent_.jumpHeight+=opponent_.verticalSpeed*dt;
             if(opponent_.jumpHeight<=0.0) {
                 opponent_.jumpHeight=0.0;
