@@ -196,23 +196,30 @@ void HudRenderer::draw(const Simulation& sim,int quality,int fps) const {
 
     // Circuit minimap (V6 control points and interpolated curve).
     const auto& center=sim.track().center();
-    const float scale=sim.isBaja()?.014f:.023f;
-    const float mapOrigin=sim.isBaja()?5300.f:1600.f;
     const float mx=float(w-239),my=27.f;
-    DrawRectangleRounded({mx-10,my-14,228,187},.11f,8,Fade(BLACK,.75f));
-    for (std::size_t i=0;i<center.size();i+=5) {
-        const auto& a=center[i],b=center[(i+5)%center.size()];
-        DrawLineEx({mx+float(a.x-mapOrigin)*scale,my+float(a.y-mapOrigin)*scale},
-                   {mx+float(b.x-mapOrigin)*scale,my+float(b.y-mapOrigin)*scale},
-                   2.3f,RAYWHITE);
+    const Rectangle mapRect{mx-10,my-14,228,187};
+    DrawRectangleRounded(mapRect,.11f,8,Fade(BLACK,.75f));
+    double minX=1e9,maxX=-1e9,minY=1e9,maxY=-1e9;
+    for(const auto& point:center) {
+        minX=std::min(minX,point.x); maxX=std::max(maxX,point.x);
+        minY=std::min(minY,point.y); maxY=std::max(maxY,point.y);
     }
+    const float mapScale=std::min(float((mapRect.width-28)/std::max(1.0,maxX-minX)),
+                                  float((mapRect.height-28)/std::max(1.0,maxY-minY)));
+    const float mapW=float(maxX-minX)*mapScale,mapH=float(maxY-minY)*mapScale;
+    const float mapX=mapRect.x+(mapRect.width-mapW)*.5f;
+    const float mapY=mapRect.y+(mapRect.height-mapH)*.5f;
+    const auto mapPoint=[&](Vec2 point) {
+        return Vector2{mapX+float(point.x-minX)*mapScale,
+                       mapY+float(point.y-minY)*mapScale};
+    };
+    for(std::size_t i=0;i<center.size();i+=4)
+        DrawLineEx(mapPoint(center[i]),mapPoint(center[(i+4)%center.size()]),
+                   2.3f,sim.isBaja()?Color{222,177,120,255}:RAYWHITE);
     if(sim.isBaja()) {
-        const auto& rival=sim.opponent();
-        DrawCircleV({mx+float(rival.position.x-mapOrigin)*scale,
-                     my+float(rival.position.y-mapOrigin)*scale},4,SKYBLUE);
-    }
-    DrawCircleV({mx+float(car.position.x-mapOrigin)*scale,
-                 my+float(car.position.y-mapOrigin)*scale},5,RED);
+        DrawCircleV(mapPoint(sim.opponent().position),4,SKYBLUE);
+        DrawCircleV(mapPoint(car.position),5,RED);
+    } else DrawCircleV(mapPoint(car.position),5,RED);
     const char* phases[]={"JOUR","CREPUSCULE","NUIT"};
     DrawText(TextFormat("%s%s",phases[weather.phase],
              weather.raining?" + PLUIE":""),w-224,201,17,GOLD);
