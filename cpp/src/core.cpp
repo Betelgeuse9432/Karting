@@ -15,9 +15,13 @@ double length(Vec2 a) { return std::hypot(a.x, a.y); }
 double wrapAngle(double a) { return std::remainder(a, 2 * kPi); }
 
 double elevation(Vec2 p) {
-    return 70 * (0.6 * std::sin(p.x / 1100) +
-                 0.4 * std::sin(p.y / 900 + 1) +
-                 0.3 * std::sin((p.x + p.y) / 1400 + 2));
+    // Broad natural relief under the entire circuit. Longer wavelengths
+    // avoid abrupt crests while increasing the elevation variation.
+    // Keeping the pavement on this surface prevents floating road edges;
+    // independent deck profiles remain available for future bridges.
+    return 510 * (0.56 * std::sin(p.x / 2600) +
+                  0.34 * std::sin(p.y / 2100 + 1) +
+                  0.23 * std::sin((p.x + p.y) / 3200 + 2));
 }
 
 const std::array<VehicleProfile, 4>& profiles() {
