@@ -506,34 +506,54 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
             const float innerZ=side*(track-.34f);
             const Vector3 upperHub{x,wheelY+.13f,side*(track-.012f)};
             const Vector3 lowerHub{x,wheelY-.13f,side*(track-.012f)};
-            const Vector3 upperA{x-.24f,.76f,innerZ};
-            const Vector3 upperB{x+.24f,.76f,innerZ};
-            const Vector3 lowerA{x-.28f,.25f,innerZ};
-            const Vector3 lowerB{x+.28f,.25f,innerZ};
-            rod(upperA,upperHub,.024f,{157,165,174,255});
-            rod(upperB,upperHub,.024f,{157,165,174,255});
-            rod(lowerA,lowerHub,.030f,{125,134,145,255});
-            rod(lowerB,lowerHub,.030f,{125,134,145,255});
-            rod(upperHub,lowerHub,.035f,{75,83,94,255});
-            DrawSphere(upperHub,.032f,{190,197,204,255});
-            DrawSphere(lowerHub,.035f,{190,197,204,255});
-            const float springX=x+.14f;
-            const float springZ=side*(track-.17f);
-            const float springTop=.79f;
-            const float springBottom=wheelY-.10f;
-            for(int coil=0;coil<20;++coil) {
-                const float t0=float(coil)/20.f,t1=float(coil+1)/20.f;
-                const float a0=t0*6.0f*2*PI,a1=t1*6.0f*2*PI;
-                const float y0=springTop+(springBottom-springTop)*t0;
-                const float y1=springTop+(springBottom-springTop)*t1;
-                DrawLine3D({springX+std::cos(a0)*.045f,y0,
-                            springZ+std::sin(a0)*.045f},
-                           {springX+std::cos(a1)*.045f,y1,
-                            springZ+std::sin(a1)*.045f},
+
+            // Triangles have four separate chassis pivots, not floating ends.
+            const Vector3 upperA{x-.24f,.76f,side*.22f};
+            const Vector3 upperB{x+.24f,.76f,side*.22f};
+            const Vector3 lowerA{x-.28f,.25f,side*.22f};
+            const Vector3 lowerB{x+.28f,.25f,side*.22f};
+            const Vector3 upperOuterA{x-.24f,.76f,innerZ};
+            const Vector3 upperOuterB{x+.24f,.76f,innerZ};
+            const Vector3 lowerOuterA{x-.28f,.25f,innerZ};
+            const Vector3 lowerOuterB{x+.28f,.25f,innerZ};
+            rod(upperA,upperOuterA,.035f,{105,115,126,255});
+            rod(upperB,upperOuterB,.035f,{105,115,126,255});
+            rod(lowerA,lowerOuterA,.042f,{105,115,126,255});
+            rod(lowerB,lowerOuterB,.042f,{105,115,126,255});
+            rod(upperOuterA,upperHub,.027f,{157,165,174,255});
+            rod(upperOuterB,upperHub,.027f,{157,165,174,255});
+            rod(lowerOuterA,lowerHub,.034f,{125,134,145,255});
+            rod(lowerOuterB,lowerHub,.034f,{125,134,145,255});
+            rod(upperHub,lowerHub,.038f,{75,83,94,255});
+            for(const Vector3 pivot:{upperA,upperB,lowerA,lowerB})
+                DrawSphere(pivot,.045f,{65,73,83,255});
+            DrawSphere(upperHub,.034f,{190,197,204,255});
+            DrawSphere(lowerHub,.038f,{190,197,204,255});
+
+            // Angled coil-over: top eye on the chassis, lower eye on the
+            // moving lower wishbone. The spring axis is outside the tyre.
+            const Vector3 shockTop{x-.16f,.82f,side*.30f};
+            const Vector3 shockBottom{x+.12f,.36f,side*(track-.28f)};
+            const Vector3 axis=Vector3Subtract(shockBottom,shockTop);
+            const Vector3 axisN=Vector3Normalize(axis);
+            Vector3 sideN=Vector3Normalize(Vector3CrossProduct(axisN,{0,0,1}));
+            if(Vector3Length(sideN)<.1f) sideN={1,0,0};
+            for(int coil=0;coil<44;++coil) {
+                const float t0=float(coil)/44.f,t1=float(coil+1)/44.f;
+                const float a0=t0*8.f*2*PI,a1=t1*8.f*2*PI;
+                const auto springPoint=[&](float t,float angle) {
+                    const Vector3 center=Vector3Add(shockTop,Vector3Scale(axis,t));
+                    const Vector3 offset=Vector3Add(
+                        Vector3Scale(sideN,std::cos(angle)*.043f),
+                        Vector3Scale({0,0,1},std::sin(angle)*.043f));
+                    return Vector3Add(center,offset);
+                };
+                DrawLine3D(springPoint(t0,a0),springPoint(t1,a1),
                            {25,115,255,255});
             }
-            rod({springX,springTop,springZ},
-                {springX,springBottom,springZ},.028f,{69,79,93,255});
+            rod(shockTop,shockBottom,.026f,{69,79,93,255});
+            DrawSphere(shockTop,.055f,{190,197,204,255});
+            DrawSphere(shockBottom,.050f,{190,197,204,255});
         }
         if(slot==5) {
             const Color carbon{22,26,32,255};
