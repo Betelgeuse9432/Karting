@@ -144,11 +144,13 @@ double Track::bridgeRise(std::size_t index) const {
     return bridgeRise_.at(index % bridgeRise_.size());
 }
 double Track::roadHeightAt(Vec2 position,std::size_t nearIndex) const {
-    // Project onto the adjacent centreline segments, then interpolate
-    // their deck elevations. This stays on the correct layer at a crossing.
+    // Elevation of the terrain at the exact requested XY, plus the bridge
+    // ramp offset interpolated along the nearest local route segment.
+    // This keeps normal asphalt embedded consistently in the terrain,
+    // even at the outer edge of a banked or curved road.
     const std::size_t n=center_.size(), index=nearIndex%n;
     double best=std::numeric_limits<double>::infinity();
-    double result=heights_[index];
+    double rise=bridgeRise_[index];
     for(const std::size_t first:{(index+n-1)%n,index}) {
         const std::size_t second=(first+1)%n;
         const Vec2 leg=center_[second]-center_[first];
@@ -158,10 +160,11 @@ double Track::roadHeightAt(Vec2 position,std::size_t nearIndex) const {
         const double d2=dot(position-projection,position-projection);
         if(d2<best) {
             best=d2;
-            result=heights_[first]+(heights_[second]-heights_[first])*t;
+            rise=bridgeRise_[first]+
+                 (bridgeRise_[second]-bridgeRise_[first])*t;
         }
     }
-    return result;
+    return elevation(position)+rise;
 }
 void Track::setRoadHeightProfile(std::vector<double> heights) {
     if(heights.size()!=heights_.size() ||
