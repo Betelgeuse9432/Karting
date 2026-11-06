@@ -20,8 +20,8 @@ double elevation(Vec2 p) {
                  0.3 * std::sin((p.x + p.y) / 1400 + 2));
 }
 
-const std::array<VehicleProfile, 6>& profiles() {
-    static const std::array<VehicleProfile, 6> cars{{
+const std::array<VehicleProfile, 8>& profiles() {
+    static const std::array<VehicleProfile, 8> cars{{
         {"KART", 650, 1300, 1.7, 2.0, 800, 950, 950, 0.0, 30, 0.7, 200,
          0.00005, 0.03, 0.4, 0.2, 0.5, 48, 125, 17, -15, 18, 0},
         {"4x4", 680, 1050, 1.15, 1.3, 560, 600, 650, 0.05, 52, 0.5, 150,
@@ -33,16 +33,25 @@ const std::array<VehicleProfile, 6>& profiles() {
         {"RALLY", 1120, 2200, 1.55, 2.0, 920, 900, 980, 0.22, 48, 0.48, 165,
          0.00018, 0.09, 1.2, 0.08, 0.22, 62, 145, 34, -32, 25, 5},
         {"F1", 1500, 2100, 0.95, 2.5, 1250, 1180, 1280, 2.2, 38, 0.85, 65,
-         0.00010, 0.045, 0.55, 0.12, 0.14, 55, 155, 56, -52, 37, 1}
+         0.00010, 0.045, 0.55, 0.12, 0.14, 55, 155, 56, -52, 37, 1},
+        {"TROPHY 1", 980, 1850, 0.78, 1.55, 720, 470, 500, 0.015, 64, 0.62, 175,
+         0.00032, 0.15, 2.1, 0.015, 0.08, 105, 205, 63, -61, 48, 5},
+        {"TROPHY 2", 1040, 1980, 0.82, 1.60, 760, 495, 525, 0.018, 67, 0.60, 180,
+         0.00030, 0.14, 2.0, 0.015, 0.08, 110, 212, 66, -64, 50, 1}
     }};
     return cars;
 }
 
-Track::Track() {
+Track::Track(bool baja) : baja_(baja) {
     // Apex Ridge: an original, continuous circuit with no crossings.
     // It combines a long opening run, a flowing outer section, a tight
     // technical complex and a fast final sweep back to the start.
-    std::vector<Vec2> raw{
+    std::vector<Vec2> raw = baja_ ? std::vector<Vec2>{
+        {900,5200},{1250,3900},{2200,2850},{3700,2450},
+        {5050,2850},{6350,2050},{7900,2250},{9100,3300},
+        {9400,4750},{8650,6250},{7300,7350},{5550,7650},
+        {3950,7150},{2500,7550},{1250,6700}
+    } : std::vector<Vec2>{
         {1700,6500},{2300,7100},{3400,7350},{4400,7000},
         {5000,6250},{5700,5900},{6500,6100},{7300,6800},
         {8200,6900},{9000,6900},{9500,6250},{9500,5450},
@@ -93,10 +102,12 @@ Track::Track() {
 
     // Pit-lane near the finish line, traversing the wraparound.
     const double stepLength = length_ / n;
-    const int pitCount = std::max(20, int(1900/stepLength));
-    const int pitStart = int(n) - std::max(3, int(500/stepLength));
-    for (int k = 0; k < pitCount; ++k)
-        pit_[std::size_t((pitStart+k) % int(n))] = true;
+    if (!baja_) {
+        const int pitCount = std::max(20, int(1900/stepLength));
+        const int pitStart = int(n) - std::max(3, int(500/stepLength));
+        for (int k = 0; k < pitCount; ++k)
+            pit_[std::size_t((pitStart+k) % int(n))] = true;
+    }
 }
 
 Vec2 Track::point(std::size_t index, double offset) const {
@@ -203,6 +214,13 @@ std::optional<double> Race::tick(const Track& track,const Car& car,int outside,d
 }
 
 Simulation::Simulation() { reset(false); }
+
+void Simulation::setMode(bool baja) {
+    track_ = Track(baja);
+    vehicleIndex_ = baja ? 6 : 2;
+    colorIndex_ = profile().defaultColor;
+    reset(false);
+}
 
 void Simulation::selectVehicle(int index,int color) {
     if (index<0 || index>=int(profiles().size()))
