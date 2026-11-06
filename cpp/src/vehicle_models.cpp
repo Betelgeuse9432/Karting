@@ -371,8 +371,8 @@ void formulaOne(Color paint,Color glass,bool braking) {
                {-.78f,.18f,.43f,.39f},
                {-.25f,.19f,.39f,.38f},
                { .42f,.18f,.36f,.40f},
-               { .92f,.17f,.30f,.36f},
-               {1.34f,.15f,.24f,.25f}},
+               { .92f,.17f,.31f,.38f},
+               {1.34f,.15f,.27f,.32f}},
               paint,tone(paint,.70f));
     // Open cockpit with a visible driver and halo.
     box(-.28f,.40f,0,.70f,.12f,.38f,carbon);
@@ -437,11 +437,12 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
             wheelHeight=std::clamp(wheelHeight,-.075f,.075f);
             const float wheelY=r+.015f+wheelHeight;
             const float innerZ=side*(track-.25f);
-            const Vector3 upperA{x-.17f,.32f,innerZ};
-            const Vector3 upperB{x+.17f,.32f,innerZ};
+            const float innerZ=side*(track-.34f);
+            const Vector3 upperA{x-.22f,.28f,innerZ};
+            const Vector3 upperB{x+.22f,.28f,innerZ};
             const Vector3 upperHub{x,wheelY+.105f,side*(track-.015f)};
-            const Vector3 lowerA{x-.19f,.205f,innerZ};
-            const Vector3 lowerB{x+.19f,.205f,innerZ};
+            const Vector3 lowerA{x-.25f,.12f,innerZ};
+            const Vector3 lowerB{x+.25f,.12f,innerZ};
             const Vector3 lowerHub{x,wheelY-.105f,side*(track-.015f)};
             // Two arms converge at each upright joint: proper triangular
             // upper and lower wishbones, with their inner pivots on brackets.
@@ -450,10 +451,10 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
             rod(lowerA,lowerHub,.022f,{145,153,164,255});
             rod(lowerB,lowerHub,.022f,{145,153,164,255});
             // Short mounts visibly connect the wishbone pivots to the chassis.
-            rod({x-.17f,.32f,side*.34f},upperA,.025f,carbon);
-            rod({x+.17f,.32f,side*.34f},upperB,.025f,carbon);
-            rod({x-.19f,.205f,side*.34f},lowerA,.027f,carbon);
-            rod({x+.19f,.205f,side*.34f},lowerB,.027f,carbon);
+            rod({x-.22f,.28f,side*.24f},upperA,.025f,carbon);
+            rod({x+.22f,.28f,side*.24f},upperB,.025f,carbon);
+            rod({x-.25f,.12f,side*.24f},lowerA,.027f,carbon);
+            rod({x+.25f,.12f,side*.24f},lowerB,.027f,carbon);
             // The upright links both ball joints and moves with the wheel.
             rod(upperHub,lowerHub,.027f,{75,83,95,255});
             DrawSphere(upperHub,.025f,{185,193,203,255});
@@ -461,7 +462,7 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
             // Blue coil-over: its lower end follows the wheel's vertical travel.
             const float springX=x+.12f;
             const float springZ=side*(track-.13f);
-            const float springTop=.34f, springBottom=wheelY-.12f;
+            const float springTop=.30f, springBottom=wheelY-.12f;
             for(int segment=0;segment<48;++segment) {
                 const float t0=float(segment)/48.f,t1=float(segment+1)/48.f;
                 const float a0=t0*6.f*2*PI,a1=t1*6.f*2*PI;
