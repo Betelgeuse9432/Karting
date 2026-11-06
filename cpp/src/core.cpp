@@ -116,6 +116,55 @@ Vec2 Track::point(std::size_t index, double offset) const {
     index %= center_.size();
     return center_[index] + normals_[index] * offset;
 }
+// Terrain and deck are separate concepts. For today's track the cached
+// deck height is the old terrain elevation, preserving the exact geometry.
+double Track::terrainHeight(Vec2 position) const {
+    return elevation(position);
+}
+double Track::roadHeight(std::size_t index) const {
+    return heights_.at(index % heights_.size());
+}
+
+// A future bridge can share X/Y with the road beneath it. Compare track
+// candidates in 3D rather than picking the first nearby 2D sample.
+// The continuity hint only breaks near-equal distances: it cannot pull a
+// vehicle to a remote road. Nothing calls this method during normal driving
+// until multi-level collision support is deliberately enabled.
+TrackInfo Track::infoAtHeight(Vec2 world, double height,
+                              std::optional<std::size_t> preferredIndex) const {
+    if (!std::isfinite(world.x) || !std::isfinite(world.y) ||
+        !std::isfinite(height))
+        throw std::invalid_argument("Non-finite 3D track coordinate");
+    const std::size_t n=center_.size();
+    const std::size_t preferred=preferredIndex ? *preferredIndex%n : 0;
+    std::size_t best=0;
+    double nearest3D=std::numeric_limits<double>::infinity();
+    std::size_t bestArcDistance=n;
+    for(std::size_t i=0;i<n;++i) {
+        const Vec2 delta=center_[i]-world;
+        const double dz=heights_[i]-height;
+        const double d2=dot(delta,delta)+dz*dz;
+        const std::size_t diff=i>preferred?i-preferred:preferred-i;
+        const std::size_t arcDistance=std::min(diff,n-diff);
+        // Prefer the previous route on *exactly equal* 3D distances.
+        const double tolerance=1e-10*std::max(1.0,nearest3D);
+        if (d2<nearest3D-tolerance ||
+            (preferredIndex && std::abs(d2-nearest3D)<=tolerance &&
+             arcDistance<bestArcDistance)) {
+            nearest3D=d2;
+            best=i;
+            bestArcDistance=arcDistance;
+        }
+    }
+    const Vec2 delta=world-center_[best];
+    const double horizontalDistance=length(delta);
+    const double signedOffset=dot(delta,normals_[best]);
+    const bool pits=pit_[best] && signedOffset>halfWidth+kerb &&
+                    signedOffset<halfWidth+kerb+pitWidth;
+    const bool grass=horizontalDistance>halfWidth+kerb && !pits;
+    return {best,horizontalDistance,signedOffset,pits,grass};
+}
+
 Vec2 Track::startPosition() const { return center_.front(); }
 double Track::startHeading() const {
     const Vec2 delta = center_[1] - center_[0];
