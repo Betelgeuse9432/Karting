@@ -124,6 +124,13 @@ double Track::terrainHeight(Vec2 position) const {
 double Track::roadHeight(std::size_t index) const {
     return heights_.at(index % heights_.size());
 }
+void Track::setRoadHeightProfile(std::vector<double> heights) {
+    if(heights.size()!=heights_.size() ||
+       !std::all_of(heights.begin(),heights.end(),
+                    [](double h){return std::isfinite(h);}))
+        throw std::invalid_argument("Invalid road height profile");
+    heights_=std::move(heights);
+}
 
 // A future bridge can share X/Y with the road beneath it. Compare track
 // candidates in 3D rather than picking the first nearby 2D sample.
