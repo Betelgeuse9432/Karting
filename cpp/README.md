@@ -9,7 +9,8 @@ les anciens pylônes et blocs de culées ont été supprimés. Au croisement,
 une **arche unique et large** est construite par sections courbes,
 avec des anneaux latéraux étroits et une voûte intérieure assombrie.
 Les anciens grands panneaux gris pleins au-dessus de l'ouverture ont
-été retirés ; seul un fin joint sous le tablier reste visible. Elle s'ouvre dans l'axe de la route
+été retirés. Des entretoises diagonales fines relient désormais l'anneau
+courbe au tablier sans reboucher les flancs de l'arche. Elle s'ouvre dans l'axe de la route
 inférieure, sans aucun support au milieu du passage. L'arche est dessinée
 seulement à proximité de la caméra et lorsque son volume est visible.
 La géométrie roulable, les hauteurs du tablier et les collisions restent
