@@ -289,12 +289,12 @@ void WorldRenderer::initialize(const Track& track) {
     for (std::size_t i=0;i<track.size();i+=13) {
         for (int side:{-1,1}) {
             const auto p=track.point(i,side*(Track::wall+170)+noise(rng));
-            if (p.x>100 && p.y>100 && p.x<9500 && p.y<8200 &&
+            if (p.x>100 && p.y>100 && p.x<9900 && p.y<8900 &&
                 track.info(p).distance>Track::wall+35)
                 trees_.push_back(p);
         }
     }
-    std::uniform_real_distribution<double> x(0,9800), y(0,8700);
+    std::uniform_real_distribution<double> x(0,10000), y(0,9000);
     for (int i=0;i<300;++i) {
         const Vec2 p{x(rng),y(rng)};
         if (track.info(p).distance>Track::wall+140) trees_.push_back(p);
@@ -327,8 +327,8 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
         for(int gz=baseZ-terrainRadius;gz<=baseZ+terrainRadius;++gz) {
             const double x0=std::max(0.0,gx*tile);
             const double z0=std::max(0.0,gz*tile);
-            const double x1=std::min(9800.0,(gx+1)*tile);
-            const double z1=std::min(8700.0,(gz+1)*tile);
+            const double x1=std::min(10000.0,(gx+1)*tile);
+            const double z1=std::min(9000.0,(gz+1)*tile);
             if(x1<=x0 || z1<=z0) continue;
             const auto a=worldPoint({x0,z0},-2.5f);
             const auto b=worldPoint({x1,z0},-2.5f);
@@ -478,16 +478,49 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
     if (quality>0) {
         drawGrandstand(track,count*0.22,cameraPosition,night,quality);
         drawGrandstand(track,count*0.68,cameraPosition,night,quality);
-        // Advertising panels on selected outside barriers.
-        for (std::size_t i=115;i<count;i+=145) {
-            const auto p=track.point(i,(i/145)%2?Track::wall+35:-Track::wall-35);
-            const auto ground=worldPoint(p);
-            if (Vector3Distance(ground,cameraPosition)>59) continue;
-            const Color ad=palette(int(i/145)%6);
-            DrawCubeV({ground.x,ground.y+1.25f,ground.z},
-                      {2.8f,1.0f,.16f},shaded(ad,1-.42f*night));
-            DrawCubeV({ground.x,ground.y+1.25f,ground.z+.10f},
-                      {2.0f,.17f,.09f},shaded(WHITE,1-.42f*night));
+        // Sponsor billboards all around the circuit, alternating both sides.
+        // Each board has a dark face, a bright brand stripe and a simple graphic
+        // wordmark built from clean 3D bars so it remains readable at speed.
+        for (std::size_t i=36;i<count;i+=std::max<std::size_t>(1,count/24)) {
+            const int side=(int(i/(std::max<std::size_t>(1,count/24)))%2)?1:-1;
+            const Vec2 signWorld=track.point(i,side*(Track::wall+31));
+            const Vector3 base=worldPoint(signWorld);
+            if (Vector3Distance(base,cameraPosition)>72) continue;
+            const Vec2 tangentRaw=track.center()[(i+2)%count]-
+                                  track.center()[(i+count-2)%count];
+            const double tangentLength=std::max(1e-6,length(tangentRaw));
+            const Vec2 tangent=tangentRaw*(1.0/tangentLength);
+            const auto at=[&](double along,float y) {
+                const Vec2 q=signWorld+tangent*along;
+                const auto w=worldPoint(q);
+                return Vector3{w.x,w.y+y,w.z};
+            };
+            const float halfWidth=3.25f;
+            const float bottom=.85f, top=2.85f;
+            const Color brand=palette(int(i/(std::max<std::size_t>(1,count/24)))%6);
+            const Color darkFace=shaded({18,23,32,255},1-.38f*night);
+            quad(at(-halfWidth,bottom),at(halfWidth,bottom),
+                 at(halfWidth,top),at(-halfWidth,top),darkFace);
+            quad(at(-halfWidth,top-.20f),at(halfWidth,top-.20f),
+                 at(halfWidth,top),at(-halfWidth,top),
+                 shaded(brand,1-.35f*night));
+            for (double end:{-halfWidth+.18,halfWidth-.18}) {
+                DrawCylinderEx(at(end,.08f),at(end,bottom),.075f,.065f,7,
+                               shaded({95,103,115,255},1-.4f*night));
+            }
+            // Abstract high-contrast sponsor lettering, visible as the car passes.
+            quad(at(-2.25f,1.35f),at(-1.45f,1.35f),
+                 at(-1.45f,2.35f),at(-2.25f,2.35f),brand);
+            quad(at(-2.08f,1.55f),at(-1.62f,1.55f),
+                 at(-1.62f,2.12f),at(-2.08f,2.12f),darkFace);
+            for (int bar=0;bar<3;++bar) {
+                const float y=2.12f-bar*.31f;
+                const float left=-1.05f;
+                const float right=1.0f-(bar%2)*.42f;
+                quad(at(left,y-.075f),at(right,y-.075f),
+                     at(right,y+.075f),at(left,y+.075f),
+                     shaded(WHITE,1-.38f*night));
+            }
         }
         // Pit-lane lighting: lamps become brighter at night.
         for (std::size_t i=0;i<count;i+=90) {
