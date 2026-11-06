@@ -98,7 +98,7 @@ void drawMountain(Vector3 base, float radius, float height, Color color,
     DrawCylinderEx(base,shoulder,radius*.92f,radius*.50f,slices,
                    Fade(color,.94f));
 }
-void draw3DLandscape(Vector3 camera, int quality, float night, double time) {
+void draw3DLandscape(Vector3 camera, int quality, float night, double time, bool baja) {
     const Color far{83,105,126,255};
     const Color mid{68,91,76,255};
     // The circuit occupies the central map. Keep every mountain well outside
@@ -317,7 +317,7 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
                          Vector3 cameraPosition,double time) const {
     const float rain=float(weather.rainLevel);
     const float night=float(weather.nightLevel);
-    draw3DLandscape(cameraPosition,quality,night,time);
+    draw3DLandscape(cameraPosition,quality,night,time,track.isBaja());
     const auto asphalt=shaded(track.isBaja()?Color{151,105,61,255}:Color{84,86,95,255},
                                1-0.20f*rain-0.35f*night);
     const auto kerbRed=shaded({223,37,37,255},1-0.25f*night);
