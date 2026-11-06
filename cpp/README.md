@@ -2,24 +2,19 @@
 
 Ce dossier contient la version native **C++20 / raylib** de Karting, utilisée sur les branches `cpp-raylib` et `main-cpp`. Les anciens fichiers du jeu Python ont été retirés de ces deux branches ; ils restent consultables dans l'historique Git et les branches historiques.
 
-## Habillage architectural du pont (développement)
+## Viaduc moderne (référence visuelle)
 
-Le pont conserve ses rampes, son tablier et ses parapets, mais tous
-les anciens pylônes et blocs de culées ont été supprimés. Au croisement,
-une **arche unique et large** est construite par sections courbes,
-avec des anneaux latéraux étroits et une voûte intérieure assombrie.
-Les anciens grands panneaux gris pleins au-dessus de l'ouverture ont
-été retirés. Des entretoises diagonales fines relient désormais l'anneau
-courbe au tablier sans reboucher les flancs de l'arche. Elle s'ouvre dans l'axe de la route
-inférieure, sans aucun support au milieu du passage. L'arche est dessinée
-seulement à proximité de la caméra et lorsque son volume est visible.
-La géométrie roulable, les hauteurs du tablier et les collisions restent
-inchangées.
+Le pont est désormais conçu comme un viaduc contemporain inspiré du visuel
+de référence : tablier clair et relativement fin, garde-corps sobres,
+dessous de dalle lisible et deux appuis rectangulaires espacés.
+La grande arche, les croisillons et les volumes maçonnés massifs ont été
+retirés. Les appuis sont éloignés du croisement et ne coupent pas la route
+qui passe dessous. Le frustum culling reste actif.
 
-Ce travail est **uniquement visuel** : ni les points de contrôle, ni
-l'altitude du tablier, ni les pentes, ni le comportement des voitures
-n'ont été modifiés. La validation en jeu est nécessaire avant tout
-transfert vers `main-cpp`.
+Cette révision est exclusivement graphique : l'épingle, les 45 points de
+contrôle du circuit, les rampes, le profil d'altitude, les collisions et
+la physique sont inchangés. Compilation et rendu réel restent à valider
+avant une éventuelle synchronisation de `main-cpp`.
 
 ## Raccord terrain–chaussée
 
@@ -47,7 +42,7 @@ de commande.
 La voiture conserve une altitude et un indice de voie courante.
 La recherche de chaussée, la collision et le chronométrage distinguent
 les deux niveaux au croisement. Le renderer dessine un vrai tablier
-avec flancs, dessous et arche centrale au-dessus de la chaussée inférieure,
+avec un tablier clair et deux appuis discrets hors de la chaussée inférieure,
 ainsi que ses barrières à la bonne hauteur. Le décor naturel ne suit pas
 la hauteur du tablier : il reste au niveau du terrain.
 
