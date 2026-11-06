@@ -2,6 +2,27 @@
 
 Ce dossier contient la version native **C++20 / raylib** de Karting, utilisée sur les branches `cpp-raylib` et `main-cpp`. Les anciens fichiers du jeu Python ont été retirés de ces deux branches ; ils restent consultables dans l'historique Git et les branches historiques.
 
+## Premier pont à deux niveaux
+
+Sur `cpp-raylib`, l'épingle orientale tourne désormais vers le nord et
+sa sortie recroise **une seule fois** la ligne droite d'approche. Le pont
+passe au-dessus de celle-ci avec environ **8,5 mètres** de séparation
+verticale. Les rampes suivent des profils lissés de part et d'autre.
+Le parcours conserve quatre secteurs, les quatre véhicules et les réglages
+de commande.
+
+La voiture conserve une altitude et un indice de voie courante.
+La recherche de chaussée, la collision et le chronométrage distinguent
+les deux niveaux au croisement. Le renderer dessine un vrai tablier
+avec flancs, dessous et piliers espacés en évitant la chaussée inférieure,
+ainsi que ses barrières à la bonne hauteur. Le décor naturel ne suit pas
+la hauteur du tablier : il reste au niveau du terrain.
+
+Le pont est une expérimentation sur la branche de développement.
+**Compilation et rendu réel restent à valider**, notamment la continuité
+de trajectoire, le passage dessous et les performances. Ne pas fusionner
+dans `main-cpp` avant validation.
+
 ## Adhérence visuelle de la voiture aux pentes
 
 La position et l'inclinaison du véhicule sont calculées depuis quatre
