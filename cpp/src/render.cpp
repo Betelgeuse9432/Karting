@@ -269,6 +269,29 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
                     quad(seamA,seamB,topB,topA,edge);
                 }
             }
+            // Slim diagonal struts transfer the arch ring into the deck.
+            // They replace the old filled sidewalls, not the road opening.
+            // At the crown the gap is already short; elsewhere the braces
+            // follow the curve without extending down into the underpass.
+            if(quality>0) {
+                const Color brace=shaded({148,155,164,255},1-.36f*night);
+                const Color node=shaded({207,210,211,255},1-.33f*night);
+                for(const int relative:{-11,-6,-2,2,6,11}) {
+                    const std::size_t k=std::size_t(
+                        int(crossingIndex)+relative);
+                    const std::size_t attach=std::size_t(
+                        int(crossingIndex)+relative+(relative<0?3:-3));
+                    for(const int side:{-1,1}) {
+                        const Vector3 foot=slice(k,relative,side,20);
+                        const Vector3 cap=roadPoint(attach,side*lip,-32);
+                        // No visible strut if the concrete deck already
+                        // meets the curved crown.
+                        if(cap.y-foot.y<.20f)continue;
+                        DrawCylinderEx(foot,cap,.14f,.115f,7,brace);
+                        DrawSphereEx(foot,.19f,5,7,node);
+                    }
+                }
+            }
         }
     }
 
