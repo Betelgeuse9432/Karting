@@ -15,7 +15,11 @@ constexpr float kScale = static_cast<float>(kWorldScale);
 Vector3 worldPoint(Vec2 p, float heightOffset = 0);
 Color palette(int index);
 
-struct TireMark { Vec2 start{}, end{}; double age = 0; };
+struct TireMark {
+    Vec2 start{}, end{};
+    double age = 0;
+    double startHeight = 0, endHeight = 0;
+};
 struct Particle {
     Vec2 location{};
     double height = 0, dx = 0, dy = 0, dz = 0, life = 0, maxLife = 1;
@@ -32,6 +36,7 @@ private:
     std::deque<TireMark> marks_;
     std::vector<Particle> particles_;
     std::array<Vec2,4> previous_{};
+    std::array<double,4> previousHeight_{};
     bool lastSkidding_ = false;
     double previousThrottle_ = 0;
     double backfireCooldown_ = 0;
