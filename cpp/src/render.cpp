@@ -62,7 +62,7 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
     const auto roadPoint=[&](std::size_t i,double offset,double lift=0.0) {
         const Vec2 p=track.point(i,offset);
         return Vector3{float(p.x*kWorldScale),
-                       float((track.roadHeight(i)+lift)*kWorldScale),
+                       float((track.roadHeightAt(p,i)+lift)*kWorldScale),
                        float(p.y*kWorldScale)};
     };
     const float farDistance=quality==0?47.f:quality==1?63.f:81.f;
@@ -100,6 +100,26 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
                   shaded({110,111,119,255},1-.3f*rain-.55f*night));
             paint(Track::halfWidth+Track::kerb+5,
                   Track::halfWidth+Track::kerb+7,YELLOW);
+        }
+        // Earth embankments support the approach ramps. Only the genuinely
+        // elevated bridge span stays open underneath for the lower roadway.
+        const double riseI=track.bridgeRise(i),riseJ=track.bridgeRise(j);
+        if((riseI>5 || riseJ>5) && std::max(riseI,riseJ)<230) {
+            const Color soil=shaded({96,108,80,255},1-.35f*night);
+            for(const int side:{-1,1}) {
+                const double edge=side*(Track::halfWidth+Track::kerb);
+                const double toe=side*(Track::halfWidth+Track::kerb+220);
+                const auto upperA=roadPoint(i,edge,0);
+                const auto upperB=roadPoint(j,edge,0);
+                const Vec2 toeA=track.point(i,toe),toeB=track.point(j,toe);
+                const Vector3 lowerA{float(toeA.x*kWorldScale),
+                    float((elevation(toeA)-9)*kWorldScale),
+                    float(toeA.y*kWorldScale)};
+                const Vector3 lowerB{float(toeB.x*kWorldScale),
+                    float((elevation(toeB)-9)*kWorldScale),
+                    float(toeB.y*kWorldScale)};
+                quad(upperA,upperB,lowerB,lowerA,soil);
+            }
         }
         // Visible bridge sidewalls make the elevated roadway a solid deck.
         // Skip near-flat ramps so the underside never cuts through terrain.
