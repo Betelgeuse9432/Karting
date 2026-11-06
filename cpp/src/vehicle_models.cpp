@@ -579,7 +579,7 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
 
 void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
                            int index,int colorIndex,bool night) const {
-    const Vector3 p=worldPoint(car.position);
+    const Vector3 p=worldPoint(car.position,float(car.jumpHeight));
     const Color paint=palette(colorIndex);
     const Color dark{31,34,42,255};
     const Color glass=night?Color{29,48,70,255}:Color{58,104,139,255};
