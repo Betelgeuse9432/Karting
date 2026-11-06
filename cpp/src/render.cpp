@@ -180,118 +180,44 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
         i+=step;
     }
 
-    // One masonry-style arch centered over the lower approach road.
-    // Its opening runs ALONG the elevated track; the lower road crosses
-    // that opening perpendicular to the bridge. No columns in the tunnel.
-    if(quality>0) {
-        constexpr Vec2 crossing{14689,2401};
-        constexpr int halfArchSamples=15;
-        std::size_t crossingIndex=14*Track::subdivisions;
-        double bestDistance=1e30;
-        for(std::size_t k=12*Track::subdivisions;
-            k<=16*Track::subdivisions && k<count;++k) {
-            const Vec2 delta=track.point(k)-crossing;
-            const double d2=dot(delta,delta);
-            if(d2<bestDistance) {
-                bestDistance=d2;
-                crossingIndex=k;
-            }
-        }
-        const Vector3 archCenter=roadPoint(crossingIndex,0);
-        const float adx=archCenter.x-cameraPosition.x;
-        const float adz=archCenter.z-cameraPosition.z;
-        if(adx*adx+adz*adz<80.f*80.f &&
-           frustum.visible(archCenter,23.f)) {
-            // Keep the arch OPEN: no massive spandrel walls between
-            // the curved ring and the bridge deck.
-            const Color ring=shaded({186,189,190,255},1-.35f*night);
-            const Color edge=shaded({118,126,135,255},1-.36f*night);
-            const Color tunnel=shaded({68,75,83,255},1-.43f*night);
-            constexpr double lip=Track::halfWidth+Track::kerb+24;
-            constexpr double spring=8.0;
-            // For each longitudinal slice, define the bottom of the arch.
-            // At its centre the opening is close to the underside of the
-            // deck; at the spring points it joins the natural ground.
-            const auto archLevel=[&](std::size_t k,int offset) {
-                const double u=double(offset)/halfArchSamples;
-                const double crown=std::sqrt(std::max(0.0,1.0-u*u));
-                const Vec2 center=track.point(k);
-                const double ground=elevation(center);
-                const double deck=track.roadHeightAt(center,k);
-                return ground+spring+
-                       std::max(0.0,deck-ground-80.0-spring)*crown;
-            };
-            const auto at=[&](std::size_t k,double lateral,double height) {
-                const Vec2 p=track.point(k,lateral);
-                return Vector3{float(p.x*kWorldScale),
-                               float(height*kWorldScale),
-                               float(p.y*kWorldScale)};
-            };
-            const auto slice=[&](std::size_t k,int offset,int side,
-                                 double aboveArch) {
-                const Vec2 p=track.point(k,side*lip);
-                const double terrain=elevation(p);
-                const double axisGround=elevation(track.point(k));
-                // Follow the lateral ground undulation, rather than
-                // creating a straight floating arch edge.
-                const double local=archLevel(k,offset)+terrain-axisGround;
-                return at(k,side*lip,local+aboveArch);
-            };
-            const std::size_t begin=crossingIndex-halfArchSamples;
-            for(int j=-halfArchSamples;j<halfArchSamples;++j) {
-                const std::size_t i=begin+std::size_t(j+halfArchSamples);
-                const std::size_t next=i+1;
-                const auto ceilingLeft=slice(i,j,-1,0);
-                const auto ceilingRight=slice(i,j,1,0);
-                const auto nextLeft=slice(next,j+1,-1,0);
-                const auto nextRight=slice(next,j+1,1,0);
-                // Curved vault visible from beneath. A separate roof
-                // surface avoids a hollow-looking paper bridge.
-                quad(ceilingLeft,nextLeft,nextRight,ceilingRight,tunnel);
-                for(const int side:{-1,1}) {
-                    const auto footA=slice(i,j,side,0);
-                    const auto footB=slice(next,j+1,side,0);
-                    // A narrow, continuous curved stone ring, not a
-                    // full-height grey wall. Its depth stays restrained
-                    // near the crown where the road deck is lowest.
-                    const auto topA=roadPoint(i,side*lip,-29);
-                    const auto topB=roadPoint(next,side*lip,-29);
-                    auto trimA=slice(i,j,side,20);
-                    auto trimB=slice(next,j+1,side,20);
-                    trimA.y=std::min(trimA.y,topA.y-.04f);
-                    trimB.y=std::min(trimB.y,topB.y-.04f);
-                    if(trimA.y>footA.y && trimB.y>footB.y)
-                        quad(footA,footB,trimB,trimA,ring);
-                    // Thin under-deck edge keeps the two parts visually
-                    // connected without closing the space above the arch.
-                    const auto seamA=roadPoint(i,side*lip,-34);
-                    const auto seamB=roadPoint(next,side*lip,-34);
-                    quad(seamA,seamB,topB,topA,edge);
+    // Modern viaduct supports: two restrained, rectangular concrete piers.
+    // The crossover itself remains completely free for the lower road.
+    // Unlike the former arch, nothing spans above the opening.
+    if (quality>0) {
+        const Color pier=shaded({183,186,192,255},1-.36f*night);
+        const Color footing=shaded({124,130,138,255},1-.40f*night);
+        const Color cap=shaded({214,215,216,255},1-.34f*night);
+        // Locations on either side of the crossover, away from the lower
+        // straight. Do not place any support under the crossing itself.
+        for(const std::size_t i:{
+                std::size_t(12*Track::subdivisions),
+                std::size_t(17*Track::subdivisions)}) {
+            if(i>=count || track.bridgeRise(i)<160) continue;
+            const Vec2 xy=track.point(i);
+            const Vector3 top=roadPoint(i,0,-31);
+            const float dx=top.x-cameraPosition.x;
+            const float dz=top.z-cameraPosition.z;
+            if(dx*dx+dz*dz>62.f*62.f || !frustum.visible(top,9.f)) continue;
+            // Protect the full width of the lower carriageway plus its
+            // barriers, even if the track changes slightly in the future.
+            bool nearUnderpass=false;
+            for(std::size_t j=0;j<5*Track::subdivisions;j+=2) {
+                if(length(xy-track.point(j))<Track::wall+135) {
+                    nearUnderpass=true;
+                    break;
                 }
             }
-            // Slim diagonal struts transfer the arch ring into the deck.
-            // They replace the old filled sidewalls, not the road opening.
-            // At the crown the gap is already short; elsewhere the braces
-            // follow the curve without extending down into the underpass.
-            if(quality>0) {
-                const Color brace=shaded({148,155,164,255},1-.36f*night);
-                const Color node=shaded({207,210,211,255},1-.33f*night);
-                for(const int relative:{-11,-6,-2,2,6,11}) {
-                    const std::size_t k=std::size_t(
-                        int(crossingIndex)+relative);
-                    const std::size_t attach=std::size_t(
-                        int(crossingIndex)+relative+(relative<0?3:-3));
-                    for(const int side:{-1,1}) {
-                        const Vector3 foot=slice(k,relative,side,20);
-                        const Vector3 cap=roadPoint(attach,side*lip,-32);
-                        // No visible strut if the concrete deck already
-                        // meets the curved crown.
-                        if(cap.y-foot.y<.20f)continue;
-                        DrawCylinderEx(foot,cap,.14f,.115f,7,brace);
-                        DrawSphereEx(foot,.19f,5,7,node);
-                    }
-                }
-            }
+            if(nearUnderpass) continue;
+            const float ground=float(elevation(xy)*kWorldScale);
+            const float available=top.y-ground;
+            if(available<1.6f) continue;
+            const Vector3 middle{top.x,(top.y+ground)*.5f,top.z};
+            // Narrow square pier, oriented simply with the roadway.
+            DrawCubeV(middle,{1.15f,available,1.15f},pier);
+            DrawCubeV({top.x,ground+.10f,top.z},
+                      {1.65f,.20f,1.65f},footing);
+            DrawCubeV({top.x,top.y-.10f,top.z},
+                      {1.60f,.20f,1.60f},cap);
         }
     }
 
