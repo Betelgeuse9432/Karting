@@ -2,6 +2,21 @@
 
 Ce dossier contient la version native **C++20 / raylib** de Karting, utilisée sur les branches `cpp-raylib` et `main-cpp`. Les anciens fichiers du jeu Python ont été retirés de ces deux branches ; ils restent consultables dans l'historique Git et les branches historiques.
 
+## Habillage architectural du pont (développement)
+
+Le pont dispose maintenant de rampes avec banquettes et talus à deux
+inclinaisons, de poutres latérales en béton, d'un dessous contrasté,
+de parapets continus et d'appuis plus volumineux. Des culées ponctuelles
+marquent les transitions avec les rampes. Les appuis sont générés hors du
+corridor de la chaussée inférieure ; l'ancienne collision physique ne
+change pas. Le détail architectural est soumis au filtrage par distance
+et par champ de vision, et réduit dans les faibles qualités graphiques.
+
+Ce travail est **uniquement visuel** : ni les points de contrôle, ni
+l'altitude du tablier, ni les pentes, ni le comportement des voitures
+n'ont été modifiés. La validation en jeu est nécessaire avant tout
+transfert vers `main-cpp`.
+
 ## Raccord terrain–chaussée
 
 La chaussée est calculée avec le relief exact **sous chaque sommet de route**
