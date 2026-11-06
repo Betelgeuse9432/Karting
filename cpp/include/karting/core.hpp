@@ -22,6 +22,7 @@ Vec2 operator*(Vec2 a, double s);
 double dot(Vec2 a, Vec2 b);
 double length(Vec2 a);
 double elevation(Vec2 p);
+double bajaElevation(Vec2 p);
 double wrapAngle(double angle);
 
 struct VehicleProfile {
