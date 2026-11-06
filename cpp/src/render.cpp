@@ -327,7 +327,7 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
                             1-0.08f*rain-0.35f*night);
     // Build the visible terrain from the same elevation field as the road.
     // This removes the flat green "table" underneath the hilly circuit.
-    const double tile=quality>=3?300.0:480.0;
+    const double tile=track.isBaja()?85.0:(quality>=3?300.0:480.0);
     const int baseX=int(std::floor((cameraPosition.x/kWorldScale)/tile));
     const int baseZ=int(std::floor((cameraPosition.z/kWorldScale)/tile));
     const int terrainRadius=quality==0?4:quality==1?5:quality==2?6:7;
