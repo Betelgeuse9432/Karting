@@ -1,4 +1,5 @@
 #include "karting/core.hpp"
+#include <algorithm>
 #include <cmath>
 #include <exception>
 #include <iostream>
@@ -29,6 +30,18 @@ void testCircuit() {
             "Starting point fits the extended world");
     require(std::isfinite(track.startHeading()),"Finite starting heading");
     require(track.heights().size()==track.size(),"Cached relief per vertex");
+    // New relief must be more pronounced without steep discontinuities.
+    const auto& deck=track.heights();
+    const auto [minElevation,maxElevation]=std::minmax_element(deck.begin(),deck.end());
+    require(*maxElevation-*minElevation>700,
+            "The same XY course now has meaningful climbs and descents");
+    for(std::size_t i=0;i<track.size();++i) {
+        const std::size_t next=(i+1)%track.size();
+        const double run=length(track.point(next)-track.point(i));
+        require(run>1e-8,"Track samples remain distinct");
+        const double grade=std::abs(track.roadHeight(next)-track.roadHeight(i))/run;
+        require(grade<.20,"No sudden slope or unrealistic road crest");
+    }
     const auto near=track.info(start);
     require(near.distance<1e-6,"Start line is on the track");
     require(!near.grass,"No grass at start");
