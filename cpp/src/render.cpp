@@ -48,7 +48,8 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
     const auto kerbWhite=shaded({230,228,218,255},1-0.4f*night);
     const auto grass=shaded({53,153,57,255},1-0.1f*rain-0.55f*night);
     // A distant lower base hides the far edge of the camera-local terrain.
-    DrawPlane({float(Track::worldWidth*kWorldScale*.5f),-4.f,
+    // Keep the distant backdrop safely beneath the deeper valleys.
+    DrawPlane({float(Track::worldWidth*kWorldScale*.5f),-18.f,
                float(Track::worldHeight*kWorldScale*.5f)},
               {float(Track::worldWidth*kWorldScale),
                float(Track::worldHeight*kWorldScale)},
