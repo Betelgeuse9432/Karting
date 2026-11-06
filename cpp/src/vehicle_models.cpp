@@ -483,7 +483,7 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
     constexpr std::array<float,8> sizes{{.155f,.265f,.205f,.195f,.180f,.220f,.315f,.325f}};
     constexpr std::array<float,8> widths{{.19f,.26f,.22f,.21f,.21f,.245f,.34f,.36f}};
     constexpr std::array<float,8> tracks{{.45f,.65f,.48f,.58f,.58f,.63f,.88f,.92f}};
-    const std::size_t slot=std::size_t(std::clamp(index,0,5));
+    const std::size_t slot=std::size_t(std::clamp(index,0,7));
     const float r=sizes[slot],width=widths[slot];
     const float track=std::max(float(p.halfWheelTrack*kWorldScale),tracks[slot]);
 
@@ -498,6 +498,7 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
         float wheelHeight=float(
             (elevation(wheelWorld)-elevation(car.position))*kWorldScale);
         if(slot==2) wheelHeight=std::clamp(wheelHeight,-.045f,.045f);
+        if(slot>=6) wheelHeight=std::clamp(wheelHeight,-.16f,.16f);
         if(slot==5) {
             const Color carbon{22,26,32,255};
             wheelHeight=std::clamp(wheelHeight,-.075f,.075f);
