@@ -436,7 +436,6 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
             const Color carbon{22,26,32,255};
             wheelHeight=std::clamp(wheelHeight,-.075f,.075f);
             const float wheelY=r+.015f+wheelHeight;
-            const float innerZ=side*(track-.25f);
             const float innerZ=side*(track-.34f);
             const Vector3 upperA{x-.22f,.28f,innerZ};
             const Vector3 upperB{x+.22f,.28f,innerZ};
