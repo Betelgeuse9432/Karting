@@ -8,9 +8,10 @@
 
 namespace karting {
 
-Vector3 worldPoint(Vec2 p, float heightOffset) {
+Vector3 worldPoint(Vec2 p, float heightOffset, bool baja) {
+    const double ground=baja?bajaElevation(p):elevation(p);
     return {float(p.x*kWorldScale),
-            float((elevation(p)+heightOffset)*kWorldScale),
+            float((ground+heightOffset)*kWorldScale),
             float(p.y*kWorldScale)};
 }
 
@@ -337,20 +338,20 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
             const double x1=std::min(10000.0,(gx+1)*tile);
             const double z1=std::min(9000.0,(gz+1)*tile);
             if(x1<=x0 || z1<=z0) continue;
-            const auto a=worldPoint({x0,z0},-2.5f);
-            const auto b=worldPoint({x1,z0},-2.5f);
-            const auto c=worldPoint({x1,z1},-2.5f);
-            const auto d=worldPoint({x0,z1},-2.5f);
+            const auto a=worldPoint({x0,z0},-2.5f,track.isBaja());
+            const auto b=worldPoint({x1,z0},-2.5f,track.isBaja());
+            const auto c=worldPoint({x1,z1},-2.5f,track.isBaja());
+            const auto d=worldPoint({x0,z1},-2.5f,track.isBaja());
             const int patch=(std::abs(gx*7+gz*11)%5);
             // Always draw a real terrain base first. The texture is a detail layer.
-            quad(worldPoint({x0,z0},-2.65f),worldPoint({x1,z0},-2.65f),
-                 worldPoint({x1,z1},-2.65f),worldPoint({x0,z1},-2.65f),
+            quad(worldPoint({x0,z0},-2.65f,track.isBaja()),worldPoint({x1,z0},-2.65f,track.isBaja()),
+                 worldPoint({x1,z1},-2.65f,track.isBaja()),worldPoint({x0,z1},-2.65f,track.isBaja()),
                  shaded(grass,.94f+patch*.025f));
             if(grassTexture_.id) {
-                const auto ta=worldPoint({x0,z0},-1.8f);
-                const auto tb=worldPoint({x1,z0},-1.8f);
-                const auto tc=worldPoint({x1,z1},-1.8f);
-                const auto td=worldPoint({x0,z1},-1.8f);
+                const auto ta=worldPoint({x0,z0},-1.8f,track.isBaja());
+                const auto tb=worldPoint({x1,z0},-1.8f,track.isBaja());
+                const auto tc=worldPoint({x1,z1},-1.8f,track.isBaja());
+                const auto td=worldPoint({x0,z1},-1.8f,track.isBaja());
                 const float u=float(x1-x0)/8.f,v=float(z1-z0)/8.f;
                 texturedQuad(ta,tb,tc,td,grassTexture_,u,v);
                 // Weather tint is a cheap overlay, not another texture pass.
@@ -364,14 +365,14 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
     const float farDistance=quality==0?47.f:quality==1?63.f:quality==2?81.f:98.f;
     const auto& center=track.center();
     for (std::size_t i=0;i<count;) {
-        const Vector3 mid=worldPoint(center[i]);
+        const Vector3 mid=worldPoint(center[i],0,track.isBaja());
         const float dx=mid.x-cameraPosition.x, dz=mid.z-cameraPosition.z;
         const float d2=dx*dx+dz*dz;
         if (d2>(farDistance+12)*(farDistance+12)) { ++i; continue; }
         const std::size_t step=(d2<40*40?1:quality==0?5:quality==1?3:quality==2?2:1);
         const auto j=(i+step)%count;
         const auto l=[&](std::size_t k,double off) {
-            return worldPoint(track.point(k,off),1);
+            return worldPoint(track.point(k,off),1,track.isBaja());
         };
         const auto paint=[&](double left,double right,Color color) {
             quad(l(i,left),l(j,left),l(j,right),l(i,right),color);
@@ -383,10 +384,10 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
         if(asphaltTexture_.id) {
             const float roadLength=Vector3Distance(roadA,roadB);
             const float roadWidth=Vector3Distance(roadA,roadD);
-            const auto ra=worldPoint(track.point(i,-Track::halfWidth),1.8f);
-            const auto rb=worldPoint(track.point(j,-Track::halfWidth),1.8f);
-            const auto rc=worldPoint(track.point(j,Track::halfWidth),1.8f);
-            const auto rd=worldPoint(track.point(i,Track::halfWidth),1.8f);
+            const auto ra=worldPoint(track.point(i,-Track::halfWidth),1.8f,track.isBaja());
+            const auto rb=worldPoint(track.point(j,-Track::halfWidth),1.8f,track.isBaja());
+            const auto rc=worldPoint(track.point(j,Track::halfWidth),1.8f,track.isBaja());
+            const auto rd=worldPoint(track.point(i,Track::halfWidth),1.8f,track.isBaja());
             texturedQuad(ra,rb,rc,rd,asphaltTexture_,
                          std::max(.05f,roadLength/4.f),roadWidth/4.f);
             // Subtle night/rain tint keeps the same material responsive to weather.
@@ -467,12 +468,12 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
             const Vec2 direction=track.center()[(index+8)%count]-
                                  track.center()[(index+count-8)%count];
             const float heading=float(std::atan2(direction.y,direction.x));
-            const Vector3 base=worldPoint(track.point(index,0),1.0f);
+            const Vector3 base=worldPoint(track.point(index,0),1.0f,true);
             const Color ramp=shaded({139,91,49,255},1-.28f*night);
             rlPushMatrix();
             rlTranslatef(base.x,base.y,base.z);
-            rlRotatef(-heading*RAD2DEG,0,1,0);
-            rlRotatef(-9.0f,0,0,1);
+            rlRotatef(heading*RAD2DEG,0,1,0);
+            rlRotatef(9.0f,0,0,1);
             DrawCubeV({0,.20f,0},{5.4f,.42f,5.8f},ramp);
             DrawCubeV({-.1f,.425f,0},{4.8f,.035f,5.45f},
                       shaded({211,164,105,255},1-.28f*night));
@@ -494,7 +495,7 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
         for (int i=0;i<26;i+=3) {
             const std::size_t segment=(count-1-std::size_t(i*5))%count;
             if (!track.isPitIndex(segment)) continue;
-            const auto g=worldPoint(track.point(segment,Track::halfWidth+Track::pitWidth+85));
+            const auto g=worldPoint(track.point(segment,Track::halfWidth+Track::pitWidth+85),0,track.isBaja());
             if (Vector3Distance(g,cameraPosition)>52) continue;
             DrawCubeV({g.x,g.y+0.58f,g.z},{2.4f,1.2f,2.0f},
                       shaded({195,200,212,255},1-.5f*night));
