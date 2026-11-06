@@ -114,6 +114,9 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
             const auto h=roadPoint(j,Track::halfWidth,-20);
             const auto k=roadPoint(i,Track::halfWidth,-20);
             quad(e,g,h,k,shaded({100,105,113,255},1-.32f*night));
+            // Solid underside: cars below should see concrete, not
+            // the underside of a paper-thin asphalt surface.
+            quad(d,c,h,k,shaded({83,89,99,255},1-.36f*night));
         }
         if (quality>0 && d2<38*38) {
             for (int side:{-1,1}) {
