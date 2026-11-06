@@ -20,6 +20,21 @@ double elevation(Vec2 p) {
                  0.3 * std::sin((p.x + p.y) / 1400 + 2));
 }
 
+double bajaElevation(Vec2 p) {
+    const double rolling=22.0*std::sin(p.x/185.0+0.4)*std::sin(p.y/235.0);
+    const double ripples=8.0*std::sin((p.x+p.y)/73.0)+
+                         5.5*std::sin((p.x-p.y)/49.0);
+    const auto mound=[&](double x,double y,double radius,double height) {
+        const double dx=p.x-x,dy=p.y-y;
+        return height*std::exp(-(dx*dx+dy*dy)/(radius*radius));
+    };
+    const double rocks=
+        mound(2100,3600,115,18)+mound(4300,3000,145,24)+
+        mound(6500,2200,125,17)+mound(8200,6000,170,22)+
+        mound(5300,7100,190,16);
+    return elevation(p)*.32+rolling+ripples+rocks;
+}
+
 const std::array<VehicleProfile, 8>& profiles() {
     static const std::array<VehicleProfile, 8> cars{{
         {"KART", 650, 1300, 1.7, 2.0, 800, 950, 950, 0.0, 30, 0.7, 200,
@@ -309,7 +324,8 @@ void Simulation::update(const Controls& controls,double dt) {
     // Scale steering response progressively with the number of wheels off-track.
     rotation *= 1.0 - 0.45 * (double(off) / 4.0);
 
-    const double slope=(elevation(oldPosition+forward*6)-elevation(oldPosition))/6;
+    const auto groundHeight=[&](Vec2 point){return track_.isBaja()?bajaElevation(point):elevation(point);};
+    const double slope=(groundHeight(oldPosition+forward*6)-groundHeight(oldPosition))/6;
     double nextSpeed=v+motor*dt;
     if (v>0.5) nextSpeed-=aBrake*dt;
     else if (controls.brake) nextSpeed-=250*dt;
@@ -338,7 +354,8 @@ void Simulation::update(const Controls& controls,double dt) {
         for(const double target:{.18,.48,.77}) {
             if(std::abs(progress-target)<.0035 && car_.jumpCooldown<=0.0 &&
                std::abs(car_.speed)>240.0) {
-                car_.verticalSpeed=130.0+std::abs(car_.speed)*.32;
+                const double launchVariation=1.0+0.22*std::sin(double(jumpSpot.index)*.017);
+                car_.verticalSpeed=(105.0+std::abs(car_.speed)*.28)*launchVariation;
                 car_.jumpCooldown=2.7;
                 break;
             }
@@ -406,7 +423,8 @@ void Simulation::update(const Controls& controls,double dt) {
         for(const double target:{.18,.48,.77}) {
             if(std::abs(aiProgress-target)<.0035 && opponent_.jumpCooldown<=0.0 &&
                opponent_.speed>240.0) {
-                opponent_.verticalSpeed=130.0+opponent_.speed*.32;
+                const double launchVariation=1.0+0.22*std::sin(double(aiJumpSpot.index)*.017);
+                opponent_.verticalSpeed=(105.0+opponent_.speed*.28)*launchVariation;
                 opponent_.jumpCooldown=2.7;
                 break;
             }
