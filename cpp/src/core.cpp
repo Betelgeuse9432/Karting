@@ -237,7 +237,7 @@ void Simulation::reset(bool preserveRecord) {
     car_.heading=track_.startHeading();
     opponent_=Car{};
     if(track_.isBaja()) {
-        const std::size_t start=std::min<std::size_t>(25,track_.size()-1);
+        const std::size_t start=std::min<std::size_t>(5,track_.size()-1);
         opponent_.position=track_.point(start,55.0);
         const Vec2 direction=track_.center()[(start+1)%track_.size()]-
                              track_.center()[(start+track_.size()-1)%track_.size()];
