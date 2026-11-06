@@ -11,7 +11,7 @@
 namespace karting {
 
 constexpr float kScale = static_cast<float>(kWorldScale);
-Vector3 worldPoint(Vec2 p, float heightOffset = 0);
+Vector3 worldPoint(Vec2 p, float heightOffset = 0, bool baja = false);
 Color palette(int index);
 
 struct TireMark { Vec2 start{}, end{}; double age = 0; };
