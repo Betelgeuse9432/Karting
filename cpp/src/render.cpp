@@ -130,12 +130,11 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
                 quad(shelfA,shelfB,footB,footA,earth);
             }
         }
-        // Stiff concrete beams with an inset shadow reveal rather than a
-        // paper-thin dark slab. At the ends the ramp gradually hides them.
+        // Slim pale concrete deck, matching a modern road viaduct.
         if(riseHigh>165) {
-            const Color face=shaded({155,160,167,255},1-.38f*night);
-            const Color band=shaded({91,99,110,255},1-.40f*night);
-            const Color under=shaded({72,78,89,255},1-.44f*night);
+            const Color face=shaded({190,193,200,255},1-.34f*night);
+            const Color band=shaded({151,158,169,255},1-.38f*night);
+            const Color under=shaded({124,133,146,255},1-.40f*night);
             for(const int side:{-1,1}) {
                 const auto a=roadPoint(i,side*(Track::halfWidth+Track::kerb),-3);
                 const auto b=roadPoint(j,side*(Track::halfWidth+Track::kerb),-3);
@@ -156,8 +155,8 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
         // Continuous raised parapets make the bridge silhouette readable.
         // Placed outside the race surface, with no extra collision geometry.
         if(quality>0 && riseHigh>165 && d2<55.f*55.f) {
-            const Color concrete=shaded({181,186,192,255},1-.35f*night);
-            const Color cap=shaded({226,228,227,255},1-.32f*night);
+            const Color concrete=shaded({221,222,226,255},1-.34f*night);
+            const Color cap=shaded({244,242,239,255},1-.32f*night);
             for(const int side:{-1,1}) {
                 const double off=side*(Track::halfWidth+Track::kerb+14);
                 const auto a=roadPoint(i,off,0),b=roadPoint(j,off,0);
