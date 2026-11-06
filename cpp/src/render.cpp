@@ -202,8 +202,10 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
         const float adz=archCenter.z-cameraPosition.z;
         if(adx*adx+adz*adz<80.f*80.f &&
            frustum.visible(archCenter,23.f)) {
-            const Color masonry=shaded({151,154,157,255},1-.38f*night);
-            const Color keystone=shaded({197,199,198,255},1-.33f*night);
+            // Keep the arch OPEN: no massive spandrel walls between
+            // the curved ring and the bridge deck.
+            const Color ring=shaded({186,189,190,255},1-.35f*night);
+            const Color edge=shaded({118,126,135,255},1-.36f*night);
             const Color tunnel=shaded({68,75,83,255},1-.43f*night);
             constexpr double lip=Track::halfWidth+Track::kerb+24;
             constexpr double spring=8.0;
@@ -249,16 +251,22 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
                 for(const int side:{-1,1}) {
                     const auto footA=slice(i,j,side,0);
                     const auto footB=slice(next,j+1,side,0);
-                    const auto trimA=slice(i,j,side,26);
-                    const auto trimB=slice(next,j+1,side,26);
+                    // A narrow, continuous curved stone ring, not a
+                    // full-height grey wall. Its depth stays restrained
+                    // near the crown where the road deck is lowest.
                     const auto topA=roadPoint(i,side*lip,-29);
                     const auto topB=roadPoint(next,side*lip,-29);
-                    // Highlighted arch ring and spandrel above the curve.
-                    quad(footA,footB,trimB,trimA,keystone);
-                    // Avoid inverted faces near the crown where the vault
-                    // almost reaches the underside of the existing deck.
-                    if(trimA.y<topA.y && trimB.y<topB.y)
-                        quad(trimA,trimB,topB,topA,masonry);
+                    auto trimA=slice(i,j,side,20);
+                    auto trimB=slice(next,j+1,side,20);
+                    trimA.y=std::min(trimA.y,topA.y-.04f);
+                    trimB.y=std::min(trimB.y,topB.y-.04f);
+                    if(trimA.y>footA.y && trimB.y>footB.y)
+                        quad(footA,footB,trimB,trimA,ring);
+                    // Thin under-deck edge keeps the two parts visually
+                    // connected without closing the space above the arch.
+                    const auto seamA=roadPoint(i,side*lip,-34);
+                    const auto seamB=roadPoint(next,side*lip,-34);
+                    quad(seamA,seamB,topB,topA,edge);
                 }
             }
         }
