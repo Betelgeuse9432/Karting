@@ -4,13 +4,15 @@ Ce dossier contient la version native **C++20 / raylib** de Karting, utilisée s
 
 ## Habillage architectural du pont (développement)
 
-Le pont dispose maintenant de rampes avec banquettes et talus à deux
-inclinaisons, de poutres latérales en béton, d'un dessous contrasté,
-de parapets continus et d'appuis plus volumineux. Des culées ponctuelles
-marquent les transitions avec les rampes. Les appuis sont générés hors du
-corridor de la chaussée inférieure ; l'ancienne collision physique ne
-change pas. Le détail architectural est soumis au filtrage par distance
-et par champ de vision, et réduit dans les faibles qualités graphiques.
+Le pont conserve ses rampes, son tablier et ses parapets, mais tous
+les anciens pylônes et blocs de culées ont été supprimés. Au croisement,
+une **arche unique et large** est maintenant construite par sections
+courbes, avec deux parements maçonnés, un bandeau périphérique contrasté
+et une voûte intérieure assombrie. Elle s'ouvre dans l'axe de la route
+inférieure, sans aucun support au milieu du passage. L'arche est dessinée
+seulement à proximité de la caméra et lorsque son volume est visible.
+La géométrie roulable, les hauteurs du tablier et les collisions restent
+inchangées.
 
 Ce travail est **uniquement visuel** : ni les points de contrôle, ni
 l'altitude du tablier, ni les pentes, ni le comportement des voitures
@@ -43,7 +45,7 @@ de commande.
 La voiture conserve une altitude et un indice de voie courante.
 La recherche de chaussée, la collision et le chronométrage distinguent
 les deux niveaux au croisement. Le renderer dessine un vrai tablier
-avec flancs, dessous et piliers espacés en évitant la chaussée inférieure,
+avec flancs, dessous et arche centrale au-dessus de la chaussée inférieure,
 ainsi que ses barrières à la bonne hauteur. Le décor naturel ne suit pas
 la hauteur du tablier : il reste au niveau du terrain.
 
