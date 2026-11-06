@@ -20,9 +20,9 @@ void close(double actual,double expected,double tolerance,const char* message) {
 
 void testCircuit() {
     const Track track;
-    require(track.size()==42*Track::subdivisions,
+    require(track.size()==45*Track::subdivisions,
             "Four-sector circuit has 42 Catmull-Rom control points");
-    require(track.lapLength()>69000 && track.lapLength()<75000,
+    require(track.lapLength()>70000 && track.lapLength()<80000,
             "Four-sector circuit preserves a long lap");
     const auto start=track.startPosition();
     require(start.x>0 && start.x<Track::worldWidth &&
@@ -52,8 +52,9 @@ void testCircuit() {
         const Vec2 location=track.point(i);
         close(track.terrainHeight(location),elevation(location),1e-10,
               "Terrain height preserves existing map");
-        close(track.roadHeight(i),elevation(location),1e-10,
-              "Deck height preserves existing track");
+        close(track.roadHeight(i),
+              elevation(location)+track.bridgeRise(i),1e-9,
+              "Road height equals terrain plus its own bridge deck offset");
         const auto onDeck=track.infoAtHeight(location,track.roadHeight(i),i);
         require(onDeck.index==i,
                 "3D lookup returns the corresponding current road sample");
@@ -101,6 +102,23 @@ void testCircuit() {
     require(invalidProfile,"Deck profile rejects non-finite heights");
 
 
+    // The upper road must genuinely cross the earlier straight in plan,
+    // while remaining far enough above it for a car to pass beneath.
+    const auto lower=track.info({14689,2401});
+    const auto upper=track.infoAtHeight({14689,2401},
+                                        track.roadHeight(14*Track::subdivisions),
+                                        14*Track::subdivisions);
+    require(lower.index<5*Track::subdivisions,
+            "Approach straight lies under the bridge");
+    require(upper.index>12*Track::subdivisions &&
+            upper.index<16*Track::subdivisions,
+            "Overpass returns the correct upper track segment");
+    require(track.roadHeightAt({14689,2401},upper.index)-
+            track.roadHeightAt({14689,2401},lower.index)>400,
+            "Bridge has at least 7.2 rendering metres of vertical separation");
+    require(track.bridgeRise(0)==0 && track.bridgeRise(30*Track::subdivisions)==0,
+            "Road remains on ground outside the bridge ramps");
+
     // Arc-length lookup must remain valid after changing the spline density.
     require(track.indexAtDistance(0)==0,
             "Distance zero selects the start");
@@ -127,7 +145,7 @@ void testCircuit() {
     require(track.info(track.point(0,Track::halfWidth+Track::kerb+45)).grass,
             "Grass begins past the wider road shoulder");
 
-    // At the hairpin the vehicle approaches eastward, pivots and exits west.
+    // At the reversed hairpin the car turns north and exits west.
     const auto tangent=[&](std::size_t pointIndex) {
         const auto& c=track.center();
         return c[(pointIndex+1)%c.size()]-
