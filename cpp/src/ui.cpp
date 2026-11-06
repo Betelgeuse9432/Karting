@@ -92,7 +92,7 @@ void HudRenderer::bajaPreview(double time) const {
     DrawText("TROPHY BAJA",w/2-175,74,42,{238,177,104,255});
     DrawText("LE DESERT ARRIVE DANS GAME VROUM",w/2-260,132,23,RAYWHITE);
 
-    DrawRectangleRounded({w/2-390,h/2-115,780,260},.045f,10,
+    DrawRectangleRounded({float(w/2-390),float(h/2-115),780.0f,260.0f},.045f,10,
                          {39,35,31,255});
     DrawRectangleLinesEx({float(w/2-390),float(h/2-115),780,260},2,
                          {190,132,75,255});
