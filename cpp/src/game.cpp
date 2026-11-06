@@ -313,6 +313,11 @@ void Game::renderRace() {
     });
     safe("effects",[&]{ effects_.draw3D(camera_); });
     safe("vehicle",[&]{
+        if(sim_.isBaja()) {
+            const int rivalIndex=sim_.opponentVehicleIndex();
+            vehicle_.draw(sim_.opponent(),profiles()[rivalIndex],
+                          rivalIndex,sim_.opponentColorIndex(),n>.2);
+        }
         vehicle_.draw(sim_.car(),sim_.profile(),
                       sim_.vehicleIndex(),sim_.colorIndex(),n>.2);
     });
