@@ -148,16 +148,36 @@ void Game::reset() {
 }
 
 void Game::handleMenu() {
-    if (IsKeyPressed(KEY_LEFT)||IsKeyPressed(KEY_Q)||IsKeyPressed(KEY_A))
-        sim_.selectVehicle((sim_.vehicleIndex()+5)%6);
-    else if (IsKeyPressed(KEY_RIGHT)||IsKeyPressed(KEY_D))
-        sim_.selectVehicle((sim_.vehicleIndex()+1)%6);
+    const bool left=IsKeyPressed(KEY_LEFT)||IsKeyPressed(KEY_Q)||IsKeyPressed(KEY_A);
+    const bool right=IsKeyPressed(KEY_RIGHT)||IsKeyPressed(KEY_D);
+    const bool confirm=IsKeyPressed(KEY_ENTER)||IsKeyPressed(KEY_SPACE);
+    const bool back=IsKeyPressed(KEY_ESCAPE)||IsKeyPressed(KEY_BACKSPACE);
+
+    if (menuScreen_==MenuScreen::Mode) {
+        if (left||right) selectedMode_=1-selectedMode_;
+        if (confirm) {
+            menuScreen_=selectedMode_==0?MenuScreen::Vehicle:MenuScreen::BajaPreview;
+        }
+        return;
+    }
+
+    if (menuScreen_==MenuScreen::BajaPreview) {
+        if (back||confirm) menuScreen_=MenuScreen::Mode;
+        return;
+    }
+
+    if (back) {
+        menuScreen_=MenuScreen::Mode;
+        return;
+    }
+    if (left) sim_.selectVehicle((sim_.vehicleIndex()+5)%6);
+    else if (right) sim_.selectVehicle((sim_.vehicleIndex()+1)%6);
     if (IsKeyPressed(KEY_UP))
         sim_.selectVehicle(sim_.vehicleIndex(),(sim_.colorIndex()+5)%6);
     else if (IsKeyPressed(KEY_DOWN)||IsKeyPressed(KEY_C))
         sim_.selectVehicle(sim_.vehicleIndex(),(sim_.colorIndex()+1)%6);
 
-    if (IsKeyPressed(KEY_ENTER)||IsKeyPressed(KEY_SPACE)) {
+    if (confirm) {
         menu_=false;
         reset();
     }
@@ -167,6 +187,7 @@ void Game::handleRace() {
     if (IsKeyPressed(KEY_R)) reset();
     if (returnToMenuPressed()) {
         menu_=true;
+        menuScreen_=MenuScreen::Mode;
         reset();
     }
     if (IsKeyPressed(KEY_G)) quality_=(quality_+1)%4;
@@ -203,6 +224,16 @@ void Game::renderMenu(double time) {
     const int width=GetScreenWidth(),height=GetScreenHeight();
     const Color top{20,22,35,255},bottom{49,54,65,255};
     DrawRectangleGradientV(0,0,width,height,top,bottom);
+
+    if (menuScreen_==MenuScreen::Mode) {
+        hud_.modeMenu(selectedMode_,time);
+        return;
+    }
+    if (menuScreen_==MenuScreen::BajaPreview) {
+        hud_.bajaPreview(time);
+        return;
+    }
+
     const float t=float(time*.35);
     const float base=float(elevation({0,0})*kWorldScale);
     Camera3D preview{};
