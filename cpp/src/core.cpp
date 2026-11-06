@@ -148,7 +148,7 @@ TrackInfo Track::infoAtHeight(Vec2 world, double height,
         const std::size_t arcDistance=std::min(diff,n-diff);
         // Prefer the previous route on *exactly equal* 3D distances.
         const double tolerance=1e-10*std::max(1.0,nearest3D);
-        if (d2<nearest3D-tolerance ||
+        if (i==0 || d2<nearest3D-tolerance ||
             (preferredIndex && std::abs(d2-nearest3D)<=tolerance &&
              arcDistance<bestArcDistance)) {
             nearest3D=d2;
