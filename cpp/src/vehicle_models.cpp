@@ -371,8 +371,8 @@ void formulaOne(Color paint,Color glass,bool braking) {
                {-.78f,.18f,.43f,.39f},
                {-.25f,.19f,.39f,.38f},
                { .42f,.18f,.36f,.40f},
-               { .92f,.17f,.31f,.38f},
-               {1.34f,.15f,.27f,.32f}},
+               {1.17f,.17f,.31f,.38f},
+               {1.59f,.15f,.27f,.32f}},
               paint,tone(paint,.70f));
     // Open cockpit with a visible driver and halo.
     box(-.28f,.40f,0,.70f,.12f,.38f,carbon);
@@ -387,9 +387,9 @@ void formulaOne(Color paint,Color glass,bool braking) {
         box(.42f,.37f,side*.535f,.30f,.12f,.018f,carbon);
         box(-.48f,.27f,side*.43f,.42f,.045f,.025f,blue);
         // Front wing: layered flaps and endplates.
-        box(1.48f,.15f,side*.48f,.36f,.045f,.12f,carbon);
-        box(1.53f,.20f,side*.48f,.27f,.025f,.11f,paint);
-        box(1.42f,.17f,side*.69f,.32f,.31f,.035f,carbon);
+        box(1.73f,.15f,side*.48f,.36f,.045f,.12f,carbon);
+        box(1.78f,.20f,side*.48f,.27f,.025f,.11f,paint);
+        box(1.67f,.17f,side*.69f,.32f,.31f,.035f,carbon);
         // Rear wing endplates and support pylons.
         box(-1.48f,.68f,side*.55f,.30f,.52f,.035f,carbon);
         rod({-1.12f,.30f,side*.18f},{-1.40f,.66f,side*.18f},.035f,carbon);
@@ -404,8 +404,8 @@ void formulaOne(Color paint,Color glass,bool braking) {
     box(-1.57f,.83f,0,.30f,.045f,1.28f,carbon);
     box(-1.53f,.89f,0,.25f,.025f,1.22f,paint);
     // Small front suspension fairing and nose tip.
-    box(1.55f,.22f,0,.18f,.07f,.20f,carbon);
-    box(1.62f,.25f,0,.09f,.035f,.12f,paint);
+    box(1.80f,.22f,0,.18f,.07f,.20f,carbon);
+    box(1.87f,.25f,0,.09f,.035f,.12f,paint);
 }
 
 void wheels(const Car& car,const VehicleProfile& p,int index) {
