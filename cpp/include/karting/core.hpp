@@ -139,6 +139,9 @@ public:
     Simulation();
     const Track& track() const { return track_; }
     const Car& car() const { return car_; }
+    const Car& opponent() const { return opponent_; }
+    int opponentVehicleIndex() const { return vehicleIndex_==6?7:6; }
+    int opponentColorIndex() const { return vehicleIndex_==6?1:0; }
     const Weather& weather() const { return weather_; }
     const Race& race() const { return race_; }
     const Telemetry& telemetry() const { return telemetry_; }
@@ -160,6 +163,7 @@ public:
 private:
     Track track_;
     Car car_{};
+    Car opponent_{};
     Weather weather_{};
     Race race_{};
     Telemetry telemetry_{};
