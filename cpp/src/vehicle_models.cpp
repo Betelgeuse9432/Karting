@@ -499,6 +499,40 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
             (elevation(wheelWorld)-elevation(car.position))*kWorldScale);
         if(slot==2) wheelHeight=std::clamp(wheelHeight,-.045f,.045f);
         if(slot>=6) wheelHeight=std::clamp(wheelHeight,-.16f,.16f);
+        if(slot>=6) {
+            const float wheelY=r+.015f+wheelHeight;
+            const float innerZ=side*(track-.34f);
+            const Vector3 upperHub{x,wheelY+.13f,side*(track-.012f)};
+            const Vector3 lowerHub{x,wheelY-.13f,side*(track-.012f)};
+            const Vector3 upperA{x-.24f,.76f,innerZ};
+            const Vector3 upperB{x+.24f,.76f,innerZ};
+            const Vector3 lowerA{x-.28f,.25f,innerZ};
+            const Vector3 lowerB{x+.28f,.25f,innerZ};
+            rod(upperA,upperHub,.024f,{157,165,174,255});
+            rod(upperB,upperHub,.024f,{157,165,174,255});
+            rod(lowerA,lowerHub,.030f,{125,134,145,255});
+            rod(lowerB,lowerHub,.030f,{125,134,145,255});
+            rod(upperHub,lowerHub,.035f,{75,83,94,255});
+            DrawSphere(upperHub,.032f,{190,197,204,255});
+            DrawSphere(lowerHub,.035f,{190,197,204,255});
+            const float springX=x+.14f;
+            const float springZ=side*(track-.17f);
+            const float springTop=.79f;
+            const float springBottom=wheelY-.10f;
+            for(int coil=0;coil<20;++coil) {
+                const float t0=float(coil)/20.f,t1=float(coil+1)/20.f;
+                const float a0=t0*6.0f*2*PI,a1=t1*6.0f*2*PI;
+                const float y0=springTop+(springBottom-springTop)*t0;
+                const float y1=springTop+(springBottom-springTop)*t1;
+                DrawLine3D({springX+std::cos(a0)*.045f,y0,
+                            springZ+std::sin(a0)*.045f},
+                           {springX+std::cos(a1)*.045f,y1,
+                            springZ+std::sin(a1)*.045f},
+                           {25,115,255,255});
+            }
+            rod({springX,springTop,springZ},
+                {springX,springBottom,springZ},.028f,{69,79,93,255});
+        }
         if(slot==5) {
             const Color carbon{22,26,32,255};
             wheelHeight=std::clamp(wheelHeight,-.075f,.075f);
