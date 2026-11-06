@@ -32,7 +32,7 @@ const std::array<VehicleProfile, 6>& profiles() {
          0.00008, 0.05, 0.6, 0.3, 0.6, 58, 160, 30, -30, 22, 1},
         {"RALLY", 1120, 2200, 1.55, 2.0, 920, 900, 980, 0.22, 48, 0.48, 165,
          0.00018, 0.09, 1.2, 0.08, 0.22, 62, 145, 34, -32, 25, 5},
-        {"F1", 1500, 2250, 1.25, 2.5, 1250, 1180, 1280, 2.2, 38, 0.85, 65,
+        {"F1", 1500, 2100, 0.95, 2.5, 1250, 1180, 1280, 2.2, 38, 0.85, 65,
          0.00010, 0.045, 0.55, 0.12, 0.14, 55, 155, 56, -52, 37, 1}
     }};
     return cars;
@@ -279,6 +279,9 @@ void Simulation::update(const Controls& controls,double dt) {
         rotation*=1+2*excess;
         motor*=rearGrip/rearUse;
     }
+    // Grass should make the car wash wide instead of turning sharply.
+    // Scale steering response progressively with the number of wheels off-track.
+    rotation *= 1.0 - 0.45 * (double(off) / 4.0);
 
     const double slope=(elevation(oldPosition+forward*6)-elevation(oldPosition))/6;
     double nextSpeed=v+motor*dt;
