@@ -33,6 +33,32 @@ void testCircuit() {
     require(near.distance<1e-6,"Start line is on the track");
     require(!near.grass,"No grass at start");
 
+    // Separate terrain altitude from per-road-sample altitude. For the
+    // unchanged circuit, they must produce the exact old surface height.
+    for(std::size_t i=0;i<track.size();i+=Track::subdivisions) {
+        const Vec2 location=track.point(i);
+        close(track.terrainHeight(location),elevation(location),1e-10,
+              "Terrain height preserves existing map");
+        close(track.roadHeight(i),elevation(location),1e-10,
+              "Deck height preserves existing track");
+        const auto onDeck=track.infoAtHeight(location,track.roadHeight(i),i);
+        require(onDeck.index==i,
+                "3D lookup returns the corresponding current road sample");
+        require(onDeck.distance<1e-5 && !onDeck.grass,
+                "3D lookup preserves the drivable road surface");
+    }
+    require(track.roadHeight(track.size())==track.roadHeight(0),
+            "Deck height wraps at the finish line");
+    bool invalidHeight=false;
+    try {
+        (void)track.infoAtHeight(track.startPosition(),
+                                std::numeric_limits<double>::infinity());
+    } catch(const std::invalid_argument&) { invalidHeight=true; }
+    require(invalidHeight,"Height lookup rejects non-finite altitude");
+    const auto noHint=track.infoAtHeight(track.startPosition(),
+                                         track.roadHeight(0));
+    require(noHint.index==0,"3D lookup works without route hint");
+
     // Arc-length lookup must remain valid after changing the spline density.
     require(track.indexAtDistance(0)==0,
             "Distance zero selects the start");
