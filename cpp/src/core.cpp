@@ -382,8 +382,11 @@ void Simulation::update(const Controls& controls,double dt) {
                  -0.4*dt),0.0,1.0);
     if (before.pits) car_.brakeHeat=0;
 
-    const double pitchTarget=((car_.brake*.05-
-            car_.throttle*.03*(1-std::abs(car_.speed)/p.topSpeed))*p.pitchFactor-slope);
+    // Suspension pitch is independent from the static road incline.
+    // The vehicle renderer now aligns all four wheels and the body to
+    // the surface normal; subtracting slope here would cancel that tilt.
+    const double pitchTarget=(car_.brake*.05-
+            car_.throttle*.03*(1-std::abs(car_.speed)/p.topSpeed))*p.pitchFactor;
     car_.pitch+=(pitchTarget-car_.pitch)*std::min(1.0,6*dt);
     const double rollTarget=std::clamp(p.rollFactor*car_.speed*rotation,
                                       -p.maxRoll,p.maxRoll);
