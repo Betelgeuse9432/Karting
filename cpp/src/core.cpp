@@ -400,6 +400,25 @@ void Simulation::update(const Controls& controls,double dt) {
         opponent_.position=opponent_.position+
             Vec2{std::cos(opponent_.heading),std::sin(opponent_.heading)}*
             (opponent_.speed*dt);
+        opponent_.jumpCooldown=std::max(0.0,opponent_.jumpCooldown-dt);
+        const auto aiJumpSpot=track_.info(opponent_.position);
+        const double aiProgress=double(aiJumpSpot.index)/double(track_.size());
+        for(const double target:{.18,.48,.77}) {
+            if(std::abs(aiProgress-target)<.0035 && opponent_.jumpCooldown<=0.0 &&
+               opponent_.speed>240.0) {
+                opponent_.verticalSpeed=130.0+opponent_.speed*.32;
+                opponent_.jumpCooldown=2.7;
+                break;
+            }
+        }
+        if(opponent_.jumpHeight>0.0 || opponent_.verticalSpeed>0.0) {
+            opponent_.verticalSpeed-=620.0*dt;
+            opponent_.jumpHeight+=opponent_.verticalSpeed*dt;
+            if(opponent_.jumpHeight<=0.0) {
+                opponent_.jumpHeight=0.0;
+                opponent_.verticalSpeed=0.0;
+            }
+        }
         track_.collide(opponent_,dt);
         opponent_.wheelRotation+=opponent_.speed*dt/10.0*.35;
     }
