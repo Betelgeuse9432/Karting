@@ -59,6 +59,35 @@ void testCircuit() {
                                          track.roadHeight(0));
     require(noHint.index==0,"3D lookup works without route hint");
 
+    // Simulate a bridge DECK without changing a single XY control point.
+    // The ground remains the same, while 3D lookup follows the elevated
+    // sample instead of a nearby segment at ground level.
+    Track layered;
+    auto profile=layered.heights();
+    const std::size_t raised=8*Track::subdivisions;
+    const Vec2 crossing=layered.point(raised);
+    const double originalGround=layered.terrainHeight(crossing);
+    profile[raised]=originalGround+600.0;
+    layered.setRoadHeightProfile(profile);
+    close(layered.roadHeight(raised),originalGround+600,1e-10,
+          "Deck can be raised independently from terrain");
+    close(layered.terrainHeight(crossing),originalGround,1e-10,
+          "Raising a deck never modifies the ground");
+    require(layered.infoAtHeight(crossing,originalGround+600,raised).index==raised,
+            "Elevated road level is correctly selected");
+    require(layered.infoAtHeight(crossing,originalGround).index!=raised,
+            "Ground level lookup does not select an elevated deck");
+    bool invalidProfile=false;
+    try { layered.setRoadHeightProfile({1.0,2.0}); }
+    catch(const std::invalid_argument&) {invalidProfile=true;}
+    require(invalidProfile,"Deck profile must match track sample count");
+    invalidProfile=false;
+    profile[raised]=std::numeric_limits<double>::quiet_NaN();
+    try { layered.setRoadHeightProfile(profile); }
+    catch(const std::invalid_argument&) {invalidProfile=true;}
+    require(invalidProfile,"Deck profile rejects non-finite heights");
+
+
     // Arc-length lookup must remain valid after changing the spline density.
     require(track.indexAtDistance(0)==0,
             "Distance zero selects the start");
