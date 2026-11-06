@@ -49,8 +49,8 @@ Track::Track(bool baja) : baja_(baja) {
     std::vector<Vec2> raw = baja_ ? std::vector<Vec2>{
         {900,5200},{1250,3900},{2200,2850},{3700,2450},
         {5050,2850},{6350,2050},{7900,2250},{9100,3300},
-        {9400,4750},{8650,6250},{7300,7350},{5550,7650},
-        {3950,7150},{2500,7550},{1250,6700}
+        {9400,4750},{8650,6250},{7300,7150},{5550,7250},
+        {3950,7150},{2500,7200},{1250,6700}
     } : std::vector<Vec2>{
         {1700,6500},{2300,7100},{3400,7350},{4400,7000},
         {5000,6250},{5700,5900},{6500,6100},{7300,6800},
@@ -323,6 +323,31 @@ void Simulation::update(const Controls& controls,double dt) {
     const Vec2 carSide{-carForward.y,carForward.x};
     car_.position=car_.position+(carForward*car_.speed+
                                   carSide*car_.lateralSpeed)*dt;
+    if(track_.isBaja()) {
+        car_.jumpCooldown=std::max(0.0,car_.jumpCooldown-dt);
+        const auto jumpSpot=track_.info(car_.position);
+        const double progress=double(jumpSpot.index)/double(track_.size());
+        for(const double target:{.18,.48,.77}) {
+            if(std::abs(progress-target)<.0035 && car_.jumpCooldown<=0.0 &&
+               std::abs(car_.speed)>240.0) {
+                car_.verticalSpeed=130.0+std::abs(car_.speed)*.32;
+                car_.jumpCooldown=2.7;
+                break;
+            }
+        }
+        if(car_.jumpHeight>0.0 || car_.verticalSpeed>0.0) {
+            car_.verticalSpeed-=620.0*dt;
+            car_.jumpHeight+=car_.verticalSpeed*dt;
+            if(car_.jumpHeight<=0.0) {
+                car_.jumpHeight=0.0;
+                car_.verticalSpeed=0.0;
+            }
+        }
+    } else {
+        car_.jumpHeight=0.0;
+        car_.verticalSpeed=0.0;
+        car_.jumpCooldown=0.0;
+    }
     car_.position.x=std::clamp(car_.position.x,0.0,10000.0);
     car_.position.y=std::clamp(car_.position.y,0.0,9000.0);
     const double impact=track_.collide(car_,dt);
