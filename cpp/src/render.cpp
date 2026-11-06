@@ -111,7 +111,7 @@ void draw3DLandscape(Vector3 camera, int quality, float night, double time, bool
         {-95,-1.5f,225}
     }};
     const float visibility=quality==0?0.78f:1.0f;
-    for(std::size_t i=0;i<mountainBases.size();++i) {
+    if(!baja) for(std::size_t i=0;i<mountainBases.size();++i) {
         const auto b=mountainBases[i];
         const float distance=Vector3Distance(camera,b);
         if(distance>(quality==0?340.0f:430.0f)) continue;
@@ -124,6 +124,24 @@ void draw3DLandscape(Vector3 camera, int quality, float night, double time, bool
             const Vector3 flank{b.x+radius*.68f,b.y,b.z+radius*.30f};
             drawMountain(flank,radius*.58f,height*.62f,
                          Fade(color,.80f),quality>=3?14:9);
+        }
+    }
+
+    if(baja) {
+        const std::array<Vector3,8> dunes{{
+            {-120,-1.5f,-90},{-40,-1.5f,-155},{55,-1.5f,-165},
+            {155,-1.5f,-95},{235,-1.5f,-20},{190,-1.5f,115},
+            {65,-1.5f,205},{-75,-1.5f,155}
+        }};
+        for(std::size_t i=0;i<dunes.size();++i) {
+            const auto p=dunes[i];
+            if(Vector3Distance(camera,p)>260.0f) continue;
+            const float radius=24.0f+float(i%3)*7.0f;
+            DrawSphere({p.x,p.y+5.0f,p.z},radius,
+                       Fade(i%2?Color{180,132,82,255}:Color{199,153,96,255},
+                            quality==0?.72f:.92f));
+            DrawSphere({p.x+radius*.45f,p.y+2.2f,p.z-radius*.18f},
+                       radius*.56f,Fade({211,166,109,255},.82f));
         }
     }
 
@@ -459,28 +477,8 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
         i+=step;
     }
 
-    // Three broad compacted-sand launch ramps give the Baja route its
-    // first off-road landmarks. Their placement follows the course tangent.
-    if(track.isBaja()) {
-        for(const double progress:{.18,.48,.77}) {
-            const std::size_t index=std::min(count-1,
-                std::size_t(double(count)*progress));
-            const Vec2 direction=track.center()[(index+8)%count]-
-                                 track.center()[(index+count-8)%count];
-            const float heading=float(std::atan2(direction.y,direction.x));
-            const Vector3 base=worldPoint(track.point(index,0),1.0f,true);
-            const Color ramp=shaded({139,91,49,255},1-.28f*night);
-            rlPushMatrix();
-            rlTranslatef(base.x,base.y,base.z);
-            rlRotatef(heading*RAD2DEG,0,1,0);
-            rlRotatef(9.0f,0,0,1);
-            DrawCubeV({0,.20f,0},{5.4f,.42f,5.8f},ramp);
-            DrawCubeV({-.1f,.425f,0},{4.8f,.035f,5.45f},
-                      shaded({211,164,105,255},1-.28f*night));
-            rlPopMatrix();
-        }
-    }
-
+    // Baja jumps are sculpted into the terrain height field, not placed
+    // as floating rectangular launch blocks.
     // The start gantry, pit garages and ads are inexpensive 3D primitives.
     if (quality>0 && !track.isBaja()) {
         const auto p=track.point(0,-Track::halfWidth-25);
