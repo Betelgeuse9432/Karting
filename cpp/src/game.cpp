@@ -93,7 +93,7 @@ void Game::reset() {
     disabled_.clear();
     faultMessage_.clear();
     followAngle_=sim_.car().heading;
-    cameraHeight_=elevation(sim_.car().position)+sim_.profile().cameraHeight;
+    cameraHeight_=sim_.car().height+sim_.profile().cameraHeight;
 }
 
 void Game::handleMenu() {
@@ -128,7 +128,7 @@ void Game::follow(double dt) {
     const auto& car=sim_.car();
     const auto& spec=sim_.profile();
     followAngle_+=wrapAngle(car.heading-followAngle_)*std::min(1.0,3.5*dt);
-    cameraHeight_+=(elevation(car.position)+spec.cameraHeight-cameraHeight_)*
+    cameraHeight_+=(car.height+spec.cameraHeight-cameraHeight_)*
                     std::min(1.0,4.0*dt);
     const Vec2 behind{std::cos(followAngle_),std::sin(followAngle_)};
     const Vec2 view=car.position-behind*spec.cameraDistance;
@@ -136,7 +136,7 @@ void Game::follow(double dt) {
                       float(cameraHeight_*kWorldScale),
                       float(view.y*kWorldScale)};
     camera_.target={float(car.position.x*kWorldScale),
-                    float((elevation(car.position)+30)*kWorldScale),
+                    float((car.height+30)*kWorldScale),
                     float(car.position.y*kWorldScale)};
     camera_.up={0,1,0};
     camera_.projection=CAMERA_PERSPECTIVE;
@@ -229,7 +229,8 @@ void Game::renderRace() {
     safe("effects",[&]{ effects_.draw3D(camera_); });
     safe("vehicle",[&]{
         vehicle_.draw(sim_.car(),sim_.profile(),
-                      sim_.vehicleIndex(),sim_.colorIndex(),n>.2);
+                      sim_.vehicleIndex(),sim_.colorIndex(),n>.2,
+                      true,&sim_.track());
     });
     EndMode3D();
 
