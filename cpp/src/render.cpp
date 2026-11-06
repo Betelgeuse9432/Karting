@@ -458,6 +458,28 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
         i+=step;
     }
 
+    // Three broad compacted-sand launch ramps give the Baja route its
+    // first off-road landmarks. Their placement follows the course tangent.
+    if(track.isBaja()) {
+        for(const double progress:{.18,.48,.77}) {
+            const std::size_t index=std::min(count-1,
+                std::size_t(double(count)*progress));
+            const Vec2 direction=track.center()[(index+8)%count]-
+                                 track.center()[(index+count-8)%count];
+            const float heading=float(std::atan2(direction.y,direction.x));
+            const Vector3 base=worldPoint(track.point(index,0),1.0f);
+            const Color ramp=shaded({139,91,49,255},1-.28f*night);
+            rlPushMatrix();
+            rlTranslatef(base.x,base.y,base.z);
+            rlRotatef(-heading*RAD2DEG,0,1,0);
+            rlRotatef(-9.0f,0,0,1);
+            DrawCubeV({0,.20f,0},{5.4f,.42f,5.8f},ramp);
+            DrawCubeV({-.1f,.425f,0},{4.8f,.035f,5.45f},
+                      shaded({211,164,105,255},1-.28f*night));
+            rlPopMatrix();
+        }
+    }
+
     // The start gantry, pit garages and ads are inexpensive 3D primitives.
     if (quality>0 && !track.isBaja()) {
         const auto p=track.point(0,-Track::halfWidth-25);
