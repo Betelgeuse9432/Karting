@@ -42,7 +42,7 @@ Track::Track() {
     // Apex Ridge: an original, continuous circuit with no crossings.
     // It combines a long opening run, a flowing outer section, a tight
     // technical complex and a fast final sweep back to the start.
-    const std::vector<Vec2> raw{
+    std::vector<Vec2> raw{
         {1700,6500},{2300,7100},{3400,7350},{4400,7000},
         {5000,6250},{5700,5900},{6500,6100},{7300,6800},
         {8200,6900},{9000,6900},{9500,6250},{9500,5450},
@@ -52,6 +52,13 @@ Track::Track() {
         {1450,3550},{1250,3750},{1120,4050},{1080,4400},
         {1160,4750},{1330,5050},{1450,5550}
     };
+    // Expand the circuit footprint while keeping it inside the enlarged world.
+    // The extra north-south stretch creates a much longer lap without pinching
+    // the existing corners against the map boundaries.
+    for (auto& p : raw) {
+        p.x = 5300.0 + (p.x - 5300.0) * 1.115;
+        p.y = 5000.0 + (p.y - 5000.0) * 1.55;
+    }
     center_.reserve(raw.size() * subdivisions);
     for (std::size_t i = 0; i < raw.size(); ++i) {
         const auto a = raw[(i + raw.size() - 1) % raw.size()];
