@@ -390,7 +390,8 @@ void Simulation::update(const Controls& controls,double dt) {
     if (before.pits) car_.brakeHeat=0;
 
     const double pitchTarget=((car_.brake*.05-
-            car_.throttle*.03*(1-std::abs(car_.speed)/p.topSpeed))*p.pitchFactor-slope);
+            car_.throttle*.03*(1-std::abs(car_.speed)/p.topSpeed))*p.pitchFactor+
+            (track_.isBaja()?slope:-slope));
     car_.pitch+=(pitchTarget-car_.pitch)*std::min(1.0,6*dt);
     const double rollTarget=std::clamp(p.rollFactor*car_.speed*rotation,
                                       -p.maxRoll,p.maxRoll);
