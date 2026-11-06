@@ -579,11 +579,21 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
             const int rockKind=std::abs(int(p.x*.17+p.y*.29))%3;
             const float rockSize=.45f+float(std::abs(int(p.x+p.y))%8)*.10f;
             if(rockKind==0) {
-                DrawCylinderEx(origin,{origin.x,origin.y+rockSize*1.8f,origin.z},
-                    rockSize*.45f,rockSize*.18f,6,
-                    shaded({151,111,72,255},1-.30f*night));
-                DrawSphere({origin.x,origin.y+rockSize*.7f,origin.z},
-                    rockSize*.62f,shaded({177,133,83,255},1-.30f*night));
+                const Color cactus=shaded({58,112,65,255},1-.30f*night);
+                const Vector3 top{origin.x,origin.y+rockSize*2.1f,origin.z};
+                DrawCylinderEx(origin,top,rockSize*.16f,rockSize*.12f,7,cactus);
+                DrawCylinderEx({origin.x,origin.y+rockSize*.92f,origin.z},
+                    {origin.x-rockSize*.58f,origin.y+rockSize*1.20f,origin.z},
+                    rockSize*.11f,rockSize*.10f,7,cactus);
+                DrawCylinderEx({origin.x-rockSize*.58f,origin.y+rockSize*1.20f,origin.z},
+                    {origin.x-rockSize*.58f,origin.y+rockSize*1.65f,origin.z},
+                    rockSize*.10f,rockSize*.08f,7,cactus);
+                DrawCylinderEx({origin.x,origin.y+rockSize*1.12f,origin.z},
+                    {origin.x+rockSize*.52f,origin.y+rockSize*1.38f,origin.z},
+                    rockSize*.11f,rockSize*.09f,7,cactus);
+                DrawCylinderEx({origin.x+rockSize*.52f,origin.y+rockSize*1.38f,origin.z},
+                    {origin.x+rockSize*.52f,origin.y+rockSize*1.78f,origin.z},
+                    rockSize*.09f,rockSize*.07f,7,cactus);
             } else {
                 DrawSphere({origin.x,origin.y+rockSize*.35f,origin.z},
                     rockSize,shaded({160,119,76,255},1-.30f*night));
