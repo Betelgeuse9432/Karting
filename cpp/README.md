@@ -2,6 +2,20 @@
 
 Ce dossier contient la version native **C++20 / raylib** de Karting, utilisée sur les branches `cpp-raylib` et `main-cpp`. Les anciens fichiers du jeu Python ont été retirés de ces deux branches ; ils restent consultables dans l'historique Git et les branches historiques.
 
+## Adhérence visuelle de la voiture aux pentes
+
+La position et l'inclinaison du véhicule sont calculées depuis quatre
+échantillons du terrain sous les roues (essieux avant/arrière, gauche/droite).
+Le plan obtenu donne un tangage longitudinal, un roulis transversal et
+une hauteur d'appui cohérents. Le rendu applique ce plan à **l'ensemble
+de la voiture, roues comprises**. Les mouvements de suspension de la
+carrosserie s'y ajoutent sans annuler l'inclinaison de la route.
+
+Le véhicule présenté dans le menu reste horizontal sur sa plateforme.
+Aucune modification des points du tracé, de la vitesse, des collisions
+ou des réglages d'adhérence. La qualité visuelle et les FPS doivent être
+confirmés par un essai du jeu.
+
 ## Relief renforcé du circuit (sans modifier le tracé)
 
 La fonction de relief continu emploie désormais des ondulations de grande
