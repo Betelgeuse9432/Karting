@@ -235,6 +235,14 @@ void Simulation::reset(bool preserveRecord) {
     car_=Car{};
     car_.position=track_.startPosition();
     car_.heading=track_.startHeading();
+    opponent_=Car{};
+    if(track_.isBaja()) {
+        const std::size_t start=std::min<std::size_t>(25,track_.size()-1);
+        opponent_.position=track_.point(start,55.0);
+        const Vec2 direction=track_.center()[(start+1)%track_.size()]-
+                             track_.center()[(start+track_.size()-1)%track_.size()];
+        opponent_.heading=std::atan2(direction.y,direction.x);
+    }
     race_.reset(preserveRecord);
     telemetry_=Telemetry{};
     boostTimeRemaining_=0.0;
@@ -368,6 +376,33 @@ void Simulation::update(const Controls& controls,double dt) {
     car_.wheelRotation+=car_.speed*dt/10*.35;
     telemetry_={off,frontSlip,rearSlip,std::abs(car_.lateralSpeed)>12,
                 before.pits,grip,impact,slope};
+
+    // A second Trophy Truck follows the same route as a lightweight rival.
+    // It aims at a point ahead on the course and adapts speed to corner angle.
+    if(track_.isBaja()) {
+        const auto aiInfo=track_.info(opponent_.position);
+        const std::size_t targetIndex=(aiInfo.index+22)%track_.size();
+        const Vec2 target=track_.point(targetIndex,0.0);
+        const Vec2 toTarget=target-opponent_.position;
+        const double targetHeading=std::atan2(toTarget.y,toTarget.x);
+        const double headingError=wrapAngle(targetHeading-opponent_.heading);
+        const auto& aiProfile=profiles()[opponentVehicleIndex()];
+        const double steerTarget=std::clamp(headingError*.82,-.52,.52);
+        opponent_.steering+=(steerTarget-opponent_.steering)*std::min(1.0,3.5*dt);
+        const double turnRate=std::clamp(
+            opponent_.speed*std::tan(opponent_.steering)/aiProfile.wheelbase,
+            -.82,.82);
+        const double targetSpeed=std::clamp(820.0-std::abs(headingError)*430.0,
+                                            430.0,790.0);
+        opponent_.speed+=std::clamp(targetSpeed-opponent_.speed,
+                                    -720.0*dt,430.0*dt);
+        opponent_.heading=wrapAngle(opponent_.heading+turnRate*dt);
+        opponent_.position=opponent_.position+
+            Vec2{std::cos(opponent_.heading),std::sin(opponent_.heading)}*
+            (opponent_.speed*dt);
+        track_.collide(opponent_,dt);
+        opponent_.wheelRotation+=opponent_.speed*dt/10.0*.35;
+    }
     // Crossing the finish line completes a lap: refill both boost charges.
     if (race_.tick(track_,car_,off,dt).has_value())
         boostsRemaining_=2;
