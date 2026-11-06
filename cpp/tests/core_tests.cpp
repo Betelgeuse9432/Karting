@@ -118,6 +118,28 @@ void testCircuit() {
             "Bridge has at least 7.2 rendering metres of vertical separation");
     require(track.bridgeRise(0)==0 && track.bridgeRise(30*Track::subdivisions)==0,
             "Road remains on ground outside the bridge ramps");
+    // Along the whole ordinary road, both edges must match the terrain:
+    // using the centreline height for lateral vertices used to bury or
+    // float one side of the asphalt on steep hills.
+    for(std::size_t i=0;i<track.size();i+=7) {
+        for(double offset:{-Track::halfWidth,Track::halfWidth}) {
+            const Vec2 edge=track.point(i,offset);
+            const double residual=track.roadHeightAt(edge,i)-
+                                  track.terrainHeight(edge);
+            close(residual,track.bridgeRise(i),1e-7,
+                  "Road edges have consistent terrain-relative deck rise");
+        }
+    }
+    for(std::size_t i=0;i<track.size();i+=Track::subdivisions) {
+        if(track.bridgeRise(i)>1e-8) continue;
+        const Vec2 leftEdge=track.point(i,-Track::halfWidth);
+        const Vec2 rightEdge=track.point(i,Track::halfWidth);
+        close(track.roadHeightAt(leftEdge,i),elevation(leftEdge),1e-8,
+              "Grounded left road edge must sit on its own terrain height");
+        close(track.roadHeightAt(rightEdge,i),elevation(rightEdge),1e-8,
+              "Grounded right road edge must sit on its own terrain height");
+    }
+
     // Collision handling must accept both superposed lanes independently.
     // Passing beneath the bridge must not snap to the deck above.
     Car below{};
