@@ -118,6 +118,23 @@ void testCircuit() {
             "Bridge has at least 7.2 rendering metres of vertical separation");
     require(track.bridgeRise(0)==0 && track.bridgeRise(30*Track::subdivisions)==0,
             "Road remains on ground outside the bridge ramps");
+    // Collision handling must accept both superposed lanes independently.
+    // Passing beneath the bridge must not snap to the deck above.
+    Car below{};
+    below.position={14689,2401};
+    below.roadIndex=lower.index;
+    below.height=track.roadHeightAt(below.position,below.roadIndex);
+    const Vec2 beforeBelow=below.position;
+    close(track.collide(below,1.0/60.0),0,1e-12,
+          "Lower road does not collide with the bridge deck");
+    require(length(below.position-beforeBelow)<1e-9,
+            "Underpass preserves lower-road position");
+    Car above{};
+    above.position=below.position;
+    above.roadIndex=upper.index;
+    above.height=track.roadHeightAt(above.position,above.roadIndex);
+    close(track.collide(above,1.0/60.0),0,1e-12,
+          "Upper bridge lane remains driveable at same XY position");
 
     // Arc-length lookup must remain valid after changing the spline density.
     require(track.indexAtDistance(0)==0,
