@@ -571,7 +571,7 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
     // Tree positions were generated once, instead of walking the circuit
     // and calling nearest-point search on every rendered frame.
     for (const auto& p:trees_) {
-        const auto origin=worldPoint(p);
+        const auto origin=worldPoint(p,0,track.isBaja());
         const float dx=origin.x-cameraPosition.x,dz=origin.z-cameraPosition.z;
         const float distance2=dx*dx+dz*dz;
         const float treeFar=quality==0?28.f:quality==1?39.f:quality==2?50.f:62.f;
