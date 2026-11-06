@@ -302,8 +302,8 @@ void Simulation::update(const Controls& controls,double dt) {
     const Vec2 carSide{-carForward.y,carForward.x};
     car_.position=car_.position+(carForward*car_.speed+
                                   carSide*car_.lateralSpeed)*dt;
-    car_.position.x=std::clamp(car_.position.x,0.0,9800.0);
-    car_.position.y=std::clamp(car_.position.y,0.0,8700.0);
+    car_.position.x=std::clamp(car_.position.x,0.0,10000.0);
+    car_.position.y=std::clamp(car_.position.y,0.0,9000.0);
     const double impact=track_.collide(car_,dt);
     car_.brakeHeat=std::clamp(car_.brakeHeat+
             (car_.brake>.05 && car_.speed>0?
