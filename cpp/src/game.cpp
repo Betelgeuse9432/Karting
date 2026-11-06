@@ -198,7 +198,7 @@ void Game::follow(double dt) {
     const auto& car=sim_.car();
     const auto& spec=sim_.profile();
     followAngle_+=wrapAngle(car.heading-followAngle_)*std::min(1.0,3.5*dt);
-    cameraHeight_+=(elevation(car.position)+spec.cameraHeight-cameraHeight_)*
+    cameraHeight_+=(elevation(car.position)+car.jumpHeight+spec.cameraHeight-cameraHeight_)*
                     std::min(1.0,4.0*dt);
     const Vec2 behind{std::cos(followAngle_),std::sin(followAngle_)};
     const Vec2 view=car.position-behind*spec.cameraDistance;
@@ -206,7 +206,7 @@ void Game::follow(double dt) {
                       float(cameraHeight_*kWorldScale),
                       float(view.y*kWorldScale)};
     camera_.target={float(car.position.x*kWorldScale),
-                    float((elevation(car.position)+30)*kWorldScale),
+                    float((elevation(car.position)+car.jumpHeight+30)*kWorldScale),
                     float(car.position.y*kWorldScale)};
     camera_.up={0,1,0};
     camera_.projection=CAMERA_PERSPECTIVE;
