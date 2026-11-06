@@ -111,15 +111,20 @@ void HudRenderer::menu(const Simulation& sim,double time) const {
     const auto ui=uiViewport();
     const int w=ui.width,h=ui.height;
     BeginMode2D(ui.camera());
-    DrawText("KARTING V6  /  C++20 + raylib",w/2-280,24,34,GOLD);
-    DrawText("CHOISIS TON VEHICULE",w/2-210,74,27,RAYWHITE);
+    DrawText(sim.isBaja()?"TROPHY BAJA  /  GAME VROUM":"KARTING V6  /  C++20 + raylib",
+             w/2-280,24,34,GOLD);
+    DrawText(sim.isBaja()?"CHOISIS TON TROPHY TRUCK":"CHOISIS TON VEHICULE",
+             w/2-210,74,27,RAYWHITE);
     const auto& cars=profiles();
-    for (int i=0;i<6;++i) {
-        const int x=w/2-480+i*160;
-        const bool selected=i==sim.vehicleIndex();
+    const int first=sim.isBaja()?6:0;
+    const int count=sim.isBaja()?2:6;
+    for (int i=0;i<count;++i) {
+        const int index=first+i;
+        const int x=w/2-count*80+i*160;
+        const bool selected=index==sim.vehicleIndex();
         DrawRectangleRounded({float(x),121,150,42},.15f,8,
-                             selected?GOLD:Color{52,59,72,255});
-        DrawText(cars[i].name.data(),x+12,130,22,selected?BLACK:RAYWHITE);
+                             selected?Color{235,177,105,255}:Color{52,59,72,255});
+        DrawText(cars[index].name.data(),x+12,130,22,selected?BLACK:RAYWHITE);
     }
     DrawText("PERFORMANCES",54,200,24,RAYWHITE);
     const auto& p=sim.profile();
@@ -139,13 +144,15 @@ void HudRenderer::menu(const Simulation& sim,double time) const {
                       i%2==0?ORANGE:LIME);
     }
     DrawText("PHYSIQUE ET STYLE",w-385,205,22,RAYWHITE);
-    const char* description[6] = {
-        "Kart nerveux, tres leger, agilité",
+    const char* description[8] = {
+        "Kart nerveux, tres leger, agilite",
         "4x4 stable, grand debattement",
         "GT3 polyvalente et efficace",
         "WEC hypercar et appui enorme",
         "Rallycross nerveuse, chassis sureleve",
-        "F1 legere, appui aero et suspensions apparentes"
+        "F1 legere, appui aero et suspensions apparentes",
+        "Trophy Truck long-travel, V8 et gros debattement",
+        "Trophy Truck spec course, chassis tubulaire renforce"
     };
     DrawText(description[sim.vehicleIndex()],w-385,244,18,LIGHTGRAY);
     DrawText(TextFormat("Vitesse max : %d km/h",
@@ -159,7 +166,8 @@ void HudRenderer::menu(const Simulation& sim,double time) const {
         if (i==sim.colorIndex())
             DrawRectangleLines(x-4,h-111,51,43,RAYWHITE);
     }
-    DrawText("GAUCHE/DROITE voiture    HAUT/BAS couleur    ENTREE jouer",
+    DrawText(sim.isBaja()?"GAUCHE/DROITE camion    HAUT/BAS couleur    ENTREE rouler":
+             "GAUCHE/DROITE voiture    HAUT/BAS couleur    ENTREE jouer",
              w/2-336,h-55,19,LIGHTGRAY);
     DrawText("ESC quitter",w/2-55,h-28,15,GRAY);
     (void)time;
