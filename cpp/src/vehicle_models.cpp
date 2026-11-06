@@ -453,14 +453,52 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
 } // namespace
 
 void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
-                           int index,int colorIndex,bool night) const {
-    const Vector3 p=worldPoint(car.position);
+                           int index,int colorIndex,bool night,
+                           bool followRoad) const {
     const Color paint=palette(colorIndex);
     const Color dark{31,34,42,255};
     const Color glass=night?Color{29,48,70,255}:Color{58,104,139,255};
+    const Vec2 forward{std::cos(car.heading),std::sin(car.heading)};
+    const Vec2 side{-forward.y,forward.x};
+    // Sample the four wheel contact locations. Compute the road plane in
+    // local car coordinates (X forward, Z right), not just the height under
+    // the vehicle centre. The whole car, including wheels, follows it.
+    double originHeight=elevation(car.position);
+    float roadPitch=0.f,roadRoll=0.f;
+    if (followRoad) {
+        const double wheelTrack=std::max(profile.halfWheelTrack,
+                                        (index==2?.60:index==1?.65:index==3?.58:.45)
+                                            /kWorldScale);
+        const auto contact=[&](double axle,double lateral) {
+            return elevation(car.position+forward*axle+side*lateral);
+        };
+        const double front=(contact(profile.frontAxle,-wheelTrack)+
+                            contact(profile.frontAxle,wheelTrack))*.5;
+        const double rear=(contact(profile.rearAxle,-wheelTrack)+
+                           contact(profile.rearAxle,wheelTrack))*.5;
+        const double left=(contact(profile.frontAxle,-wheelTrack)+
+                           contact(profile.rearAxle,-wheelTrack))*.5;
+        const double right=(contact(profile.frontAxle,wheelTrack)+
+                            contact(profile.rearAxle,wheelTrack))*.5;
+        const double longitudinalGrade=(front-rear)/
+                              (profile.frontAxle-profile.rearAxle);
+        const double transverseGrade=(right-left)/(2*wheelTrack);
+        // Intercept at the vehicle centre: avoids height drift when the
+        // front/rear axle offsets are not symmetric.
+        originHeight=(front+rear)*.5-
+                     longitudinalGrade*(profile.frontAxle+profile.rearAxle)*.5;
+        roadPitch=float(std::atan(longitudinalGrade)*RAD2DEG);
+        roadRoll=float(-std::atan(transverseGrade)*RAD2DEG);
+    }
+    const Vector3 p{float(car.position.x*kWorldScale),
+                    float(originHeight*kWorldScale),
+                    float(car.position.y*kWorldScale)};
     rlPushMatrix();
     rlTranslatef(p.x,p.y,p.z);
     rlRotatef(float(-car.heading*RAD2DEG),0,1,0);
+    rlRotatef(roadRoll,1,0,0);
+    rlRotatef(roadPitch,0,0,1);
+    // Suspension motion applies to the chassis, not the wheel contacts.
     rlPushMatrix();
     rlRotatef(float(car.roll*RAD2DEG),1,0,0);
     rlRotatef(float(car.pitch*RAD2DEG),0,0,1);
