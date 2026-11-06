@@ -257,9 +257,7 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
                     quad(footA,footB,trimB,trimA,keystone);
                     // Avoid inverted faces near the crown where the vault
                     // almost reaches the underside of the existing deck.
-                    const float safeA=std::max(trimA.y,topA.y);
-                    const float safeB=std::max(trimB.y,topB.y);
-                    if(safeA==trimA.y && safeB==trimB.y)
+                    if(trimA.y<topA.y && trimB.y<topB.y)
                         quad(trimA,trimB,topB,topA,masonry);
                 }
             }
