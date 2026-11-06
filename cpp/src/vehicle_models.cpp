@@ -498,9 +498,10 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
             forward*(x/kWorldScale)+lateral*(side*track/kWorldScale);
         float wheelHeight=float(
             ((baja?bajaElevation(wheelWorld):elevation(wheelWorld))-
-             (baja?bajaElevation(car.position):elevation(car.position)))*kWorldScale);
+             (baja?bajaElevation(car.position):elevation(car.position)))*kWorldScale
+            - (baja?car.jumpHeight*kWorldScale:0.0));
         if(slot==2) wheelHeight=std::clamp(wheelHeight,-.045f,.045f);
-        if(slot>=6) wheelHeight=std::clamp(wheelHeight,-.16f,.16f);
+        if(slot>=6) wheelHeight=std::clamp(wheelHeight,-.48f,.20f);
         if(slot>=6) {
             const float wheelY=r+.015f+wheelHeight;
             const float innerZ=side*(track-.34f);
