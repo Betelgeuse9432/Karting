@@ -2,6 +2,21 @@
 
 Ce dossier contient la version native **C++20 / raylib** de Karting, utilisée sur les branches `cpp-raylib` et `main-cpp`. Les anciens fichiers du jeu Python ont été retirés de ces deux branches ; ils restent consultables dans l'historique Git et les branches historiques.
 
+## Relief renforcé du circuit (sans modifier le tracé)
+
+La fonction de relief continu emploie désormais des ondulations de grande
+longueur d'onde, plus amples. Sur le tour actuel, le dénivelé est d'environ
+**15 m en unités de rendu**, avec des pentes dont le maximum échantillonné
+reste inférieur à **20 %**. Les 42 points de contrôle en XY, la largeur,
+les virages, les commandes et les profils des véhicules sont inchangés.
+
+La chaussée reste au contact du terrain naturel : c'est une phase de relief
+général, pas encore un pont ni une route sur pilotis. La caméra, la voiture,
+les arbres et les autres éléments de scène utilisent la même fonction de
+relief. Le plan de terrain lointain a été abaissé pour éviter de masquer
+les nouvelles vallées. L'effet sur la conduite et les FPS doit être validé
+dans le jeu.
+
 ## Architecture de la carte : terrain et chaussée distincts
 
 La représentation conserve **exactement le tracé actuel**. La carte expose
