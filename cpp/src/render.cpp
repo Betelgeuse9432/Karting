@@ -101,42 +101,70 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
             paint(Track::halfWidth+Track::kerb+5,
                   Track::halfWidth+Track::kerb+7,YELLOW);
         }
-        // Earth embankments support the approach ramps. Only the genuinely
-        // elevated bridge span stays open underneath for the lower roadway.
+        // A consistent three-part infrastructure: shaped earth ramps,
+        // concrete approach walls, then a raised deck. No terrain edits.
         const double riseI=track.bridgeRise(i),riseJ=track.bridgeRise(j);
-        if((riseI>5 || riseJ>5) && std::max(riseI,riseJ)<230) {
-            const Color soil=shaded({96,108,80,255},1-.35f*night);
+        const double riseHigh=std::max(riseI,riseJ);
+        if(riseHigh>3 && riseHigh<225) {
+            // Swept, two-slope embankment: broad foot / shallow shoulder /
+            // narrow compacted berm. It fades into the native terrain.
+            const Color earth=shaded({93,112,76,255},1-.32f*night);
+            const Color compact=shaded({124,128,101,255},1-.30f*night);
             for(const int side:{-1,1}) {
                 const double edge=side*(Track::halfWidth+Track::kerb);
-                const double toe=side*(Track::halfWidth+Track::kerb+220);
-                const auto upperA=roadPoint(i,edge,0);
-                const auto upperB=roadPoint(j,edge,0);
-                const Vec2 toeA=track.point(i,toe),toeB=track.point(j,toe);
-                const Vector3 lowerA{float(toeA.x*kWorldScale),
-                    float((elevation(toeA)-9)*kWorldScale),
-                    float(toeA.y*kWorldScale)};
-                const Vector3 lowerB{float(toeB.x*kWorldScale),
-                    float((elevation(toeB)-9)*kWorldScale),
-                    float(toeB.y*kWorldScale)};
-                quad(upperA,upperB,lowerB,lowerA,soil);
+                const double shoulder=side*(Track::halfWidth+Track::kerb+105);
+                const double toe=side*(Track::halfWidth+Track::kerb+390);
+                const auto topA=roadPoint(i,edge,-2),topB=roadPoint(j,edge,-2);
+                const auto sidePoint=[&](std::size_t idx,double offset,double fraction) {
+                    const Vec2 pos=track.point(idx,offset);
+                    const double rise=track.bridgeRise(idx);
+                    return Vector3{float(pos.x*kWorldScale),
+                      float((elevation(pos)+fraction*rise-9)*kWorldScale),
+                      float(pos.y*kWorldScale)};
+                };
+                const auto shelfA=sidePoint(i,shoulder,.74);
+                const auto shelfB=sidePoint(j,shoulder,.74);
+                const auto footA=sidePoint(i,toe,0);
+                const auto footB=sidePoint(j,toe,0);
+                quad(topA,topB,shelfB,shelfA,compact);
+                quad(shelfA,shelfB,footB,footA,earth);
             }
         }
-        // Visible bridge sidewalls make the elevated roadway a solid deck.
-        // Skip near-flat ramps so the underside never cuts through terrain.
-        if(track.bridgeRise(i)>105 || track.bridgeRise(j)>105) {
-            const auto a=roadPoint(i,-Track::halfWidth,0);
-            const auto b=roadPoint(j,-Track::halfWidth,0);
-            const auto c=roadPoint(j,-Track::halfWidth,-20);
-            const auto d=roadPoint(i,-Track::halfWidth,-20);
-            quad(a,b,c,d,shaded({100,105,113,255},1-.32f*night));
-            const auto e=roadPoint(i,Track::halfWidth,0);
-            const auto g=roadPoint(j,Track::halfWidth,0);
-            const auto h=roadPoint(j,Track::halfWidth,-20);
-            const auto k=roadPoint(i,Track::halfWidth,-20);
-            quad(e,g,h,k,shaded({100,105,113,255},1-.32f*night));
-            // Solid underside: cars below should see concrete, not
-            // the underside of a paper-thin asphalt surface.
-            quad(d,c,h,k,shaded({83,89,99,255},1-.36f*night));
+        // Stiff concrete beams with an inset shadow reveal rather than a
+        // paper-thin dark slab. At the ends the ramp gradually hides them.
+        if(riseHigh>165) {
+            const Color face=shaded({155,160,167,255},1-.38f*night);
+            const Color band=shaded({91,99,110,255},1-.40f*night);
+            const Color under=shaded({72,78,89,255},1-.44f*night);
+            for(const int side:{-1,1}) {
+                const auto a=roadPoint(i,side*(Track::halfWidth+Track::kerb),-3);
+                const auto b=roadPoint(j,side*(Track::halfWidth+Track::kerb),-3);
+                const auto c=roadPoint(j,side*(Track::halfWidth+Track::kerb),-29);
+                const auto d=roadPoint(i,side*(Track::halfWidth+Track::kerb),-29);
+                quad(a,b,c,d,face);
+                const auto e=roadPoint(i,side*(Track::halfWidth+Track::kerb),-23);
+                const auto g=roadPoint(j,side*(Track::halfWidth+Track::kerb),-23);
+                const auto h=roadPoint(j,side*(Track::halfWidth+Track::kerb),-29);
+                const auto k=roadPoint(i,side*(Track::halfWidth+Track::kerb),-29);
+                quad(e,g,h,k,band);
+            }
+            quad(roadPoint(i,-Track::halfWidth-Track::kerb,-29),
+                 roadPoint(j,-Track::halfWidth-Track::kerb,-29),
+                 roadPoint(j,Track::halfWidth+Track::kerb,-29),
+                 roadPoint(i,Track::halfWidth+Track::kerb,-29),under);
+        }
+        // Continuous raised parapets make the bridge silhouette readable.
+        // Placed outside the race surface, with no extra collision geometry.
+        if(quality>0 && riseHigh>165 && d2<55.f*55.f) {
+            const Color concrete=shaded({181,186,192,255},1-.35f*night);
+            const Color cap=shaded({226,228,227,255},1-.32f*night);
+            for(const int side:{-1,1}) {
+                const double off=side*(Track::halfWidth+Track::kerb+14);
+                const auto a=roadPoint(i,off,0),b=roadPoint(j,off,0);
+                const auto up=[](Vector3 p,float d){p.y+=d;return p;};
+                quad(a,b,up(b,.84f),up(a,.84f),concrete);
+                DrawCylinderEx(up(a,.87f),up(b,.87f),.060f,.060f,5,cap);
+            }
         }
         if (quality>0 && d2<38*38) {
             for (int side:{-1,1}) {
@@ -152,33 +180,64 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
         i+=step;
     }
 
-    // Sparse pillars outside the road width, only on supported portions.
-    // Cull before drawing, and avoid placing a pillar on the lower track.
+    // Architectural piers and end abutments, outside both road corridors.
+    // Every element is camera-culled; coarse quality skips the details.
     if(quality>0) {
-        for(std::size_t i=0;i<count;i+=12) {
-            if(track.bridgeRise(i)<180) continue;
+        const auto nearLowerRoad=[&](Vec2 position) {
+            for(std::size_t k=0;k<5*Track::subdivisions;k+=3) {
+                if(length(position-track.point(k))<Track::wall+130) return true;
+            }
+            return false;
+        };
+        for(std::size_t i=9*Track::subdivisions;
+            i<22*Track::subdivisions && i<count;i+=12) {
+            const double rise=track.bridgeRise(i);
+            if(rise<145) continue;
             const Vector3 top=roadPoint(i,0);
             const float dx=top.x-cameraPosition.x,dz=top.z-cameraPosition.z;
-            if(dx*dx+dz*dz>48.f*48.f || !frustum.visible(top,7.f)) continue;
+            if(dx*dx+dz*dz>55.f*55.f || !frustum.visible(top,9.f))
+                continue;
             for(const int side:{-1,1}) {
-                const Vec2 location=track.point(i,side*(Track::wall+70));
-                // The ground-level approach remains unobstructed below.
-                bool blocked=false;
-                for(std::size_t j=0;j<5*Track::subdivisions;++j) {
-                    if(length(location-track.point(j))<Track::wall+90) {
-                        blocked=true; break;
-                    }
-                }
-                if(blocked) continue;
-                const double ground=track.terrainHeight(location);
-                const double deck=track.roadHeight(i)-24;
-                if(deck-ground<160) continue;
-                const Vector3 bottom{float(location.x*kWorldScale),
-                                     float(ground*kWorldScale),
-                                     float(location.y*kWorldScale)};
-                const Vector3 upper{bottom.x,float(deck*kWorldScale),bottom.z};
-                DrawCylinderEx(bottom,upper,.23f,.23f,7,
-                               shaded({116,122,132,255},1-.35f*night));
+                const double offset=side*(Track::wall+115);
+                const Vec2 position=track.point(i,offset);
+                if(nearLowerRoad(position)) continue;
+                const double ground=elevation(position);
+                const double cap=track.roadHeightAt(position,i)-35;
+                const float height=float((cap-ground)*kWorldScale);
+                if(height<1.5f) continue;
+                const Vector3 base{float(position.x*kWorldScale),
+                      float(ground*kWorldScale),float(position.y*kWorldScale)};
+                const Vector3 columnTop{base.x,base.y+height,base.z};
+                const Color column=shaded({145,150,158,255},1-.40f*night);
+                const Color footing=shaded({98,104,114,255},1-.38f*night);
+                // Tapered concrete shafts; stronger visually than toothpicks.
+                DrawCylinderEx({base.x,base.y+.18f,base.z},columnTop,
+                               .43f,.33f,8,column);
+                DrawCubeV({base.x,base.y+.17f,base.z},
+                          {1.5f,.34f,1.5f},footing);
+                DrawCubeV({columnTop.x,columnTop.y, columnTop.z},
+                          {1.7f,.28f,1.3f},footing);
+            }
+        }
+        // End-of-viaduct abutments, set to each side of the carriageway.
+        for(const std::size_t index:{
+                std::size_t(11*Track::subdivisions),
+                std::size_t(18*Track::subdivisions)}) {
+            const auto center=roadPoint(index,0);
+            const float dx=center.x-cameraPosition.x,dz=center.z-cameraPosition.z;
+            if(dx*dx+dz*dz>60.f*60.f||!frustum.visible(center,8.f))continue;
+            for(const int side:{-1,1}) {
+                const Vec2 location=track.point(index,side*(Track::wall+42));
+                if(nearLowerRoad(location)) continue;
+                const double bottom=elevation(location);
+                const double top=track.roadHeightAt(location,index)-28;
+                if(top-bottom<65)continue;
+                const float h=float((top-bottom)*kWorldScale);
+                const Vector3 pos{float(location.x*kWorldScale),
+                                  float((top+bottom)*.5*kWorldScale),
+                                  float(location.y*kWorldScale)};
+                DrawCubeV(pos,{2.0f,h,1.3f},
+                          shaded({117,124,132,255},1-.35f*night));
             }
         }
     }
