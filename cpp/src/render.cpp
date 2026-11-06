@@ -180,64 +180,88 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
         i+=step;
     }
 
-    // Architectural piers and end abutments, outside both road corridors.
-    // Every element is camera-culled; coarse quality skips the details.
+    // One masonry-style arch centered over the lower approach road.
+    // Its opening runs ALONG the elevated track; the lower road crosses
+    // that opening perpendicular to the bridge. No columns in the tunnel.
     if(quality>0) {
-        const auto nearLowerRoad=[&](Vec2 position) {
-            for(std::size_t k=0;k<5*Track::subdivisions;k+=3) {
-                if(length(position-track.point(k))<Track::wall+130) return true;
-            }
-            return false;
-        };
-        for(std::size_t i=9*Track::subdivisions;
-            i<22*Track::subdivisions && i<count;i+=12) {
-            const double rise=track.bridgeRise(i);
-            if(rise<145) continue;
-            const Vector3 top=roadPoint(i,0);
-            const float dx=top.x-cameraPosition.x,dz=top.z-cameraPosition.z;
-            if(dx*dx+dz*dz>55.f*55.f || !frustum.visible(top,9.f))
-                continue;
-            for(const int side:{-1,1}) {
-                const double offset=side*(Track::wall+115);
-                const Vec2 position=track.point(i,offset);
-                if(nearLowerRoad(position)) continue;
-                const double ground=elevation(position);
-                const double cap=track.roadHeightAt(position,i)-35;
-                const float height=float((cap-ground)*kWorldScale);
-                if(height<1.5f) continue;
-                const Vector3 base{float(position.x*kWorldScale),
-                      float(ground*kWorldScale),float(position.y*kWorldScale)};
-                const Vector3 columnTop{base.x,base.y+height,base.z};
-                const Color column=shaded({145,150,158,255},1-.40f*night);
-                const Color footing=shaded({98,104,114,255},1-.38f*night);
-                // Tapered concrete shafts; stronger visually than toothpicks.
-                DrawCylinderEx({base.x,base.y+.18f,base.z},columnTop,
-                               .43f,.33f,8,column);
-                DrawCubeV({base.x,base.y+.17f,base.z},
-                          {1.5f,.34f,1.5f},footing);
-                DrawCubeV({columnTop.x,columnTop.y, columnTop.z},
-                          {1.7f,.28f,1.3f},footing);
+        constexpr Vec2 crossing{14689,2401};
+        constexpr int halfArchSamples=15;
+        std::size_t crossingIndex=14*Track::subdivisions;
+        double bestDistance=1e30;
+        for(std::size_t k=12*Track::subdivisions;
+            k<=16*Track::subdivisions && k<count;++k) {
+            const Vec2 delta=track.point(k)-crossing;
+            const double d2=dot(delta,delta);
+            if(d2<bestDistance) {
+                bestDistance=d2;
+                crossingIndex=k;
             }
         }
-        // End-of-viaduct abutments, set to each side of the carriageway.
-        for(const std::size_t index:{
-                std::size_t(11*Track::subdivisions),
-                std::size_t(18*Track::subdivisions)}) {
-            const auto center=roadPoint(index,0);
-            const float dx=center.x-cameraPosition.x,dz=center.z-cameraPosition.z;
-            if(dx*dx+dz*dz>60.f*60.f||!frustum.visible(center,8.f))continue;
-            for(const int side:{-1,1}) {
-                const Vec2 location=track.point(index,side*(Track::wall+42));
-                if(nearLowerRoad(location)) continue;
-                const double bottom=elevation(location);
-                const double top=track.roadHeightAt(location,index)-28;
-                if(top-bottom<65)continue;
-                const float h=float((top-bottom)*kWorldScale);
-                const Vector3 pos{float(location.x*kWorldScale),
-                                  float((top+bottom)*.5*kWorldScale),
-                                  float(location.y*kWorldScale)};
-                DrawCubeV(pos,{2.0f,h,1.3f},
-                          shaded({117,124,132,255},1-.35f*night));
+        const Vector3 archCenter=roadPoint(crossingIndex,0);
+        const float adx=archCenter.x-cameraPosition.x;
+        const float adz=archCenter.z-cameraPosition.z;
+        if(adx*adx+adz*adz<80.f*80.f &&
+           frustum.visible(archCenter,23.f)) {
+            const Color masonry=shaded({151,154,157,255},1-.38f*night);
+            const Color keystone=shaded({197,199,198,255},1-.33f*night);
+            const Color tunnel=shaded({68,75,83,255},1-.43f*night);
+            constexpr double lip=Track::halfWidth+Track::kerb+24;
+            constexpr double spring=8.0;
+            // For each longitudinal slice, define the bottom of the arch.
+            // At its centre the opening is close to the underside of the
+            // deck; at the spring points it joins the natural ground.
+            const auto archLevel=[&](std::size_t k,int offset) {
+                const double u=double(offset)/halfArchSamples;
+                const double crown=std::sqrt(std::max(0.0,1.0-u*u));
+                const Vec2 center=track.point(k);
+                const double ground=elevation(center);
+                const double deck=track.roadHeightAt(center,k);
+                return ground+spring+
+                       std::max(0.0,deck-ground-80.0-spring)*crown;
+            };
+            const auto at=[&](std::size_t k,double lateral,double height) {
+                const Vec2 p=track.point(k,lateral);
+                return Vector3{float(p.x*kWorldScale),
+                               float(height*kWorldScale),
+                               float(p.y*kWorldScale)};
+            };
+            const auto slice=[&](std::size_t k,int offset,int side,
+                                 double aboveArch) {
+                const Vec2 p=track.point(k,side*lip);
+                const double terrain=elevation(p);
+                const double axisGround=elevation(track.point(k));
+                // Follow the lateral ground undulation, rather than
+                // creating a straight floating arch edge.
+                const double local=archLevel(k,offset)+terrain-axisGround;
+                return at(k,side*lip,local+aboveArch);
+            };
+            const std::size_t begin=crossingIndex-halfArchSamples;
+            for(int j=-halfArchSamples;j<halfArchSamples;++j) {
+                const std::size_t i=begin+std::size_t(j+halfArchSamples);
+                const std::size_t next=i+1;
+                const auto ceilingLeft=slice(i,j,-1,0);
+                const auto ceilingRight=slice(i,j,1,0);
+                const auto nextLeft=slice(next,j+1,-1,0);
+                const auto nextRight=slice(next,j+1,1,0);
+                // Curved vault visible from beneath. A separate roof
+                // surface avoids a hollow-looking paper bridge.
+                quad(ceilingLeft,nextLeft,nextRight,ceilingRight,tunnel);
+                for(const int side:{-1,1}) {
+                    const auto footA=slice(i,j,side,0);
+                    const auto footB=slice(next,j+1,side,0);
+                    const auto trimA=slice(i,j,side,26);
+                    const auto trimB=slice(next,j+1,side,26);
+                    const auto topA=roadPoint(i,side*lip,-29);
+                    const auto topB=roadPoint(next,side*lip,-29);
+                    // Highlighted arch ring and spandrel above the curve.
+                    quad(footA,footB,trimB,trimA,keystone);
+                    // Avoid inverted faces near the crown where the vault
+                    // almost reaches the underside of the existing deck.
+                    const float safeA=std::max(trimA.y,topA.y);
+                    const float safeB=std::max(trimB.y,topB.y);
+                    if(safeA==trimA.y && safeB==trimB.y)
+                        quad(trimA,trimB,topB,topA,masonry);
+                }
             }
         }
     }
