@@ -173,8 +173,9 @@ void Game::renderMenu(double time) {
     display.heading=time*.7;
     display.wheelRotation=time*5;
     display.wing=.1+.45*(.5+.5*std::sin(time*2));
+    // Showroom turntable stays level; only the racing car follows terrain.
     vehicle_.draw(display,sim_.profile(),sim_.vehicleIndex(),
-                  sim_.colorIndex(),false);
+                  sim_.colorIndex(),false,false);
     EndMode3D();
     hud_.menu(sim_,time);
 }
