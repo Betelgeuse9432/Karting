@@ -53,6 +53,8 @@ struct Controls {
 
 struct Car {
     Vec2 position{};
+    double height = 0; // World-unit altitude of the road under the car.
+    std::size_t roadIndex = 0; // Continuous route index through stacked roads.
     double heading = 0;
     double speed = 0;
     double lateralSpeed = 0;
@@ -95,6 +97,8 @@ public:
     // a particular track sample, so overlapping roads may have different Z.
     double terrainHeight(Vec2 position) const;
     double roadHeight(std::size_t index) const;
+    double roadHeightAt(Vec2 position, std::size_t nearIndex) const;
+    double bridgeRise(std::size_t index) const;
     // Replace only the deck altitude profile, not the XY spline or terrain.
     // Used later for ramps, bridges and underpasses; default equals terrain.
     void setRoadHeightProfile(std::vector<double> heights);
@@ -115,6 +119,7 @@ private:
     std::vector<Vec2> center_;
     std::vector<Vec2> normals_;
     std::vector<double> heights_;
+    std::vector<double> bridgeRise_;
     std::vector<double> distances_;
     std::vector<bool> pit_;
     double length_ = 0;
@@ -179,6 +184,7 @@ private:
     Telemetry telemetry_{};
     int vehicleIndex_ = 2;
     int colorIndex_ = 3;
+    std::size_t roadIndex_ = 0;
 };
 
 class FixedClock {
