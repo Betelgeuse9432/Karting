@@ -196,17 +196,23 @@ void HudRenderer::draw(const Simulation& sim,int quality,int fps) const {
 
     // Circuit minimap (V6 control points and interpolated curve).
     const auto& center=sim.track().center();
-    const float scale=.023f;
+    const float scale=sim.isBaja()?.014f:.023f;
+    const float mapOrigin=sim.isBaja()?5300.f:1600.f;
     const float mx=float(w-239),my=27.f;
     DrawRectangleRounded({mx-10,my-14,228,187},.11f,8,Fade(BLACK,.75f));
     for (std::size_t i=0;i<center.size();i+=5) {
         const auto& a=center[i],b=center[(i+5)%center.size()];
-        DrawLineEx({mx+float(a.x-1600)*scale,my+float(a.y-1600)*scale},
-                   {mx+float(b.x-1600)*scale,my+float(b.y-1600)*scale},
+        DrawLineEx({mx+float(a.x-mapOrigin)*scale,my+float(a.y-mapOrigin)*scale},
+                   {mx+float(b.x-mapOrigin)*scale,my+float(b.y-mapOrigin)*scale},
                    2.3f,RAYWHITE);
     }
-    DrawCircleV({mx+float(car.position.x-1600)*scale,
-                 my+float(car.position.y-1600)*scale},5,RED);
+    if(sim.isBaja()) {
+        const auto& rival=sim.opponent();
+        DrawCircleV({mx+float(rival.position.x-mapOrigin)*scale,
+                     my+float(rival.position.y-mapOrigin)*scale},4,SKYBLUE);
+    }
+    DrawCircleV({mx+float(car.position.x-mapOrigin)*scale,
+                 my+float(car.position.y-mapOrigin)*scale},5,RED);
     const char* phases[]={"JOUR","CREPUSCULE","NUIT"};
     DrawText(TextFormat("%s%s",phases[weather.phase],
              weather.raining?" + PLUIE":""),w-224,201,17,GOLD);
