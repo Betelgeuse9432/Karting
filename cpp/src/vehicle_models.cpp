@@ -454,7 +454,7 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
 
 void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
                            int index,int colorIndex,bool night,
-                           bool followRoad) const {
+                           bool followRoad,const Track* track) const {
     const Color paint=palette(colorIndex);
     const Color dark{31,34,42,255};
     const Color glass=night?Color{29,48,70,255}:Color{58,104,139,255};
@@ -463,14 +463,15 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
     // Sample the four wheel contact locations. Compute the road plane in
     // local car coordinates (X forward, Z right), not just the height under
     // the vehicle centre. The whole car, including wheels, follows it.
-    double originHeight=elevation(car.position);
+    double originHeight=track?car.height:elevation(car.position);
     float roadPitch=0.f,roadRoll=0.f;
     if (followRoad) {
         const double wheelTrack=std::max(profile.halfWheelTrack,
                                         (index==2?.60:index==1?.65:index==3?.58:.45)
                                             /kWorldScale);
         const auto contact=[&](double axle,double lateral) {
-            return elevation(car.position+forward*axle+side*lateral);
+            const Vec2 point=car.position+forward*axle+side*lateral;
+            return track?track->roadHeightAt(point,car.roadIndex):elevation(point);
         };
         const double front=(contact(profile.frontAxle,-wheelTrack)+
                             contact(profile.frontAxle,wheelTrack))*.5;
