@@ -1,4 +1,5 @@
 #include "karting/game.hpp"
+#include "karting/bridge_geometry.hpp"
 #include "rlgl.h"
 #include "raymath.h"
 #include <algorithm>
@@ -33,6 +34,76 @@ static void quad(Vector3 a,Vector3 b,Vector3 c,Vector3 d,Color color) {
     // Both faces visible even around elevation changes and sharp turns.
     DrawTriangle3D(c,b,a,color);
     DrawTriangle3D(d,c,a,color);
+}
+
+static Vector3 raised(Vector3 v,float amount) {
+    v.y+=amount;
+    return v;
+}
+
+// An actual closed, two-sided solid with thickness, not a floating quad.
+// Its lower, taller face is darkened to give the barrier readable depth.
+static void solidGuardSegment(Vector3 innerA,Vector3 innerB,
+                              Vector3 outerA,Vector3 outerB,
+                              float bottom,float top,
+                              Color inside,Color outside,Color crown) {
+    const Vector3 ai=raised(innerA,bottom),bi=raised(innerB,bottom);
+    const Vector3 ao=raised(outerA,bottom),bo=raised(outerB,bottom);
+    const Vector3 ci=raised(innerA,top),di=raised(innerB,top);
+    const Vector3 co=raised(outerA,top),dO=raised(outerB,top);
+    quad(ai,bi,di,ci,inside);
+    quad(ao,bo,dO,co,outside);
+    quad(ci,di,dO,co,crown);
+    quad(ai,ao,bo,bi,outside);
+    quad(ai,ci,co,ao,inside);
+    quad(bi,bo,dO,di,outside);
+}
+
+static Vector3 vertex3(bridge::SectionVertex point) {
+    return {float(point.position.x*kWorldScale),
+            float(point.altitude*kWorldScale),
+            float(point.position.y*kWorldScale)};
+}
+
+static void solidEmbankment(const Track& track,std::size_t i,std::size_t j,
+                            float night) {
+    const auto first=bridge::embankmentSection(track,i);
+    const auto second=bridge::embankmentSection(track,j);
+    const Color sod=shaded({78,116,59,255},1-.46f*night);
+    const Color packed=shaded({126,116,86,255},1-.40f*night);
+    const Color exposed=shaded({118,92,67,255},1-.43f*night);
+    const Color rock=shaded({99,92,81,255},1-.43f*night);
+    const Color deep=shaded({72,66,59,255},1-.43f*night);
+    const float variation=0.94f+float((i/5)%7)*.015f;
+    const std::array<Color,7> strata{{
+        shaded(exposed,variation),shaded(sod,variation),
+        packed,shaded(sod,variation),shaded(exposed,variation),
+        deep,shaded(rock,variation)
+    }};
+    // Sweep EVERY edge of the cross section, including the buried
+    // underside. The top lies just below the asphalt and shoulder.
+    for(std::size_t k=0;k<first.size();++k) {
+        const auto next=(k+1)%first.size();
+        quad(vertex3(first[k]),vertex3(second[k]),
+             vertex3(second[next]),vertex3(first[next]),strata[k]);
+    }
+    // Explicitly seal both ends, including LOD boundaries. A side view
+    // through the ramp now shows packed soil, never an empty green sheet.
+    for(const auto& end:{std::pair<std::size_t,bridge::EmbankmentSection>{i,first},
+                        {j,second}}) {
+        const Vec2 xy=track.point(end.first);
+        const Vector3 center{
+            float(xy.x*kWorldScale),
+            float((elevation(xy)+track.bridgeRise(end.first)*.42-18)*kWorldScale),
+            float(xy.y*kWorldScale)};
+        for(std::size_t k=0;k<end.second.size();++k) {
+            const auto next=(k+1)%end.second.size();
+            const auto a=vertex3(end.second[k]);
+            const auto b=vertex3(end.second[next]);
+            DrawTriangle3D(center,a,b,shaded(packed,variation*.82f));
+            DrawTriangle3D(center,b,a,shaded(packed,variation*.82f));
+        }
+    }
 }
 
 void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
@@ -101,79 +172,78 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
             paint(Track::halfWidth+Track::kerb+5,
                   Track::halfWidth+Track::kerb+7,YELLOW);
         }
-        // A consistent three-part infrastructure: shaped earth ramps,
-        // concrete approach walls, then a raised deck. No terrain edits.
+        // Earth ramps, retaining abutments and structural deck.
+        // On the low approaches, every cross section is a CLOSED soil volume.
         const double riseI=track.bridgeRise(i),riseJ=track.bridgeRise(j);
         const double riseHigh=std::max(riseI,riseJ);
-        if(riseHigh>3 && riseHigh<225) {
-            // Swept, two-slope embankment: broad foot / shallow shoulder /
-            // narrow compacted berm. It fades into the native terrain.
-            const Color earth=shaded({93,112,76,255},1-.32f*night);
-            const Color compact=shaded({124,128,101,255},1-.30f*night);
-            for(const int side:{-1,1}) {
-                const double edge=side*(Track::halfWidth+Track::kerb);
-                const double shoulder=side*(Track::halfWidth+Track::kerb+105);
-                const double toe=side*(Track::halfWidth+Track::kerb+390);
-                const auto topA=roadPoint(i,edge,-2),topB=roadPoint(j,edge,-2);
-                const auto sidePoint=[&](std::size_t idx,double offset,double fraction) {
-                    const Vec2 pos=track.point(idx,offset);
-                    const double rise=track.bridgeRise(idx);
-                    return Vector3{float(pos.x*kWorldScale),
-                      float((elevation(pos)+fraction*rise-9)*kWorldScale),
-                      float(pos.y*kWorldScale)};
-                };
-                const auto shelfA=sidePoint(i,shoulder,.74);
-                const auto shelfB=sidePoint(j,shoulder,.74);
-                const auto footA=sidePoint(i,toe,0);
-                const auto footB=sidePoint(j,toe,0);
-                quad(topA,topB,shelfB,shelfA,compact);
-                quad(shelfA,shelfB,footB,footA,earth);
-            }
+        if(bridge::isFilledEmbankment(riseI,riseJ))
+            solidEmbankment(track,i,j,night);
+
+        const double deckWidth=bridge::kDeckHalfWidth;
+        if(riseHigh>bridge::kFillMinRise) {
+            // Render actual paved shoulders above the compacted fill.
+            // On elevated portions these sit on the widened concrete slab.
+            const Color shoulder=shaded({111,116,117,255},
+                                        1-.22f*rain-.43f*night);
+            paint(-deckWidth,-Track::halfWidth-Track::kerb,shoulder);
+            paint(Track::halfWidth+Track::kerb,deckWidth,shoulder);
         }
-        // Slim pale concrete deck, matching a modern road viaduct.
-        if(riseHigh>165) {
-            const Color face=shaded({190,193,200,255},1-.34f*night);
-            const Color band=shaded({151,158,169,255},1-.38f*night);
-            const Color under=shaded({124,133,146,255},1-.40f*night);
+        if(riseHigh>bridge::kDeckMinRise) {
+            const Color face=shaded({192,194,198,255},1-.34f*night);
+            const Color band=shaded({139,146,157,255},1-.38f*night);
+            const Color underside=shaded({112,123,138,255},1-.43f*night);
             for(const int side:{-1,1}) {
-                const auto a=roadPoint(i,side*(Track::halfWidth+Track::kerb),-3);
-                const auto b=roadPoint(j,side*(Track::halfWidth+Track::kerb),-3);
-                const auto c=roadPoint(j,side*(Track::halfWidth+Track::kerb),-29);
-                const auto d=roadPoint(i,side*(Track::halfWidth+Track::kerb),-29);
-                quad(a,b,c,d,face);
-                const auto e=roadPoint(i,side*(Track::halfWidth+Track::kerb),-23);
-                const auto g=roadPoint(j,side*(Track::halfWidth+Track::kerb),-23);
-                const auto h=roadPoint(j,side*(Track::halfWidth+Track::kerb),-29);
-                const auto k=roadPoint(i,side*(Track::halfWidth+Track::kerb),-29);
-                quad(e,g,h,k,band);
+                const double edge=side*deckWidth;
+                quad(roadPoint(i,edge,-3),roadPoint(j,edge,-3),
+                     roadPoint(j,edge,-32),roadPoint(i,edge,-32),face);
+                quad(roadPoint(i,edge,-25),roadPoint(j,edge,-25),
+                     roadPoint(j,edge,-32),roadPoint(i,edge,-32),band);
             }
-            quad(roadPoint(i,-Track::halfWidth-Track::kerb,-29),
-                 roadPoint(j,-Track::halfWidth-Track::kerb,-29),
-                 roadPoint(j,Track::halfWidth+Track::kerb,-29),
-                 roadPoint(i,Track::halfWidth+Track::kerb,-29),under);
+            // Solid soffit and sealed abutment sections instead of a
+            // thin roof open when viewed from the underpass.
+            quad(roadPoint(i,-deckWidth,-32),roadPoint(j,-deckWidth,-32),
+                 roadPoint(j,deckWidth,-32),roadPoint(i,deckWidth,-32),
+                 underside);
+            quad(roadPoint(i,-deckWidth,-3),roadPoint(i,deckWidth,-3),
+                 roadPoint(i,deckWidth,-32),roadPoint(i,-deckWidth,-32),
+                 face);
+            quad(roadPoint(j,-deckWidth,-3),roadPoint(j,deckWidth,-3),
+                 roadPoint(j,deckWidth,-32),roadPoint(j,-deckWidth,-32),
+                 face);
         }
-        // Continuous raised parapets make the bridge silhouette readable.
-        // Placed outside the race surface, with no extra collision geometry.
-        if(quality>0 && riseHigh>165 && d2<55.f*55.f) {
-            const Color concrete=shaded({221,222,226,255},1-.34f*night);
-            const Color cap=shaded({244,242,239,255},1-.32f*night);
+        // One continuous protection system, including the approach ramps.
+        // Concrete lower toe + thick metallic beam, both closed solids.
+        // The top is only 48 cm above the road instead of 84 cm.
+        if((riseHigh>bridge::kFillMinRise || quality>0)
+           && d2<(riseHigh>bridge::kFillMinRise?55.f*55.f:38.f*38.f)) {
+            const Color foot=shaded({169,173,176,255},1-.42f*night);
+            const Color beam=shaded({188,193,198,255},1-.40f*night);
+            const Color outside=shaded({124,135,145,255},1-.43f*night);
+            const Color railTop=shaded({227,230,232,255},1-.37f*night);
             for(const int side:{-1,1}) {
-                const double off=side*(Track::halfWidth+Track::kerb+14);
-                const auto a=roadPoint(i,off,0),b=roadPoint(j,off,0);
-                const auto up=[](Vector3 p,float d){p.y+=d;return p;};
-                quad(a,b,up(b,.84f),up(a,.84f),concrete);
-                DrawCylinderEx(up(a,.87f),up(b,.87f),.060f,.060f,5,cap);
-            }
-        }
-        if (quality>0 && d2<38*38) {
-            for (int side:{-1,1}) {
-                if (side>0 && track.isPitIndex(i)) continue;
-                const auto a=roadPoint(i,side*Track::wall,18);
-                const auto b=roadPoint(j,side*Track::wall,18);
-                const auto a2=roadPoint(i,side*Track::wall,25);
-                const auto b2=roadPoint(j,side*Track::wall,25);
-                DrawLine3D(a,b,shaded(LIGHTGRAY,1-.5f*night));
-                DrawLine3D(a2,b2,shaded(GRAY,1-.5f*night));
+                if(side>0 && track.isPitIndex(i)) continue;
+                const auto innerA=roadPoint(i,side*bridge::kBarrierInner,-1);
+                const auto innerB=roadPoint(j,side*bridge::kBarrierInner,-1);
+                const auto outerA=roadPoint(i,side*bridge::kBarrierOuter,-1);
+                const auto outerB=roadPoint(j,side*bridge::kBarrierOuter,-1);
+                solidGuardSegment(innerA,innerB,outerA,outerB,0.f,
+                                  bridge::kBarrierFootHeight,
+                                  foot,outside,railTop);
+                solidGuardSegment(innerA,innerB,outerA,outerB,
+                                  bridge::kBarrierRailBottom,
+                                  bridge::kBarrierTotalHeight,
+                                  beam,outside,railTop);
+                // Reflective rail posts give a sense of thickness and speed.
+                if(quality>0 && i%8<step && d2<33.f*33.f) {
+                    const auto pos=roadPoint(i,side*(Track::wall-10),0);
+                    DrawCubeV(raised(pos,.26f),
+                              {.13f,.52f,.13f},
+                              shaded({103,112,122,255},1-.43f*night));
+                    DrawCubeV(raised(pos,.34f),
+                              {.15f,.055f,.055f},
+                              side>0?shaded({224,69,47,255},1-.38f*night):
+                                     shaded({245,217,97,255},1-.38f*night));
+                }
             }
         }
         i+=step;
