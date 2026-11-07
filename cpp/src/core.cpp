@@ -358,12 +358,12 @@ void Simulation::update(const Controls& controls,double dt) {
         car_.jumpCooldown=std::max(0.0,car_.jumpCooldown-dt);
         const auto jumpSpot=track_.info(car_.position);
         const double progress=double(jumpSpot.index)/double(track_.size());
-        for(const double target:{.18,.48,.77}) {
+        for(const double target:{.08,.18,.31,.48,.62,.77,.90}) {
             if(std::abs(progress-target)<.0035 && car_.jumpCooldown<=0.0 &&
                std::abs(car_.speed)>240.0) {
-                const double launchVariation=1.0+0.12*std::sin(double(jumpSpot.index)*.017);
-                car_.verticalSpeed=(42.0+std::abs(car_.speed)*.105)*launchVariation;
-                car_.jumpCooldown=2.7;
+                const double launchVariation=1.0+0.16*std::sin(double(jumpSpot.index)*.013);
+                car_.verticalSpeed=(35.0+std::abs(car_.speed)*.092)*launchVariation;
+                car_.jumpCooldown=1.9;
                 break;
             }
         }
@@ -428,12 +428,12 @@ void Simulation::update(const Controls& controls,double dt) {
         opponent_.jumpCooldown=std::max(0.0,opponent_.jumpCooldown-dt);
         const auto aiJumpSpot=track_.info(opponent_.position);
         const double aiProgress=double(aiJumpSpot.index)/double(track_.size());
-        for(const double target:{.18,.48,.77}) {
+        for(const double target:{.08,.18,.31,.48,.62,.77,.90}) {
             if(std::abs(aiProgress-target)<.0035 && opponent_.jumpCooldown<=0.0 &&
                opponent_.speed>240.0) {
-                const double launchVariation=1.0+0.12*std::sin(double(aiJumpSpot.index)*.017);
-                opponent_.verticalSpeed=(42.0+opponent_.speed*.105)*launchVariation;
-                opponent_.jumpCooldown=2.7;
+                const double launchVariation=1.0+0.16*std::sin(double(aiJumpSpot.index)*.013);
+                opponent_.verticalSpeed=(35.0+opponent_.speed*.092)*launchVariation;
+                opponent_.jumpCooldown=1.9;
                 break;
             }
         }
