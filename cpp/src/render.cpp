@@ -291,6 +291,7 @@ void WorldRenderer::initialize(const Track& track) {
     asphaltTexture_=makeSurfaceTexture(!track.isBaja(),track.isBaja());
     grassTexture_=makeSurfaceTexture(false,track.isBaja());
     trees_.clear();
+    if(track.isDesert()) return;
     std::mt19937 rng(7);
     std::uniform_real_distribution<double> noise(-310,310);
     for (std::size_t i=0;i<track.size();i+=13) {
@@ -319,6 +320,11 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
                          Vector3 cameraPosition,double time) const {
     const float rain=float(weather.rainLevel);
     const float night=float(weather.nightLevel);
+    if(track.isDesert()) {
+        const Color sand=shaded({205,164,105,255},1.0f-.28f*night);
+        DrawPlane({0,-.035f,0},{20000.0f*kWorldScale,20000.0f*kWorldScale},sand);
+        return;
+    }
     draw3DLandscape(cameraPosition,quality,night,time,track.isBaja());
     const auto asphalt=shaded(track.isBaja()?Color{151,105,61,255}:Color{84,86,95,255},
                                1-0.20f*rain-0.35f*night);
