@@ -96,7 +96,7 @@ private:
     Camera3D camera_{};
     bool menu_ = true;
     MenuScreen menuScreen_ = MenuScreen::Mode;
-    int selectedMode_ = 0; // 0 = circuit GT3, 1 = Trophy Baja
+    int selectedMode_ = 0; // 0 = circuit GT3, 1 = Trophy Baja, 2 = desert
     bool paused_ = false;
     bool boostQueued_ = false;
     int quality_ = 2;
