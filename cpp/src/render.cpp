@@ -8,8 +8,8 @@
 
 namespace karting {
 
-Vector3 worldPoint(Vec2 p, float heightOffset, bool baja) {
-    const double ground=baja?bajaElevation(p):elevation(p);
+Vector3 worldPoint(Vec2 p, float heightOffset, bool baja, bool desert) {
+    const double ground=desert?0.0:baja?bajaElevation(p):elevation(p);
     return {float(p.x*kWorldScale),
             float((ground+heightOffset)*kWorldScale),
             float(p.y*kWorldScale)};
