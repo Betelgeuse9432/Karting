@@ -228,9 +228,11 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
                  roadPoint(j,deckWidth,-32),roadPoint(j,-deckWidth,-32),
                  face);
         }
-        // Solid walls are ONLY for the elevated bridge deck.
-        // The rest of the circuit keeps its original two discreet guide lines.
-        if(quality>0 && bridge::hasBridgeWalls(riseI,riseJ) && d2<55.f*55.f) {
+        // Keep volumetric protection only on the bridge and around the
+        // eastern hairpin / western chicane. Regular straights retain
+        // their previous two nearly invisible guide lines.
+        const bool solidWalls=bridge::hasSolidWalls(i,j,riseI,riseJ);
+        if(quality>0 && solidWalls && d2<55.f*55.f) {
             const Color foot=shaded({169,173,176,255},1-.42f*night);
             const Color beam=shaded({188,193,198,255},1-.40f*night);
             const Color outside=shaded({124,135,145,255},1-.43f*night);
@@ -260,10 +262,9 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
                                      shaded({245,217,97,255},1-.38f*night));
                 }
             }
-        } else if(quality>0 && !bridge::hasBridgeWalls(riseI,riseJ)
-                  && d2<38.f*38.f) {
-            // Restore exactly the pre-bridge rendering on ordinary roads:
-            // two thin lines on each side, not opaque concrete barriers.
+        } else if(quality>0 && !solidWalls && d2<38.f*38.f) {
+            // Original rendering on all other roads: two delicate lines
+            // on each side, not concrete barriers.
             for(int side:{-1,1}) {
                 if(side>0 && track.isPitIndex(i)) continue;
                 const auto a=roadPoint(i,side*Track::wall,18);
