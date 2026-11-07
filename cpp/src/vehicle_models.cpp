@@ -488,6 +488,7 @@ void wheels(const Car& car,const VehicleProfile& p,int index,bool desert=false) 
     const bool baja=index>=6;
     const Vec2 forward{std::cos(car.heading),std::sin(car.heading)};
     const Vec2 lateral{-forward.y,forward.x};
+    const float visualWheelRotation=float(car.wheelRotation)*(desert?4.0f:1.0f);
     for(float x:{rear,front}) for(float side:{-1.f,1.f}) {
         // Keep the original wheel track and tyre width. Only limit vertical
         // suspension travel on the GT3 so terrain height cannot push tyres
@@ -516,14 +517,16 @@ void wheels(const Car& car,const VehicleProfile& p,int index,bool desert=false) 
             // upright. The outer ball joints move with the wheel travel.
             // Inner pivots sit directly on the chassis side rail.
             // Each pair stays on its own side of the vehicle.
-            const Vector3 upperA{x-.25f,.78f,side*.54f};
-            const Vector3 upperB{x+.25f,.78f,side*.54f};
-            const Vector3 lowerA{x-.29f,.58f,side*.54f};
-            const Vector3 lowerB{x+.29f,.58f,side*.54f};
-            // Upright chassis brackets make the upper pivots visibly part
-            // of the frame instead of leaving them suspended in space.
-            rod({x-.25f,.58f,side*.54f},upperA,.045f,{75,84,94,255});
-            rod({x+.25f,.58f,side*.54f},upperB,.045f,{75,84,94,255});
+            const float railZ=side*.57f;
+            const Vector3 upperA{x-.25f,.78f,railZ};
+            const Vector3 upperB{x+.25f,.78f,railZ};
+            const Vector3 lowerA{x-.29f,.58f,railZ};
+            const Vector3 lowerB{x+.29f,.58f,railZ};
+            // Reinforced upright brackets are welded directly to the side rail.
+            // Both wishbones pivot on these brackets, not on floating points.
+            rod({x-.25f,.58f,railZ},upperA,.052f,{75,84,94,255});
+            rod({x+.25f,.58f,railZ},upperB,.052f,{75,84,94,255});
+            rod({x-.29f,.58f,railZ},{x+.29f,.58f,railZ},.052f,{75,84,94,255});
             rod(upperA,upperHub,.035f,{105,115,126,255});
             rod(upperB,upperHub,.035f,{105,115,126,255});
             rod(lowerA,lowerHub,.042f,{105,115,126,255});
@@ -629,7 +632,7 @@ void wheels(const Car& car,const VehicleProfile& p,int index,bool desert=false) 
         for(int band=0;band<5;++band) {
             const float treadZ=-width*.38f+float(band)*width*.19f;
             for(int segment=0;segment<32;++segment) {
-                const float a0=2*PI*float(segment)/32.f+float(car.wheelRotation);
+                const float a0=2*PI*float(segment)/32.f+visualWheelRotation;
                 const float a1=a0+.13f;
                 const float r0=r*.985f,r1=r*.978f;
                 DrawLine3D({std::cos(a0)*r0,std::sin(a0)*r0,treadZ},
@@ -645,7 +648,7 @@ void wheels(const Car& car,const VehicleProfile& p,int index,bool desert=false) 
             r*.17f,{188,191,199,255});
         // The wheel rim rotates using the real wheel rotation state.
         for(int spoke=0;spoke<5;++spoke) {
-            const float a=float(car.wheelRotation)+spoke*1.2566371f;
+            const float a=visualWheelRotation+spoke*1.2566371f;
             DrawLine3D({std::cos(a)*r*.2f,std::sin(a)*r*.2f,z+side*.028f},
                        {std::cos(a)*r*.48f,std::sin(a)*r*.48f,z+side*.028f},
                        {180,185,193,255});
@@ -724,8 +727,10 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
                    {-.48f,highlightY-.012f,side*highlightZ*.94f},
                    {255,255,255,36});
     }
-    rlPopMatrix();
+    // Wheels, uprights and wishbones share the chassis roll/pitch transform.
+    // Previously they were drawn after this pop and appeared detached.
     wheels(car,profile,index,desert);
+    rlPopMatrix();
     rlPopMatrix();
 }
 
