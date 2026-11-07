@@ -296,6 +296,26 @@ void testGripRainAndDrift() {
     require(std::isfinite(braking.car().lateralSpeed),"Drift remains finite");
 }
 
+void testSlopeGravity() {
+    // A 10% slope should produce ~0.976 m/s² along the road, not
+    // the approximately tenfold force of the previous arcade constant.
+    const double grade=0.10;
+    const double expected=-9.81*grade/std::hypot(1.0,grade);
+    const double worldConversion=kWorldScale*kTravelScale;
+    close(slopeAcceleration(grade)*worldConversion,expected,1e-10,
+          "10% uphill gravity equals physical road-axis acceleration");
+    close(slopeAcceleration(-grade),-slopeAcceleration(grade),1e-10,
+          "Downhill gravity mirrors the climb");
+    close(slopeAcceleration(0.0),0.0,1e-12,
+          "Flat road has zero gravitational drag");
+    require(std::abs(slopeAcceleration(grade))<15.0,
+            "Moderate hill no longer removes 120 speed-units/s");
+    bool invalid=false;
+    try { (void)slopeAcceleration(std::numeric_limits<double>::quiet_NaN()); }
+    catch (const std::invalid_argument&) { invalid=true; }
+    require(invalid,"Non-finite road grade rejected");
+}
+
 void testFixedTiming() {
     FixedClock clock;
     int steps=0;
@@ -351,10 +371,11 @@ int main() {
         testCarAcceleration();
         testSpeedDistanceCalibration();
         testGripRainAndDrift();
+        testSlopeGravity();
         testFixedTiming();
         testResetAndParameters();
         testBarrier();
-        std::cout<<"8 suites de tests C++ reussies.\n";
+        std::cout<<"9 suites de tests C++ reussies.\n";
         return 0;
     } catch (const std::exception& e) {
         std::cerr<<"TEST FAILED: "<<e.what()<<'\n';
