@@ -396,8 +396,10 @@ void Simulation::update(const Controls& controls,double dt) {
                  -0.4*dt),0.0,1.0);
     if (before.pits) car_.brakeHeat=0;
 
-    double pitchTarget=((car_.brake*.05-
-            car_.throttle*.03*(1-std::abs(car_.speed)/p.topSpeed))*p.pitchFactor+
+    // Longitudinal weight transfer: braking compresses the front and
+    // lifts the rear; acceleration squats the rear and lifts the nose.
+    double pitchTarget=((car_.throttle*.045-car_.brake*.095)*
+            (track_.isDesert()?1.0:p.pitchFactor)+
             (track_.isBaja()?slope:-slope));
     // In the air, pitch follows vertical velocity: nose rises on take-off,
     // then progressively points down as the truck descends.
