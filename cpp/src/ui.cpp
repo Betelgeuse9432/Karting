@@ -73,13 +73,13 @@ void HudRenderer::menu(const Simulation& sim,double time) const {
     const auto ui=uiViewport();
     const int w=ui.width,h=ui.height;
     BeginMode2D(ui.camera());
-    DrawText(sim.isBaja()?"TROPHY BAJA  /  GAME VROUM":"KARTING V6  /  C++20 + raylib",
+    DrawText(sim.isBaja()?"TROPHY BAJA  /  GAME VROUM":sim.isDesert()?"DESERT  /  GAME VROUM":"KARTING V6  /  C++20 + raylib",
              w/2-280,24,34,GOLD);
-    DrawText(sim.isBaja()?"CHOISIS TON TROPHY TRUCK":"CHOISIS TON VEHICULE",
+    DrawText((sim.isBaja()||sim.isDesert())?"CHOISIS TON TROPHY TRUCK":"CHOISIS TON VEHICULE",
              w/2-210,74,27,RAYWHITE);
     const auto& cars=profiles();
-    const int first=sim.isBaja()?6:0;
-    const int count=sim.isBaja()?2:6;
+    const int first=(sim.isBaja()||sim.isDesert())?6:0;
+    const int count=(sim.isBaja()||sim.isDesert())?2:6;
     for (int i=0;i<count;++i) {
         const int index=first+i;
         const int x=w/2-count*80+i*160;
@@ -128,7 +128,7 @@ void HudRenderer::menu(const Simulation& sim,double time) const {
         if (i==sim.colorIndex())
             DrawRectangleLines(x-4,h-111,51,43,RAYWHITE);
     }
-    DrawText(sim.isBaja()?"GAUCHE/DROITE camion    HAUT/BAS couleur    ENTREE rouler":
+    DrawText((sim.isBaja()||sim.isDesert())?"GAUCHE/DROITE camion    HAUT/BAS couleur    ENTREE rouler":
              "GAUCHE/DROITE voiture    HAUT/BAS couleur    ENTREE jouer",
              w/2-336,h-55,19,LIGHTGRAY);
     DrawText("ESC quitter",w/2-55,h-28,15,GRAY);
