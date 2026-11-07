@@ -89,8 +89,10 @@ static void solidEmbankment(const Track& track,std::size_t i,std::size_t j,
     }
     // Explicitly seal both ends, including LOD boundaries. A side view
     // through the ramp now shows packed soil, never an empty green sheet.
-    for(const auto& end:{std::pair<std::size_t,bridge::EmbankmentSection>{i,first},
-                        {j,second}}) {
+    const std::array<std::pair<std::size_t,bridge::EmbankmentSection>,2> ends{{
+        {i,first},{j,second}
+    }};
+    for(const auto& end:ends) {
         const Vec2 xy=track.point(end.first);
         const Vector3 center{
             float(xy.x*kWorldScale),
