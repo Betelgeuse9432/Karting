@@ -389,9 +389,13 @@ void Simulation::update(const Controls& controls,double dt) {
                  -0.4*dt),0.0,1.0);
     if (before.pits) car_.brakeHeat=0;
 
-    const double pitchTarget=((car_.brake*.05-
+    double pitchTarget=((car_.brake*.05-
             car_.throttle*.03*(1-std::abs(car_.speed)/p.topSpeed))*p.pitchFactor+
             (track_.isBaja()?slope:-slope));
+    // In the air, pitch follows vertical velocity: nose rises on take-off,
+    // then progressively points down as the truck descends.
+    if(track_.isBaja())
+        pitchTarget+=0.34*std::clamp(car_.verticalSpeed/62.0,-1.0,1.0);
     car_.pitch+=(pitchTarget-car_.pitch)*std::min(1.0,6*dt);
     const double rollTarget=std::clamp(p.rollFactor*car_.speed*rotation,
                                       -p.maxRoll,p.maxRoll);
