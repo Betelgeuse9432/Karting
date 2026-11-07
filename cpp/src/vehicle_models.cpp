@@ -500,7 +500,7 @@ void wheels(const Car& car,const VehicleProfile& p,int index,bool desert=false) 
              (desert?0.0:(baja?bajaElevation(car.position):elevation(car.position))))*kWorldScale
             - (baja?car.jumpHeight*kWorldScale:0.0));
         if(slot==2) wheelHeight=std::clamp(wheelHeight,-.045f,.045f);
-        if(slot>=6) wheelHeight=std::clamp(wheelHeight,-.48f,.20f);
+        if(slot>=6) wheelHeight=std::clamp(wheelHeight,-.62f,.30f);
         // In the flat Desert world, braking/acceleration still articulate the
         // suspension: the front compresses under braking, the rear under power.
         if(desert) {
@@ -518,15 +518,15 @@ void wheels(const Car& car,const VehicleProfile& p,int index,bool desert=false) 
             // Inner pivots sit directly on the chassis side rail.
             // Each pair stays on its own side of the vehicle.
             const float railZ=side*.57f;
-            const Vector3 upperA{x-.25f,.78f,railZ};
-            const Vector3 upperB{x+.25f,.78f,railZ};
-            const Vector3 lowerA{x-.29f,.58f,railZ};
-            const Vector3 lowerB{x+.29f,.58f,railZ};
+            const Vector3 upperA{x-.36f,.78f,railZ};
+            const Vector3 upperB{x+.36f,.78f,railZ};
+            const Vector3 lowerA{x-.42f,.58f,railZ};
+            const Vector3 lowerB{x+.42f,.58f,railZ};
             // Reinforced upright brackets are welded directly to the side rail.
             // Both wishbones pivot on these brackets, not on floating points.
-            rod({x-.25f,.58f,railZ},upperA,.052f,{75,84,94,255});
-            rod({x+.25f,.58f,railZ},upperB,.052f,{75,84,94,255});
-            rod({x-.29f,.58f,railZ},{x+.29f,.58f,railZ},.052f,{75,84,94,255});
+            rod({x-.36f,.58f,railZ},upperA,.052f,{75,84,94,255});
+            rod({x+.36f,.58f,railZ},upperB,.052f,{75,84,94,255});
+            rod({x-.42f,.58f,railZ},{x+.42f,.58f,railZ},.052f,{75,84,94,255});
             rod(upperA,upperHub,.035f,{105,115,126,255});
             rod(upperB,upperHub,.035f,{105,115,126,255});
             rod(lowerA,lowerHub,.042f,{105,115,126,255});
@@ -540,8 +540,8 @@ void wheels(const Car& car,const VehicleProfile& p,int index,bool desert=false) 
             // Coil-over top eye is fixed to the chassis. Its lower eye is
             // attached to the moving lower wishbone, so the whole damper
             // changes length and angle as the tyre travels.
-            const Vector3 shockTop{x-.16f,.61f,side*.54f};
-            const Vector3 shockBottom{x+.12f,wheelY-.10f,side*(track-.25f)};
+            const Vector3 shockTop{x-.22f,.61f,side*.57f};
+            const Vector3 shockBottom{x+.22f,wheelY-.12f,side*(track-.20f)};
             const Vector3 axis{shockBottom.x-shockTop.x,
                                 shockBottom.y-shockTop.y,
                                 shockBottom.z-shockTop.z};
