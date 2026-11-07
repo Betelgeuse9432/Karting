@@ -508,10 +508,12 @@ void wheels(const Car& car,const VehicleProfile& p,int index,bool desert=false) 
 
             // Each wishbone pivots on the chassis and converges on the
             // upright. The outer ball joints move with the wheel travel.
-            const Vector3 upperA{x-.24f,.76f,side*.22f};
-            const Vector3 upperB{x+.24f,.76f,side*.22f};
-            const Vector3 lowerA{x-.28f,.25f,side*.22f};
-            const Vector3 lowerB{x+.28f,.25f,side*.22f};
+            // Inner pivots sit directly on the chassis side rail.
+            // Each pair stays on its own side of the vehicle.
+            const Vector3 upperA{x-.25f,.78f,side*.54f};
+            const Vector3 upperB{x+.25f,.78f,side*.54f};
+            const Vector3 lowerA{x-.29f,.55f,side*.54f};
+            const Vector3 lowerB{x+.29f,.55f,side*.54f};
             rod(upperA,upperHub,.035f,{105,115,126,255});
             rod(upperB,upperHub,.035f,{105,115,126,255});
             rod(lowerA,lowerHub,.042f,{105,115,126,255});
@@ -525,7 +527,7 @@ void wheels(const Car& car,const VehicleProfile& p,int index,bool desert=false) 
             // Coil-over top eye is fixed to the chassis. Its lower eye is
             // attached to the moving lower wishbone, so the whole damper
             // changes length and angle as the tyre travels.
-            const Vector3 shockTop{x-.16f,.82f,side*.30f};
+            const Vector3 shockTop{x-.16f,.61f,side*.54f};
             const Vector3 shockBottom{x+.12f,wheelY-.10f,side*(track-.25f)};
             const Vector3 axis{shockBottom.x-shockTop.x,
                                 shockBottom.y-shockTop.y,
@@ -660,17 +662,13 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
     if(desert) {
         const Color tube{52,59,66,255};
         const float half=.57f;
-        // Bare rectangular space-frame chassis, with no panels or cockpit.
-        for(float side:{-half,half}) {
-            rod({-1.12f,.48f,side},{1.12f,.48f,side},.055f,tube);
-            rod({-1.12f,.48f,side},{-1.12f,.92f,side},.055f,tube);
-            rod({1.12f,.48f,side},{1.12f,.92f,side},.055f,tube);
-            rod({-1.12f,.92f,side},{1.12f,.92f,side},.055f,tube);
-        }
+        // One simple, open rectangular chassis. No roof cage or diagonal bracing.
+        for(float side:{-half,half})
+            rod({-1.12f,.58f,side},{1.12f,.58f,side},.055f,tube);
         for(float x:{-1.12f,1.12f})
-            rod({x,.48f,-half},{x,.48f,half},.055f,tube);
-        rod({-1.12f,.92f,-half},{1.12f,.92f,half},.04f,tube);
-        rod({-1.12f,.92f,half},{1.12f,.92f,-half},.04f,tube);
+            rod({x,.58f,-half},{x,.58f,half},.055f,tube);
+        for(float x:{-.52f,.52f})
+            rod({x,.58f,-half},{x,.58f,half},.042f,tube);
     } else switch(index) {
     case 0: kart(paint);break;
     case 1: offRoad(paint,glass,dark,car.brake>.1);break;
