@@ -17,71 +17,33 @@ void HudRenderer::modeMenu(int selectedMode,double time) const {
     const auto ui=uiViewport();
     const int w=ui.width,h=ui.height;
     BeginMode2D(ui.camera());
-
-    DrawText("GAME VROUM",w/2-190,58,48,GOLD);
-    DrawText("CHOISIS TON TERRAIN DE JEU",w/2-250,119,27,RAYWHITE);
-    DrawText("Deux disciplines. Deux ambiances. Une seule envie : attaquer.", 
-             w/2-300,158,18,LIGHTGRAY);
-
-    const Rectangle circuit{float(w/2-430),225,390,300};
-    const Rectangle baja{float(w/2+40),225,390,300};
-    const Color idle{35,42,55,255};
-    const Color active{57,67,82,255};
-    DrawRectangleRounded(circuit,.055f,10,selectedMode==0?active:idle);
-    DrawRectangleRounded(baja,.055f,10,selectedMode==1?active:idle);
-    DrawRectangleLinesEx(circuit,selectedMode==0?4.f:1.5f,
-                         selectedMode==0?GOLD:Color{91,101,117,255});
-    DrawRectangleLinesEx(baja,selectedMode==1?4.f:1.5f,
-                         selectedMode==1?GOLD:Color{91,101,117,255});
-
-    // Stylised circuit card: asphalt ribbon, kerbs and start/finish markings.
-    DrawRectangleRounded({circuit.x+28,circuit.y+27,334,132},.08f,8,
-                         {21,26,35,255});
-    DrawLineEx({circuit.x+75,circuit.y+93},{circuit.x+135,circuit.y+55},17,
-               {105,111,121,255});
-    DrawLineEx({circuit.x+135,circuit.y+55},{circuit.x+245,circuit.y+65},17,
-               {105,111,121,255});
-    DrawLineEx({circuit.x+245,circuit.y+65},{circuit.x+298,circuit.y+119},17,
-               {105,111,121,255});
-    DrawLineEx({circuit.x+298,circuit.y+119},{circuit.x+190,circuit.y+135},17,
-               {105,111,121,255});
-    DrawLineEx({circuit.x+190,circuit.y+135},{circuit.x+75,circuit.y+93},17,
-               {105,111,121,255});
-    DrawLineEx({circuit.x+75,circuit.y+93},{circuit.x+135,circuit.y+55},2,WHITE);
-    DrawText("PISTE",int(circuit.x+28),circuit.y+181,29,GOLD);
-    DrawText("GT3  /  ASPHALTE  /  CIRCUIT",int(circuit.x+28),
-             circuit.y+222,19,RAYWHITE);
-    DrawText("Freinages, trajectoires et vitesse",int(circuit.x+28),
-             circuit.y+254,16,LIGHTGRAY);
-
-    // Desert card: dune silhouettes, a jump ramp and a Trophy Truck outline.
-    DrawRectangleRounded({baja.x+28,baja.y+27,334,132},.08f,8,
-                         {35,31,29,255});
-    DrawTriangle({baja.x+28,baja.y+148},{baja.x+145,baja.y+66},
-                 {baja.x+235,baja.y+148},{160,111,62,255});
-    DrawTriangle({baja.x+135,baja.y+148},{baja.x+255,baja.y+82},
-                 {baja.x+362,baja.y+148},{190,135,73,255});
-    DrawLineEx({baja.x+65,baja.y+135},{baja.x+270,baja.y+135},3,
-               {235,190,126,255});
-    DrawRectangleRounded({baja.x+145,baja.y+93,105,28},.18f,6,
-                         {28,31,35,255});
-    DrawCircle(int(baja.x+165),baja.y+126,17,{20,22,25,255});
-    DrawCircle(int(baja.x+232),baja.y+126,17,{20,22,25,255});
-    DrawText("HORS-PISTE",int(baja.x+28),baja.y+181,29,
-             {238,177,104,255});
-    DrawText("TROPHY BAJA  /  SABLE  /  SAUTS",int(baja.x+28),
-             baja.y+222,19,RAYWHITE);
-    DrawText("Deux Trophy Trucks et suspensions longues",int(baja.x+28),
-             baja.y+254,16,LIGHTGRAY);
-
-    const char* hint=selectedMode==0
-        ?"PISTE GT3 SELECTIONNEE"
-        :"TROPHY BAJA SELECTIONNE";
-    DrawText(hint,w/2-145,h-111,18,GOLD);
-    DrawText("GAUCHE / DROITE : choisir     ENTREE : valider",
-             w/2-270,h-72,19,RAYWHITE);
-    DrawText(TextFormat("GAME VROUM  |  MENU %02d",int(time*2)%100),
-             20,h-28,14,GRAY);
+    DrawText("GAME VROUM",w/2-190,48,48,GOLD);
+    DrawText("CHOISIS TON MONDE",w/2-190,112,27,RAYWHITE);
+    const Rectangle cards[3]={{float(w/2-555),205,350,320},
+                              {float(w/2-175),205,350,320},
+                              {float(w/2+205),205,350,320}};
+    const Color idle{35,42,55,255},active{57,67,82,255};
+    for(int i=0;i<3;++i) {
+        DrawRectangleRounded(cards[i],.055f,10,selectedMode==i?active:idle);
+        DrawRectangleLinesEx(cards[i],selectedMode==i?4.f:1.5f,
+            selectedMode==i?GOLD:Color{91,101,117,255});
+    }
+    DrawRectangleRounded({cards[0].x+24,cards[0].y+25,302,145},.08f,8,{25,30,39,255});
+    DrawText("GT3",int(cards[0].x+118),cards[0].y+76,42,GOLD);
+    DrawText("PISTE",int(cards[0].x+28),cards[0].y+198,29,GOLD);
+    DrawText("Asphalte et circuit",int(cards[0].x+28),cards[0].y+245,18,RAYWHITE);
+    DrawRectangleRounded({cards[1].x+24,cards[1].y+25,302,145},.08f,8,{45,35,28,255});
+    DrawTriangle({cards[1].x+24,cards[1].y+155},{cards[1].x+150,cards[1].y+48},{cards[1].x+302,cards[1].y+155},{177,119,65,255});
+    DrawText("TROPHY BAJA",int(cards[1].x+28),cards[1].y+198,25,{238,177,104,255});
+    DrawText("Hors-piste et grands sauts",int(cards[1].x+28),cards[1].y+245,17,RAYWHITE);
+    DrawRectangleRounded({cards[2].x+24,cards[2].y+25,302,145},.08f,8,{205,164,105,255});
+    DrawText("SABLE",int(cards[2].x+92),cards[2].y+82,36,{75,49,25,255});
+    DrawText("DESERT",int(cards[2].x+28),cards[2].y+198,29,{238,177,104,255});
+    DrawText("Sable plat a perte de vue",int(cards[2].x+28),cards[2].y+245,17,RAYWHITE);
+    const char* hints[]={"PISTE GT3 SELECTIONNEE","TROPHY BAJA SELECTIONNE","DESERT SELECTIONNE"};
+    DrawText(hints[std::clamp(selectedMode,0,2)],w/2-150,h-105,18,GOLD);
+    DrawText("GAUCHE / DROITE : choisir     ENTREE : valider",w/2-270,h-65,19,RAYWHITE);
+    DrawText(TextFormat("GAME VROUM  |  MENU %02d",int(time*2)%100),20,h-28,14,GRAY);
     EndMode2D();
 }
 
