@@ -317,10 +317,10 @@ void Game::renderRace() {
         if(sim_.isBaja()) {
             const int rivalIndex=sim_.opponentVehicleIndex();
             vehicle_.draw(sim_.opponent(),profiles()[rivalIndex],
-                          rivalIndex,sim_.opponentColorIndex(),n>.2);
+                          rivalIndex,sim_.opponentColorIndex(),n>.2,sim_.isDesert());
         }
         vehicle_.draw(sim_.car(),sim_.profile(),
-                      sim_.vehicleIndex(),sim_.colorIndex(),n>.2);
+                      sim_.vehicleIndex(),sim_.colorIndex(),n>.2,sim_.isDesert());
     });
     EndMode3D();
 
