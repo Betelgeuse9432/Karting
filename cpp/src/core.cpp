@@ -40,8 +40,8 @@ double bajaElevation(Vec2 p) {
     return elevation(p)*.18+rolling*.48+ripples*.34+rocks*.55+ramps;
 }
 
-const std::array<VehicleProfile, 8>& profiles() {
-    static const std::array<VehicleProfile, 8> cars{{
+const std::array<VehicleProfile, 9>& profiles() {
+    static const std::array<VehicleProfile, 9> cars{{
         {"KART", 650, 1300, 1.7, 2.0, 800, 950, 950, 0.0, 30, 0.7, 200,
          0.00005, 0.03, 0.4, 0.2, 0.5, 48, 125, 17, -15, 18, 0},
         {"4x4", 680, 1050, 1.15, 1.3, 560, 600, 650, 0.05, 52, 0.5, 150,
@@ -57,7 +57,9 @@ const std::array<VehicleProfile, 8>& profiles() {
         {"TROPHY 1", 980, 1850, 0.78, 1.55, 720, 470, 500, 0.015, 64, 0.62, 175,
          0.00032, 0.15, 2.1, 0.015, 0.08, 105, 205, 63, -61, 48, 5},
         {"TROPHY 2", 1040, 1980, 0.82, 1.60, 760, 495, 525, 0.018, 67, 0.60, 180,
-         0.00030, 0.14, 2.0, 0.015, 0.08, 110, 212, 66, -64, 50, 1}
+         0.00030, 0.14, 2.0, 0.015, 0.08, 110, 212, 66, -64, 50, 1},
+        {"TROPHY 3", 1010, 2050, 0.80, 1.58, 790, 485, 540, 0.012, 66, 0.61, 178,
+         0.00031, 0.145, 2.05, 0.015, 0.08, 108, 210, 65, -63, 51, 2}
     }};
     return cars;
 }
