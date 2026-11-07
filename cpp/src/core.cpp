@@ -246,7 +246,7 @@ Simulation::Simulation() { reset(false); }
 void Simulation::setMode(int mode) {
     const bool baja=mode==1, desert=mode==2;
     track_ = Track(baja,desert);
-    vehicleIndex_ = baja ? 6 : 2;
+    vehicleIndex_ = (baja || desert) ? 6 : 2;
     colorIndex_ = profile().defaultColor;
     reset(false);
 }
