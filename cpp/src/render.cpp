@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <random>
+#include <utility>
 
 namespace karting {
 
@@ -75,10 +76,11 @@ static void solidEmbankment(const Track& track,std::size_t i,std::size_t j,
     const Color rock=shaded({99,92,81,255},1-.43f*night);
     const Color deep=shaded({72,66,59,255},1-.43f*night);
     const float variation=0.94f+float((i/5)%7)*.015f;
-    const std::array<Color,7> strata{{
-        shaded(exposed,variation),shaded(sod,variation),
-        packed,shaded(sod,variation),shaded(exposed,variation),
-        deep,shaded(rock,variation)
+    const std::array<Color,9> strata{{
+        shaded(rock,variation*.87f),shaded(exposed,variation),
+        shaded(sod,variation),packed,shaded(sod,variation),
+        shaded(exposed,variation),shaded(rock,variation*.87f),
+        deep,shaded(deep,variation)
     }};
     // Sweep EVERY edge of the cross section, including the buried
     // underside. The top lies just below the asphalt and shoulder.
@@ -178,8 +180,21 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
         // On the low approaches, every cross section is a CLOSED soil volume.
         const double riseI=track.bridgeRise(i),riseJ=track.bridgeRise(j);
         const double riseHigh=std::max(riseI,riseJ);
-        if(bridge::isFilledEmbankment(riseI,riseJ))
+        if(bridge::isFilledEmbankment(riseI,riseJ)) {
             solidEmbankment(track,i,j,night);
+            // Scattered low-poly stones break up the flat grading visually;
+            // positions are deterministic, with no per-frame random work.
+            if(quality>0 && d2<34.f*34.f && i%11<step) {
+                const Color stone=shaded({102,96,82,255},1-.39f*night);
+                for(const int side:{-1,1}) {
+                    const auto slice=bridge::embankmentSection(track,i);
+                    const auto toe=vertex3(slice[side<0?0:7]);
+                    const float radius=.14f+float((i/11)%4)*.045f;
+                    DrawSphereEx(raised(toe,radius*.8f),
+                                 radius,3,6,stone);
+                }
+            }
+        }
 
         const double deckWidth=bridge::kDeckHalfWidth;
         if(riseHigh>bridge::kFillMinRise) {
