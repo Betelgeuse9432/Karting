@@ -436,10 +436,22 @@ void trophyTruck(Color paint,Color glass,bool braking,bool second) {
     for(float x:{-1.42f,-.82f,-.30f,.48f,1.30f}) {
         rod({x,.55f,-.58f},{x,.55f,.58f},.047f,rail);
     }
-    // Roof and rear bulkhead cross-bracing.
+    // Roof, firewall and rear bulkhead cross-bracing.
     for(float x:{-.52f,.50f}) rod({x,1.62f,-.46f},{x,1.62f,.46f},.040f,cage);
     rod({-.92f,.72f,-.58f},{.88f,.72f,.58f},.034f,alloy);
     rod({-.92f,.72f,.58f},{.88f,.72f,-.58f},.034f,alloy);
+    // Additional triangulated lower frame: the suspension towers are tied
+    // into the main rails instead of appearing as isolated uprights.
+    for(float side:{-1.f,1.f}) {
+        rod({1.28f,.55f,side*.58f},{.72f,.92f,side*.58f},.046f,cage);
+        rod({.72f,.92f,side*.58f},{.38f,.55f,side*.58f},.046f,cage);
+        rod({-1.28f,.55f,side*.58f},{-.72f,.92f,side*.58f},.046f,cage);
+        rod({-.72f,.92f,side*.58f},{-.36f,.55f,side*.58f},.046f,cage);
+    }
+    // A central tunnel and engine cradle complete the visible spaceframe.
+    rod({-1.28f,.57f,0},{1.28f,.57f,0},.052f,rail);
+    for(float x:{-.98f,-.48f,.18f,.78f})
+        rod({x,.57f,-.38f},{x,.57f,.38f},.034f,alloy);
 
     // Reinforced front suspension pickup towers and rear trailing-arm mounts.
     for(float side:{-1.f,1.f}) {
@@ -545,6 +557,15 @@ void wheels(const Car& car,const VehicleProfile& p,int index,bool desert=false) 
                 rod(lowerA,lowerHub,.042f,{105,115,126,255});
                 rod(lowerB,lowerHub,.042f,{105,115,126,255});
                 rod(upperHub,lowerHub,.038f,{75,83,94,255});
+                // Steering arm and tie rod: the upright is visibly connected
+                // to the steering rack rather than steering as a bare wheel.
+                const Vector3 steeringArm{x-.06f,wheelY-.015f,
+                                           side*(track-.045f)};
+                const Vector3 rackJoint{x-.34f,.49f,side*.28f};
+                rod(lowerHub,steeringArm,.030f,{170,178,187,255});
+                rod(steeringArm,rackJoint,.022f,{205,166,91,255});
+                DrawSphere(steeringArm,.026f,{190,197,204,255});
+                DrawSphere(rackJoint,.024f,{190,197,204,255});
             }
             for(const Vector3 pivot:{upperA,upperB,lowerA,lowerB})
                 DrawSphere(pivot,.045f,{65,73,83,255});
@@ -600,6 +621,24 @@ void wheels(const Car& car,const VehicleProfile& p,int index,bool desert=false) 
                 rod(bypassTop,bypassBottom,.035f,{185,133,54,255});
                 rod({bypassTop.x,bypassTop.y+.04f,bypassTop.z},
                     {bypassTop.x,bypassTop.y+.16f,bypassTop.z},.050f,{91,101,112,255});
+                // External remote reservoir and hydraulic hose.
+                const Vector3 reservoir{bypassTop.x-.20f,bypassTop.y+.02f,
+                                         side*.78f};
+                rod({reservoir.x,reservoir.y-.13f,reservoir.z},
+                    {reservoir.x,reservoir.y+.13f,reservoir.z},.052f,
+                    {105,116,130,255});
+                rod({reservoir.x,reservoir.y+.13f,reservoir.z},
+                    {reservoir.x,reservoir.y+.13f,reservoir.z+.035f},.030f,
+                    {190,197,204,255});
+                rod({bypassTop.x,bypassTop.y+.12f,bypassTop.z},
+                    {reservoir.x,reservoir.y+.08f,reservoir.z},.012f,
+                    {45,53,63,255});
+                // Bump stop and limit strap show the two ends of wheel travel.
+                rod({x-.18f,.69f,side*.58f},
+                    {x-.18f,.80f,side*.58f},.035f,{215,177,73,255});
+                rod({x+.18f,.75f,side*.60f},
+                    {x+.25f,wheelY-.08f,side*(track-.04f)},.012f,
+                    {125,91,58,255});
                 DrawSphere(bypassTop,.045f,{190,197,204,255});
                 DrawSphere(bypassBottom,.040f,{190,197,204,255});
             }
