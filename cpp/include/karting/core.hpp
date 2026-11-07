@@ -151,12 +151,10 @@ struct Telemetry {
 struct Race {
     int laps = 0;
     int nextSector = 1;
-    bool outsideLastFrame = false;
     double elapsed = 0;
     double lastLap = -1;
     double bestLap = -1;
     double topSpeed = 0;
-    double warningTime = 0;
     std::vector<double> recent;
     void reset(bool keepBest = true);
     std::optional<double> tick(const Track& track, const Car& car, int outsideWheels, double dt);
