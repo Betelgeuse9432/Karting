@@ -106,7 +106,7 @@ void HudRenderer::menu(const Simulation& sim,double time) const {
                       i%2==0?ORANGE:LIME);
     }
     DrawText("PHYSIQUE ET STYLE",w-385,205,22,RAYWHITE);
-    const char* description[8] = {
+    const char* description[9] = {
         "Kart nerveux, tres leger, agilite",
         "4x4 stable, grand debattement",
         "GT3 polyvalente et efficace",
@@ -114,7 +114,8 @@ void HudRenderer::menu(const Simulation& sim,double time) const {
         "Rallycross nerveuse, chassis sureleve",
         "F1 legere, appui aero et suspensions apparentes",
         "Trophy Truck long-travel, V8 et gros debattement",
-        "Trophy Truck spec course, chassis tubulaire renforce"
+        "Trophy Truck spec course, chassis tubulaire renforce",
+        "Trophy Truck grand debattement, configuration desert"
     };
     DrawText(description[sim.vehicleIndex()],w-385,244,18,LIGHTGRAY);
     DrawText(TextFormat("Vitesse max : %d km/h",
