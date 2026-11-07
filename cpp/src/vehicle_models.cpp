@@ -712,8 +712,12 @@ void wheels(const Car& car,const VehicleProfile& p,int index,bool desert=false) 
 
 void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
                            int index,int colorIndex,bool night,bool desert) const {
+    // Desert vehicle intentionally hidden while its model is rebuilt from zero.
+    // Keep the simulation and every other vehicle/world renderer unchanged.
+    if(desert) return;
+
     const bool baja=index>=6;
-    const Vector3 p=worldPoint(car.position,float(car.jumpHeight),baja,desert);
+    const Vector3 p=worldPoint(car.position,float(car.jumpHeight),baja,false);
     const Color paint=palette(colorIndex);
     const Color dark{31,34,42,255};
     const Color glass=night?Color{29,48,70,255}:Color{58,104,139,255};
@@ -723,25 +727,18 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
     rlPushMatrix();
     rlRotatef(float(car.roll*RAD2DEG),1,0,0);
     rlRotatef(float(car.pitch*RAD2DEG),0,0,1);
-    if(desert) {
-        trophyTruck(paint,glass,car.brake>.1,false);
-    } else switch(index) {
+    switch(index) {
     case 0: kart(paint);break;
     case 1: offRoad(paint,glass,dark,car.brake>.1);break;
     case 2: gt3(paint,glass,dark,car.brake>.1);break;
     case 3:
-        // Raise only the WEC bodywork; wheels stay at their original ground contact.
         rlPushMatrix();
         rlTranslatef(0,.035f,0);
-        // Give the main body more vertical volume and a slightly shorter nose-to-tail
-        // profile. Keep the wheelbase and tyre contact points unchanged.
         rlScalef(.96f,.96f,1.0f);
         wec(paint,glass,dark,car.brake>.1);
         rlPopMatrix();
         break;
     case 5:
-        // Compact the F1 body around its centre; suspension and wheels retain
-        // their own dimensions so the tyres stay planted on the track.
         rlPushMatrix();
         rlScalef(.88f,.90f,.90f);
         formulaOne(paint,glass,car.brake>.1);
@@ -754,7 +751,6 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
         trophyTruck(paint,glass,car.brake>.1,true);
         break;
     case 4:
-        // Scale the rally hatch to a compact real-world footprint.
         rlPushMatrix();
         rlScalef(.84f,.84f,.84f);
         rally(paint,glass,dark,car.brake>.1);
@@ -762,17 +758,14 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
         break;
     default: gt3(paint,glass,dark,car.brake>.1);break;
     }
-    // Restrained clear-coat highlights help every vehicle read as painted metal.
     const float highlightY=index==1?.82f:index==2?.445f:index==3?.285f:index==4?.80f:index==5?.39f:index>=6?.94f:.205f;
     const float highlightZ=index==1?.47f:index==2?.49f:index==3?.34f:index==4?.48f:index==5?.36f:index>=6?.62f:.20f;
-    if(!desert) for(float side:{-1.f,1.f}) {
+    for(float side:{-1.f,1.f}) {
         DrawLine3D({.62f,highlightY,side*highlightZ},
                    {-.48f,highlightY-.012f,side*highlightZ*.94f},
                    {255,255,255,36});
     }
-    // Wheels, uprights and wishbones share the chassis roll/pitch transform.
-    // Previously they were drawn after this pop and appeared detached.
-    wheels(car,profile,index,desert);
+    wheels(car,profile,index,false);
     rlPopMatrix();
     rlPopMatrix();
 }
