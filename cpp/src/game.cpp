@@ -154,10 +154,8 @@ void Game::handleMenu() {
     const bool back=IsKeyPressed(KEY_ESCAPE)||IsKeyPressed(KEY_BACKSPACE);
 
     if (menuScreen_==MenuScreen::Mode) {
-        if (left) selectedMode_=(selectedMode_+2)%3;
-        else if (right) selectedMode_=(selectedMode_+1)%3;
         if (confirm) {
-            sim_.setMode(selectedMode_);
+            sim_.setMode(0);
             world_.initialize(sim_.track());
             menuScreen_=MenuScreen::Vehicle;
         }
@@ -168,10 +166,11 @@ void Game::handleMenu() {
         menuScreen_=MenuScreen::Mode;
         return;
     }
-    const int first=(sim_.isBaja()||sim_.isDesert())?6:0;
-    const int count=sim_.isDesert()?3:sim_.isBaja()?2:6;
-    if (left) sim_.selectVehicle(first+(sim_.vehicleIndex()-first+count-1)%count);
-    else if (right) sim_.selectVehicle(first+(sim_.vehicleIndex()-first+1)%count);
+    constexpr std::array<int,5> vehicleSlots{{0,2,3,4,5}};
+    const auto current=std::find(vehicleSlots.begin(),vehicleSlots.end(),sim_.vehicleIndex());
+    const int selected=current==vehicleSlots.end()?1:int(current-vehicleSlots.begin());
+    if (left) sim_.selectVehicle(vehicleSlots[std::size_t((selected+4)%5)]);
+    else if (right) sim_.selectVehicle(vehicleSlots[std::size_t((selected+1)%5)]);
     if (IsKeyPressed(KEY_UP))
         sim_.selectVehicle(sim_.vehicleIndex(),(sim_.colorIndex()+5)%6);
     else if (IsKeyPressed(KEY_DOWN)||IsKeyPressed(KEY_C))
