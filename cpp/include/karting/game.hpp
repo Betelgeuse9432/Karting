@@ -14,7 +14,6 @@ constexpr float kScale = static_cast<float>(kWorldScale);
 Vector3 worldPoint(Vec2 p, float heightOffset = 0, bool baja = false);
 Color palette(int index);
 
-struct TireMark { Vec2 start{}, end{}; double age = 0; };
 struct Particle {
     Vec2 location{};
     double height = 0, dx = 0, dy = 0, dz = 0, life = 0, maxLife = 1;
@@ -29,10 +28,7 @@ public:
     void draw3D(const Camera3D& camera) const;
 private:
     std::mt19937 generator_{42};
-    std::deque<TireMark> marks_;
     std::vector<Particle> particles_;
-    std::array<Vec2,4> previous_{};
-    bool lastSkidding_ = false;
     bool previousThrottle_ = false;
     double emitTime_ = 0;
 };
