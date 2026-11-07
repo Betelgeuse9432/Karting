@@ -21,6 +21,10 @@ constexpr double toKmH(double simulationSpeed) {
     return simulationSpeed * kKmHPerSpeedUnit;
 }
 
+// Acceleration due to a road grade, expressed in the engine's speed units.
+// The actual gravity (9.81 m/s²) is converted using the same scale as the HUD.
+double slopeAcceleration(double grade);
+
 struct Vec2 {
     double x = 0.0;
     double y = 0.0;
