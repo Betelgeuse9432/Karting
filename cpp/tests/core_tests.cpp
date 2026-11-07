@@ -1,4 +1,5 @@
 #include "karting/core.hpp"
+#include "karting/bridge_geometry.hpp"
 #include <algorithm>
 #include <cmath>
 #include <exception>
@@ -227,6 +228,56 @@ void testCircuit() {
     }
 }
 
+void testBridgeStructures() {
+    const Track track;
+    // Thin but solid guardrails, aligned with the simulated road boundary.
+    require(bridge::kBarrierTotalHeight<.60f &&
+            bridge::kBarrierTotalHeight>.35f,
+            "Bridge barriers are lower than the old 84 cm parapets");
+    require(bridge::kBarrierFootHeight<bridge::kBarrierRailBottom &&
+            bridge::kBarrierRailBottom<bridge::kBarrierTotalHeight,
+            "Both solid pieces of the safety rail remain separated");
+    require(bridge::kBarrierInner<Track::wall &&
+            bridge::kBarrierOuter>=Track::wall,
+            "Safety barrier wraps the simulated collision boundary");
+    require(bridge::kDeckHalfWidth>bridge::kBarrierOuter,
+            "Concrete bridge deck extends beneath the full barrier");
+
+    // The ramps are closed cross sections of actual soil, with footings
+    // buried into terrain, rather than hollow green sheets.
+    const std::size_t ramp=11*Track::subdivisions;
+    const auto section=bridge::embankmentSection(track,ramp);
+    const double rise=track.bridgeRise(ramp);
+    require(bridge::isFilledEmbankment(rise,
+                track.bridgeRise(ramp+1)),
+            "Earth support exists on the approach ramp");
+    require(section.size()==7,"Solid ramp profile has seven closed vertices");
+    for(const auto& vertex:section)
+        require(std::isfinite(vertex.position.x) &&
+                std::isfinite(vertex.position.y) &&
+                std::isfinite(vertex.altitude),
+                "Embankment geometry has finite vertices");
+    for(const int foot:{0,5,6})
+        require(section[foot].altitude <
+                track.terrainHeight(section[foot].position),
+                "Bottom and both embankment toes are buried in the ground");
+    const auto left=track.point(ramp,-bridge::kDeckHalfWidth);
+    const auto right=track.point(ramp,bridge::kDeckHalfWidth);
+    close(length(section[2].position-left),0,1e-10,
+          "Left top edge meets concrete shoulder");
+    close(length(section[3].position-right),0,1e-10,
+          "Right top edge meets concrete shoulder");
+    close(section[2].altitude,track.terrainHeight(left)+rise-5,1e-9,
+          "Embankment connects below left road shoulder");
+    close(section[3].altitude,track.terrainHeight(right)+rise-5,1e-9,
+          "Embankment connects below right road shoulder");
+    require(!bridge::isFilledEmbankment(track.bridgeRise(14*Track::subdivisions),
+                                         track.bridgeRise(14*Track::subdivisions+1)),
+            "High viaduct spans stay hollow underneath for the lower road");
+    require(!bridge::isFilledEmbankment(0,0),
+            "Ordinary ground does not generate redundant embankments");
+}
+
 void testProfiles() {
     require(profiles().size()==4,"4 cars");
     require(profiles()[0].name=="KART","Kart present");
@@ -387,6 +438,7 @@ void testBarrier() {
 int main() {
     try {
         testCircuit();
+        testBridgeStructures();
         testProfiles();
         testCarAcceleration();
         testSpeedDistanceCalibration();
@@ -396,7 +448,7 @@ int main() {
         testFixedTiming();
         testResetAndParameters();
         testBarrier();
-        std::cout<<"10 suites de tests C++ reussies.\n";
+        std::cout<<"11 suites de tests C++ reussies.\n";
         return 0;
     } catch (const std::exception& e) {
         std::cerr<<"TEST FAILED: "<<e.what()<<'\n';
