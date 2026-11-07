@@ -351,7 +351,7 @@ Portés depuis la V6 Python :
 - Les 42 points de contrôle du circuit à quatre secteurs et leur interpolation fermée
 - Les quatre voitures (Kart / 4x4 / GT3 / WEC) avec leurs performances récentes
 - L'accélération, le freinage, le grip avant/arrière, la dérive avec frein à main, l'appui, la pluie et le relief
-- Les rails, les pénalités si quatre roues hors piste, la voie des stands, le chrono, les records et leur sauvegarde
+- Les rails, le ralentissement naturel dans l'herbe sans pénalité chronométrique, la voie des stands, le chrono, les records et leur sauvegarde
 - La sélection du véhicule et de la couleur, les trois qualités, le jour/crépuscule/nuit
 - Un rendu 3D GPU avec arbres, garages, véhicules distincts et particules
 
