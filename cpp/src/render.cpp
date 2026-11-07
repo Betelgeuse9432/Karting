@@ -137,11 +137,21 @@ void draw3DLandscape(Vector3 camera, int quality, float night, double time, bool
             const auto p=dunes[i];
             if(Vector3Distance(camera,p)>260.0f) continue;
             const float radius=24.0f+float(i%3)*7.0f;
-            DrawSphere({p.x,p.y+5.0f,p.z},radius,
-                       Fade(i%2?Color{180,132,82,255}:Color{199,153,96,255},
-                            quality==0?.72f:.92f));
-            DrawSphere({p.x+radius*.45f,p.y+2.2f,p.z-radius*.18f},
-                       radius*.56f,Fade({211,166,109,255},.82f));
+            const Color duneColor=Fade(
+                i%2?Color{180,132,82,255}:Color{199,153,96,255},
+                quality==0?.72f:.92f);
+            // Flattened, overlapping ellipsoids create dune ridges rather
+            // than the conspicuous spherical "boulders" of the old pass.
+            rlPushMatrix();
+            rlTranslatef(p.x,p.y+1.1f,p.z);
+            rlScalef(1.0f,.20f,1.28f);
+            DrawSphere({0,0,0},radius,duneColor);
+            rlPopMatrix();
+            rlPushMatrix();
+            rlTranslatef(p.x+radius*.42f,p.y+.65f,p.z-radius*.20f);
+            rlScalef(1.05f,.16f,1.18f);
+            DrawSphere({0,0,0},radius*.58f,Fade({211,166,109,255},.82f));
+            rlPopMatrix();
         }
     }
 
@@ -475,6 +485,42 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
             }
         }
         i+=step;
+    }
+
+    if(track.isBaja()) {
+        // Three broad dirt launch faces. Each is a low wedge following the
+        // circuit tangent, with a shallow run-up and a rounded landing crest.
+        for(const double progress:{.18,.48,.77}) {
+            const std::size_t index=std::min(count-1,
+                std::size_t(double(count)*progress));
+            const std::size_t before=(index+count-3)%count;
+            const std::size_t after=(index+3)%count;
+            const Vec2 tangentRaw=center[after]-center[before];
+            const double tangentLen=std::max(1e-6,length(tangentRaw));
+            const Vec2 tangent=tangentRaw*(1.0/tangentLen);
+            const Vec2 side{-tangent.y,tangent.x};
+            const Vec2 c=center[index];
+            const double halfWidth=Track::halfWidth*.92;
+            const double run=115.0;
+            const auto rampPoint=[&](double along,double lateral,float lift) {
+                const Vec2 q=c+tangent*along+side*lateral;
+                return worldPoint(q,lift, true);
+            };
+            const Color dirt=shaded({174,119,66,255},1-.28f*night);
+            const Color crest=shaded({205,151,91,255},1-.25f*night);
+            // Ground-level shoulders and an inclined top face.
+            const auto l0=rampPoint(-run,-halfWidth,0);
+            const auto r0=rampPoint(-run, halfWidth,0);
+            const auto lc=rampPoint(0,-halfWidth,5.0f);
+            const auto rc=rampPoint(0, halfWidth,5.0f);
+            const auto le=rampPoint(run,-halfWidth,0);
+            const auto re=rampPoint(run, halfWidth,0);
+            quad(l0,r0,rc,lc,dirt);
+            quad(lc,rc,re,le,crest);
+            // Side berms make the ramp profile readable from either side.
+            quad(l0,lc,le,rampPoint(run,-halfWidth-7,0),dirt);
+            quad(r0,rampPoint(run,halfWidth+7,0),re,rc,dirt);
+        }
     }
 
     // Baja jumps are sculpted into the terrain height field, not placed
