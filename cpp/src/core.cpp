@@ -406,8 +406,13 @@ void Simulation::update(const Controls& controls,double dt) {
     if(track_.isBaja())
         pitchTarget+=0.34*std::clamp(car_.verticalSpeed/62.0,-1.0,1.0);
     car_.pitch+=(pitchTarget-car_.pitch)*std::min(1.0,6*dt);
-    const double rollTarget=std::clamp(p.rollFactor*car_.speed*rotation,
-                                      -p.maxRoll,p.maxRoll);
+    // The chassis leans into the corner on the Desert Trophy Truck.
+    // The render transform's roll axis has the opposite sign to lateral
+    // acceleration, so invert the target for this world only.
+    const double rollDirection=track_.isDesert()?-1.0:1.0;
+    const double rollTarget=std::clamp(
+        rollDirection*p.rollFactor*car_.speed*rotation,
+        -p.maxRoll,p.maxRoll);
     car_.roll+=(rollTarget-car_.roll)*std::min(1.0,6*dt);
     const double wingTarget=.1+.25*std::abs(car_.speed)/p.topSpeed+.9*car_.brake;
     car_.wing+=(wingTarget-car_.wing)*std::min(1.0,10*dt);
