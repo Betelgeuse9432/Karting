@@ -504,6 +504,7 @@ void wheels(const Car& car,const VehicleProfile& p,int index,bool desert=false) 
         // suspension: the front compresses under braking, the rear under power.
         if(desert) {
             const float axleSign=x>0.0f?1.0f:-1.0f;
+            wheelHeight-=float(car.jumpHeight*kWorldScale);
             wheelHeight+=std::clamp(-float(car.pitch)*axleSign*.72f,-.16f,.16f);
         }
         if(slot>=6) {
@@ -526,11 +527,25 @@ void wheels(const Car& car,const VehicleProfile& p,int index,bool desert=false) 
             rod({x-.36f,.58f,railZ},upperA,.052f,{75,84,94,255});
             rod({x+.36f,.58f,railZ},upperB,.052f,{75,84,94,255});
             rod({x-.42f,.58f,railZ},{x+.42f,.58f,railZ},.052f,{75,84,94,255});
-            rod(upperA,upperHub,.035f,{105,115,126,255});
-            rod(upperB,upperHub,.035f,{105,115,126,255});
-            rod(lowerA,lowerHub,.042f,{105,115,126,255});
-            rod(lowerB,lowerHub,.042f,{105,115,126,255});
-            rod(upperHub,lowerHub,.038f,{75,83,94,255});
+            if(desert && x==rear) {
+                // Rear trailing-arm layout: two long longitudinal links per side,
+                // pivoting at the reinforced rear bulkhead and carrying the upright.
+                const Vector3 armFront{x-.62f,.55f,side*.57f};
+                const Vector3 armRear{x+.48f,wheelY-.02f,side*(track-.02f)};
+                const Vector3 armBrace{x-.12f,wheelY-.10f,side*(track-.02f)};
+                rod(armFront,armRear,.055f,{125,137,149,255});
+                rod({x-.62f,.55f,side*.70f},armBrace,.045f,{105,115,126,255});
+                rod(armFront,{x-.62f,.55f,side*.70f},.045f,{75,84,94,255});
+                rod(upperHub,lowerHub,.050f,{75,83,94,255});
+                rod({x-.18f,.58f,side*.57f},{x+.18f,.58f,side*.57f},.045f,{75,84,94,255});
+            } else {
+                // Front double wishbones: each triangular arm has two chassis pivots.
+                rod(upperA,upperHub,.035f,{105,115,126,255});
+                rod(upperB,upperHub,.035f,{105,115,126,255});
+                rod(lowerA,lowerHub,.042f,{105,115,126,255});
+                rod(lowerB,lowerHub,.042f,{105,115,126,255});
+                rod(upperHub,lowerHub,.038f,{75,83,94,255});
+            }
             for(const Vector3 pivot:{upperA,upperB,lowerA,lowerB})
                 DrawSphere(pivot,.045f,{65,73,83,255});
             DrawSphere(upperHub,.034f,{190,197,204,255});
@@ -577,6 +592,17 @@ void wheels(const Car& car,const VehicleProfile& p,int index,bool desert=false) 
                            {25,115,255,255});
             }
             rod(shockTop,shockBottom,.026f,{69,79,93,255});
+            // A separate bypass damper beside each coilover, with its own
+            // chassis eye and moving lower mount, makes the long-travel setup legible.
+            if(desert) {
+                const Vector3 bypassTop{x-.43f,.78f,side*.56f};
+                const Vector3 bypassBottom{x+.34f,wheelY-.18f,side*(track-.10f)};
+                rod(bypassTop,bypassBottom,.035f,{185,133,54,255});
+                rod({bypassTop.x,bypassTop.y+.04f,bypassTop.z},
+                    {bypassTop.x,bypassTop.y+.16f,bypassTop.z},.050f,{91,101,112,255});
+                DrawSphere(bypassTop,.045f,{190,197,204,255});
+                DrawSphere(bypassBottom,.040f,{190,197,204,255});
+            }
             DrawSphere(shockTop,.055f,{190,197,204,255});
             DrawSphere(shockBottom,.050f,{190,197,204,255});
         }
