@@ -508,39 +508,32 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
             const Vector3 upperHub{x,wheelY+.13f,side*(track-.012f)};
             const Vector3 lowerHub{x,wheelY-.13f,side*(track-.012f)};
 
-            // Triangles have four separate chassis pivots, not floating ends.
+            // Each wishbone pivots on the chassis and converges on the
+            // upright. The outer ball joints move with the wheel travel.
             const Vector3 upperA{x-.24f,.76f,side*.22f};
             const Vector3 upperB{x+.24f,.76f,side*.22f};
             const Vector3 lowerA{x-.28f,.25f,side*.22f};
             const Vector3 lowerB{x+.28f,.25f,side*.22f};
-            const Vector3 upperOuterA{x-.24f,.76f,innerZ};
-            const Vector3 upperOuterB{x+.24f,.76f,innerZ};
-            const Vector3 lowerOuterA{x-.28f,.25f,innerZ};
-            const Vector3 lowerOuterB{x+.28f,.25f,innerZ};
-            rod(upperA,upperOuterA,.035f,{105,115,126,255});
-            rod(upperB,upperOuterB,.035f,{105,115,126,255});
-            rod(lowerA,lowerOuterA,.042f,{105,115,126,255});
-            rod(lowerB,lowerOuterB,.042f,{105,115,126,255});
-            rod(upperOuterA,upperHub,.027f,{157,165,174,255});
-            rod(upperOuterB,upperHub,.027f,{157,165,174,255});
-            rod(lowerOuterA,lowerHub,.034f,{125,134,145,255});
-            rod(lowerOuterB,lowerHub,.034f,{125,134,145,255});
+            rod(upperA,upperHub,.035f,{105,115,126,255});
+            rod(upperB,upperHub,.035f,{105,115,126,255});
+            rod(lowerA,lowerHub,.042f,{105,115,126,255});
+            rod(lowerB,lowerHub,.042f,{105,115,126,255});
             rod(upperHub,lowerHub,.038f,{75,83,94,255});
             for(const Vector3 pivot:{upperA,upperB,lowerA,lowerB})
                 DrawSphere(pivot,.045f,{65,73,83,255});
             DrawSphere(upperHub,.034f,{190,197,204,255});
             DrawSphere(lowerHub,.038f,{190,197,204,255});
 
-            // Angled coil-over: top eye on the chassis, lower eye on the
-            // moving lower wishbone. The spring axis is outside the tyre.
+            // Coil-over top eye is fixed to the chassis. Its lower eye is
+            // attached to the moving lower wishbone, so the whole damper
+            // changes length and angle as the tyre travels.
             const Vector3 shockTop{x-.16f,.82f,side*.30f};
-            const Vector3 shockBottom{x+.12f,.36f,side*(track-.28f)};
+            const Vector3 shockBottom{x+.12f,wheelY-.10f,side*(track-.25f)};
             const Vector3 axis{shockBottom.x-shockTop.x,
                                 shockBottom.y-shockTop.y,
                                 shockBottom.z-shockTop.z};
-            const float axisLength=std::sqrt(axis.x*axis.x+
-                                             axis.y*axis.y+
-                                             axis.z*axis.z);
+            const float axisLength=std::max(.001f,std::sqrt(
+                axis.x*axis.x+axis.y*axis.y+axis.z*axis.z));
             const Vector3 axisN{axis.x/axisLength,axis.y/axisLength,
                                 axis.z/axisLength};
             Vector3 sideN{axisN.y,-axisN.x,0.0f};
@@ -550,6 +543,7 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
                 sideN.x/=sideLength;
                 sideN.y/=sideLength;
             } else sideN={1,0,0};
+            // Blue coil wraps the actual shock axis, between its two eyes.
             for(int coil=0;coil<44;++coil) {
                 const float t0=float(coil)/44.f,t1=float(coil+1)/44.f;
                 const float a0=t0*8.f*2*PI,a1=t1*8.f*2*PI;
