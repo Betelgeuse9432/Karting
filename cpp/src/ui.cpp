@@ -158,8 +158,6 @@ void HudRenderer::draw(const Simulation& sim,int quality,int fps) const {
     DrawText("ESPACE drift  N ciel  P pluie  G qualite  R reset  M menu",
              w/2-316,h-56,17,LIGHTGRAY);
 
-    if (race.warningTime>0)
-        DrawText("LIMITES DE PISTE : +1 SECONDE",w/2-239,152,23,RED);
     if (telemetry.wheelsOutside>0)
         DrawText(TextFormat("%d ROUE(S) DANS L'HERBE",telemetry.wheelsOutside),
                  w/2-190,27,22,ORANGE);
