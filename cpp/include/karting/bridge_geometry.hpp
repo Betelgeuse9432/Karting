@@ -25,29 +25,42 @@ struct SectionVertex {
     double altitude;
 };
 
-// Closed seven-vertex cross section: two grass/stone shoulders, buried
-// earth sides and a central bottom below the terrain. Extruding the
-// whole ring closes the embankment instead of leaving green sheet surfaces.
-using EmbankmentSection = std::array<SectionVertex, 7>;
+// Closed nine-vertex cross section: turf, exposed compacted soil,
+// buried stone toes and a central bottom below the terrain. Sweeping
+// the ENTIRE ring closes the embankment instead of using green sheets.
+using EmbankmentSection = std::array<SectionVertex, 9>;
 
 inline EmbankmentSection embankmentSection(const Track& track,
                                           std::size_t index) {
     const double rise=std::max(0.0,track.bridgeRise(index));
-    const double shoulder= kDeckHalfWidth + 35.0 + .35*rise;
-    const double toe= kDeckHalfWidth + 75.0 + std::min(1.6*rise,430.0);
+    const double upper= kDeckHalfWidth + 28.0 + .24*rise;
+    const double lower= kDeckHalfWidth + 64.0 + .92*rise;
+    const double toe= kDeckHalfWidth + 94.0 + std::min(1.85*rise,480.0);
 
     const auto vertex=[&](double offset,double addedHeight) {
+        // Deterministic, low-frequency irregularity along the track keeps
+        // the two banks from looking like perfectly planar green ramps.
+        const double jitter=6.0*std::sin(index*.11+offset*.0018) +
+                            3.0*std::sin(index*.047-offset*.003);
         const Vec2 xy=track.point(index,offset);
-        return SectionVertex{xy,elevation(xy)+addedHeight};
+        return SectionVertex{xy,elevation(xy)+addedHeight+jitter};
+    };
+    // The roadway crown must remain geometrically accurate: no jitter
+    // where the earth touches the slab's underside.
+    const auto roadEdge=[&](double offset) {
+        const Vec2 xy=track.point(index,offset);
+        return SectionVertex{xy,elevation(xy)+rise-5.0};
     };
     return {{
         vertex(-toe,-23.0),
-        vertex(-shoulder,.59*rise-9.0),
-        vertex(-kDeckHalfWidth,rise-5.0),
-        vertex(kDeckHalfWidth,rise-5.0),
-        vertex(shoulder,.59*rise-9.0),
+        vertex(-lower,.36*rise-17.0),
+        vertex(-upper,.78*rise-9.0),
+        roadEdge(-kDeckHalfWidth),
+        roadEdge(kDeckHalfWidth),
+        vertex(upper,.78*rise-9.0),
+        vertex(lower,.36*rise-17.0),
         vertex(toe,-23.0),
-        vertex(0.0,-33.0)
+        vertex(0.0,-40.0)
     }};
 }
 
