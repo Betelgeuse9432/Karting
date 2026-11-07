@@ -316,6 +316,26 @@ void testSlopeGravity() {
     require(invalid,"Non-finite road grade rejected");
 }
 
+void testGrassDoesNotAddLapTime() {
+    const Track track;
+    Race race;
+    Car car;
+    car.position = track.startPosition();
+    car.roadIndex = 0;
+    car.height = track.roadHeight(0);
+
+    constexpr double dt = 1.0/60.0;
+    race.tick(track, car, 4, dt);
+    close(race.elapsed, dt, 1e-12,
+          "Four wheels on grass must not add a one-second penalty");
+    race.tick(track, car, 4, dt);
+    close(race.elapsed, 2*dt, 1e-12,
+          "Staying on grass must not add a penalty either");
+    race.tick(track, car, 0, dt);
+    close(race.elapsed, 3*dt, 1e-12,
+          "Returning to tarmac must preserve real elapsed time");
+}
+
 void testFixedTiming() {
     FixedClock clock;
     int steps=0;
@@ -372,10 +392,11 @@ int main() {
         testSpeedDistanceCalibration();
         testGripRainAndDrift();
         testSlopeGravity();
+        testGrassDoesNotAddLapTime();
         testFixedTiming();
         testResetAndParameters();
         testBarrier();
-        std::cout<<"9 suites de tests C++ reussies.\n";
+        std::cout<<"10 suites de tests C++ reussies.\n";
         return 0;
     } catch (const std::exception& e) {
         std::cerr<<"TEST FAILED: "<<e.what()<<'\n';
