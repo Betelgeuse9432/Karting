@@ -2,19 +2,31 @@
 
 Ce dossier contient la version native **C++20 / raylib** de Karting, utilisée sur les branches `cpp-raylib` et `main-cpp`. Les anciens fichiers du jeu Python ont été retirés de ces deux branches ; ils restent consultables dans l'historique Git et les branches historiques.
 
-## Viaduc moderne (référence visuelle)
+## Viaduc moderne (barrières et talus volumiques)
 
-Le pont est désormais conçu comme un viaduc contemporain inspiré du visuel
-de référence : tablier clair et relativement fin, garde-corps sobres,
-dessous de dalle lisible et deux appuis rectangulaires espacés.
-La grande arche, les croisillons et les volumes maçonnés massifs ont été
-retirés. Les appuis sont éloignés du croisement et ne coupent pas la route
-qui passe dessous. Le frustum culling reste actif.
+Le pont conserve un tablier clair relativement fin, des piles rectangulaires
+discrètes et un dégagement complet pour la route inférieure. Les barrières
+ont été **abaissées de 84 à 48 cm**, avec désormais **une épaisseur réelle** :
+socle en béton, poutre métallique fermée, faces latérales et capuchons,
+montants et réflecteurs. Leur placement correspond au seuil de collision
+déjà utilisé par la physique, sans déplacer les limites de conduite.
 
-Cette révision est exclusivement graphique : l'épingle, les 45 points de
-contrôle du circuit, les rampes, le profil d'altitude, les collisions et
-la physique sont inchangés. Compilation et rendu réel restent à valider
-avant une éventuelle synchronisation de `main-cpp`.
+Les talus ne sont plus deux plaques verdâtres ouvertes. Les rampes sont
+des **volumes de remblais fermés** : sections transversales en neuf points,
+accotement herbeux, terre compactée, roche et pieds enterrés dans le terrain.
+Les extrémités et le dessous sont fermés pour ne plus voir l'intérieur vide.
+De légères irrégularités et quelques pierres apparentes cassent la monotonie
+des grandes surfaces. Le tablier est élargi jusqu'aux barrières, muni
+d'une sous-face et de joues latérales, sans combler le passage inférieur.
+
+Cette révision est **graphique et géométrique** : aucun changement dans les
+45 points de contrôle, les pentes physiques, les collisions, les records ou
+la gravité. Le rendu est limité par la distance et la qualité graphique.
+Le comportement en jeu et les FPS doivent être vérifiés sur Windows.
+
+**Gestion des branches :** `main-cpp` a été synchronisée avec
+`cpp-raylib` **avant** ce travail ; les nouveaux ajustements du pont sont
+publiés uniquement sur `cpp-raylib` pour validation.
 
 ## Raccord terrain–chaussée
 
