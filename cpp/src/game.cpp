@@ -154,9 +154,10 @@ void Game::handleMenu() {
     const bool back=IsKeyPressed(KEY_ESCAPE)||IsKeyPressed(KEY_BACKSPACE);
 
     if (menuScreen_==MenuScreen::Mode) {
-        if (left||right) selectedMode_=1-selectedMode_;
+        if (left) selectedMode_=(selectedMode_+2)%3;
+        else if (right) selectedMode_=(selectedMode_+1)%3;
         if (confirm) {
-            sim_.setMode(selectedMode_==1);
+            sim_.setMode(selectedMode_);
             world_.initialize(sim_.track());
             menuScreen_=MenuScreen::Vehicle;
         }
@@ -198,7 +199,7 @@ void Game::follow(double dt) {
     const auto& car=sim_.car();
     const auto& spec=sim_.profile();
     followAngle_+=wrapAngle(car.heading-followAngle_)*std::min(1.0,3.5*dt);
-    cameraHeight_+=((sim_.isBaja()?bajaElevation(car.position):elevation(car.position))+car.jumpHeight+spec.cameraHeight-cameraHeight_)*
+    cameraHeight_+=((sim_.isBaja()?bajaElevation(car.position):sim_.isDesert()?0.0:elevation(car.position))+car.jumpHeight+spec.cameraHeight-cameraHeight_)*
                     std::min(1.0,4.0*dt);
     const Vec2 behind{std::cos(followAngle_),std::sin(followAngle_)};
     const Vec2 view=car.position-behind*spec.cameraDistance;
