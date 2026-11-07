@@ -14,6 +14,18 @@ double dot(Vec2 a, Vec2 b) { return a.x * b.x + a.y * b.y; }
 double length(Vec2 a) { return std::hypot(a.x, a.y); }
 double wrapAngle(double a) { return std::remainder(a, 2 * kPi); }
 
+// The previous factor of 1200 treated one simulated speed unit as if it
+// were one metre/second, despite kTravelScale and kWorldScale. Consequently
+// a gentle 10% grade imposed 120 speed-units/s instead of ~11.7.
+// sin(atan(grade)) = grade / hypot(1, grade) gives gravity along the road.
+double slopeAcceleration(double grade) {
+    if (!std::isfinite(grade))
+        throw std::invalid_argument("Non-finite road grade");
+    constexpr double g = 9.81;
+    const double unitsPerMetrePerSecond = 1.0 / (kWorldScale * kTravelScale);
+    return -g * grade / std::hypot(1.0, grade) * unitsPerMetrePerSecond;
+}
+
 double elevation(Vec2 p) {
     // Broad natural relief under the entire circuit. Longer wavelengths
     // avoid abrupt crests while increasing the elevation variation.
@@ -396,7 +408,9 @@ void Simulation::update(const Controls& controls,double dt) {
     if (controls.handbrake)
         nextSpeed-=std::copysign(std::min(std::abs(nextSpeed),370*dt),nextSpeed);
     nextSpeed-=nextSpeed*p.grassDrag*off*dt;
-    nextSpeed-=slope*1200*dt;
+    // Physically consistent slope force: small climbs no longer act as
+    // tenfold gravity; downhill acceleration remains symmetric.
+    nextSpeed+=slopeAcceleration(slope)*dt;
     car_.speed=std::clamp(nextSpeed,-150.0,p.topSpeed);
 
     const double dAngle=rotation*dt;
