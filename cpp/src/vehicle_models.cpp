@@ -472,7 +472,7 @@ void trophyTruck(Color paint,Color glass,bool braking,bool second) {
     (void)paint;(void)glass;
 }
 
-void wheels(const Car& car,const VehicleProfile& p,int index) {
+void wheels(const Car& car,const VehicleProfile& p,int index,bool desert=false) {
     const Color carbon{22,26,32,255};
     // GT3 wheel centres sit close to the actual front and rear wheel arches.
     const float axleVisualScale=index==3?1.12f:1.0f;
@@ -495,8 +495,8 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
         const Vec2 wheelWorld=car.position+
             forward*(x/kWorldScale)+lateral*(side*track/kWorldScale);
         float wheelHeight=float(
-            ((baja?bajaElevation(wheelWorld):elevation(wheelWorld))-
-             (baja?bajaElevation(car.position):elevation(car.position)))*kWorldScale
+            ((desert?0.0:(baja?bajaElevation(wheelWorld):elevation(wheelWorld)))-
+             (desert?0.0:(baja?bajaElevation(car.position):elevation(car.position))))*kWorldScale
             - (baja?car.jumpHeight*kWorldScale:0.0));
         if(slot==2) wheelHeight=std::clamp(wheelHeight,-.045f,.045f);
         if(slot>=6) wheelHeight=std::clamp(wheelHeight,-.48f,.20f);
@@ -657,7 +657,21 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
     rlPushMatrix();
     rlRotatef(float(car.roll*RAD2DEG),1,0,0);
     rlRotatef(float(car.pitch*RAD2DEG),0,0,1);
-    switch(index) {
+    if(desert) {
+        const Color tube{52,59,66,255};
+        const float half=.57f;
+        // Bare rectangular space-frame chassis, with no panels or cockpit.
+        for(float side:{-half,half}) {
+            rod({-1.12f,.48f,side},{1.12f,.48f,side},.055f,tube);
+            rod({-1.12f,.48f,side},{-1.12f,.92f,side},.055f,tube);
+            rod({1.12f,.48f,side},{1.12f,.92f,side},.055f,tube);
+            rod({-1.12f,.92f,side},{1.12f,.92f,side},.055f,tube);
+        }
+        for(float x:{-1.12f,1.12f})
+            rod({x,.48f,-half},{x,.48f,half},.055f,tube);
+        rod({-1.12f,.92f,-half},{1.12f,.92f,half},.04f,tube);
+        rod({-1.12f,.92f,half},{1.12f,.92f,-half},.04f,tube);
+    } else switch(index) {
     case 0: kart(paint);break;
     case 1: offRoad(paint,glass,dark,car.brake>.1);break;
     case 2: gt3(paint,glass,dark,car.brake>.1);break;
@@ -697,13 +711,13 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
     // Restrained clear-coat highlights help every vehicle read as painted metal.
     const float highlightY=index==1?.82f:index==2?.445f:index==3?.285f:index==4?.80f:index==5?.39f:index>=6?.94f:.205f;
     const float highlightZ=index==1?.47f:index==2?.49f:index==3?.34f:index==4?.48f:index==5?.36f:index>=6?.62f:.20f;
-    for(float side:{-1.f,1.f}) {
+    if(!desert) for(float side:{-1.f,1.f}) {
         DrawLine3D({.62f,highlightY,side*highlightZ},
                    {-.48f,highlightY-.012f,side*highlightZ*.94f},
                    {255,255,255,36});
     }
     rlPopMatrix();
-    wheels(car,profile,index);
+    wheels(car,profile,index,desert);
     rlPopMatrix();
 }
 
