@@ -262,53 +262,122 @@ void gt3(Color paint,Color glass,Color dark,bool braking) {
     rearWing(-1.19f,.705f,1.12f,.245f,carbon);
 }
 void wec(Color paint,Color glass,Color dark,bool braking) {
-    // Simple WEC Hypercar silhouette. Front is +X, rear is -X.
-    const Color carbon{24,28,34,255};
-    const Color glassDark=tone(glass,.72f);
-    const Color headlamp{235,243,232,255};
-    const Color tail=braking?Color{255,38,32,255}:Color{135,22,28,255};
+    // Modern WEC Hypercar: low closed-cockpit prototype with sculpted fenders,
+    // deep aero floor, front dive planes, cooling channels and a tall rear wing.
+    // Front is +X, rear is -X.
+    const Color carbon{21,25,31,255};
+    const Color aero{34,40,48,255};
+    const Color glassDark=tone(glass,.62f);
+    const Color lamp{231,242,238,255};
+    const Color tail=braking?Color{255,35,28,255}:Color{154,24,31,255};
+    const Color vent{9,13,18,255};
 
-    // One continuous, gently rounded body profile.
-    bodyShell({{-1.43f,.085f,.19f,.30f},
-               {-1.20f,.09f,.26f,.39f},
-               {-.82f,.10f,.31f,.43f},
-               {-.38f,.105f,.32f,.42f},
-               { .18f,.10f,.28f,.39f},
-               { .67f,.09f,.23f,.36f},
-               {1.08f,.075f,.18f,.31f},
-               {1.38f,.065f,.13f,.23f},
-               {1.48f,.06f,.105f,.16f}},
-              paint,tone(paint,.76f));
+    // Wide, low central monocoque with a long nose and tapered rear deck.
+    bodyShell({{-1.48f,.085f,.19f,.32f},
+               {-1.28f,.095f,.27f,.43f},
+               {-.94f,.105f,.31f,.47f},
+               {-.48f,.105f,.32f,.45f},
+               { .08f,.095f,.29f,.42f},
+               { .55f,.085f,.24f,.39f},
+               { .98f,.075f,.20f,.34f},
+               {1.30f,.065f,.15f,.27f},
+               {1.52f,.055f,.105f,.18f}},
+              paint,tone(paint,.70f));
 
-    // Compact integrated canopy: lower roof, short windscreen and rear glass.
-    cockpit(.31f,-.73f,-.045f,-.54f,.315f,.66f,.275f,.185f,
-            glassDark,tone(paint,.88f));
+    // Closed cockpit canopy: broad windscreen, compact roof and sloped rear glass.
+    cockpit(.38f,-.72f,-.10f,-.52f,.315f,.70f,.285f,.205f,
+            glassDark,tone(paint,.82f));
+    // Windscreen base and roof edge give the canopy a proper prototype outline.
+    rod({.38f,.315f,-.285f},{-.10f,.70f,-.205f},.018f,carbon);
+    rod({.38f,.315f,.285f},{-.10f,.70f,.205f},.018f,carbon);
 
-    // Small front splitter and simple flat floor.
-    box(1.43f,.075f,0,.25f,.035f,.88f,carbon);
-    box(-1.40f,.075f,0,.18f,.045f,.84f,carbon);
-
-    // Two subtle side skirts, kept as straight elements.
+    // Deep front splitter, central intake and two separated brake-cooling ducts.
+    box(1.47f,.075f,0,.34f,.035f,1.12f,carbon);
+    box(1.475f,.19f,0,.045f,.16f,.46f,vent);
     for(float side:{-1.f,1.f}) {
-        box(-.08f,.115f,side*.405f,1.30f,.055f,.055f,carbon);
-        // Minimal front and rear light units.
-        box(1.405f,.16f,side*.205f,.025f,.035f,.13f,headlamp);
-        box(-1.435f,.195f,side*.265f,.025f,.035f,.14f,tail);
+        box(1.405f,.185f,side*.315f,.10f,.105f,.19f,vent);
+        box(1.455f,.13f,side*.49f,.22f,.10f,.055f,aero);
+        // Front dive planes are mounted directly to the outer bumper corners.
+        panel({1.27f,.20f,side*.43f},{1.03f,.30f,side*.57f},
+              {.99f,.17f,side*.57f},{1.30f,.13f,side*.43f},carbon);
+        // Narrow headlight strips integrated into the front fender shoulders.
+        box(1.365f,.275f,side*.255f,.055f,.045f,.20f,lamp);
+        box(1.39f,.245f,side*.255f,.025f,.018f,.16f,
+            {70,155,180,255});
     }
 
-    // One low central fin, with no oversized roof scoop or extra decoration.
-    panel({-.34f,.30f,-.012f},{-1.22f,.27f,-.012f},
-          {-1.04f,.43f,-.012f},{-.55f,.40f,-.012f},carbon);
-    panel({-.34f,.30f,.012f},{-1.22f,.27f,.012f},
-          {-1.04f,.43f,.012f},{-.55f,.40f,.012f},carbon);
+    // Raised front and rear wheel pods, joined to the main body by broad shoulders.
+    for(float side:{-1.f,1.f}) {
+        const float z=side*.455f;
+        // Raised fender crowns over both axles, with visible wheel clearance.
+        for(float axle:{.91f,-.91f}) {
+            const float archZ=side*.535f;
+            for(int segment=0;segment<14;++segment) {
+                const float a0=3.14159265f*float(segment)/14.0f;
+                const float a1=3.14159265f*float(segment+1)/14.0f;
+                const Vector3 p0{axle+std::cos(a0)*.255f,
+                                 .205f+std::sin(a0)*.255f,archZ};
+                const Vector3 p1{axle+std::cos(a1)*.255f,
+                                 .205f+std::sin(a1)*.255f,archZ};
+                rod(p0,p1,.018f,carbon);
+            }
+            // Solid fender shoulders connect the arch to the central body shell.
+            box(axle,.315f,side*.435f,.53f,.105f,.16f,paint);
+            box(axle,.245f,side*.545f,.43f,.035f,.025f,aero);
+            // Three extraction slots sit on top of each wheel pod.
+            for(int slot=0;slot<3;++slot)
+                box(axle-.015f,.374f,side*(.36f+slot*.045f),
+                    .19f,.012f,.018f,carbon);
+        }
 
-    // Low twin supports and a thin, restrained rear wing.
+        // Sidepod: broad shoulder, deep undercut and recessed cooling inlet.
+        box(-.08f,.205f,z,.92f,.19f,.22f,paint);
+        box(-.03f,.285f,side*.555f,.47f,.085f,.025f,aero);
+        box(-.12f,.295f,side*.572f,.31f,.065f,.012f,vent);
+        for(int l=0;l<4;++l)
+            box(-.12f,.302f,side*(.535f+l*.023f),
+                .25f,.012f,.009f,{105,113,123,255});
+        // Deep side skirt and floor edge, visibly attached between the axles.
+        box(-.02f,.105f,side*.535f,.92f,.085f,.075f,carbon);
+        box(-.03f,.075f,side*.49f,.98f,.035f,.12f,aero);
+
+        // Rear brake light and vertical rear corner aero fences.
+        box(-1.455f,.235f,side*.255f,.025f,.055f,.12f,tail);
+        box(-1.28f,.20f,side*.43f,.20f,.14f,.055f,carbon);
+        panel({-1.30f,.16f,side*.48f},{-1.02f,.38f,side*.52f},
+              {-.88f,.16f,side*.52f},{-1.15f,.12f,side*.48f},aero);
+    }
+
+    // Large dorsal fin, blended into the engine cover and ending at the wing mount.
+    panel({-.25f,.30f,-.018f},{-1.27f,.255f,-.018f},
+          {-1.10f,.49f,-.018f},{-.52f,.47f,-.018f},carbon);
+    panel({-.25f,.30f,.018f},{-1.27f,.255f,.018f},
+          {-1.10f,.49f,.018f},{-.52f,.47f,.018f},carbon);
+    // Engine-cover cooling louvres, laid flat on the rear deck.
+    for(int i=0;i<5;++i) {
+        const float x=-.72f-i*.085f;
+        box(x,.325f,0,.035f,.012f,.43f,carbon);
+    }
+
+    // Rear diffuser with three tunnels and vertical strakes.
+    box(-1.34f,.085f,0,.30f,.045f,.94f,carbon);
+    for(float side:{-1.f,0.f,1.f}) {
+        box(-1.43f,.105f,side*.29f,.34f,.07f,.025f,aero);
+        box(-1.25f,.105f,side*.29f,.28f,.09f,.018f,carbon);
+    }
+
+    // High, wide endurance-racing rear wing on two substantial rear-deck pylons.
+    for(float side:{-1.f,1.f}) {
+        rod({-.91f,.30f,side*.245f},{-1.16f,.66f,side*.30f},
+            .035f,carbon);
+        rod({-.91f,.30f,side*.245f},{-1.16f,.66f,side*.30f},
+            .018f,{105,113,123,255});
+    }
+    rearWing(-1.22f,.69f,1.20f,.22f,carbon);
+    // Small endplates make the wing read as a single connected aero assembly.
     for(float side:{-1.f,1.f})
-        rod({-1.02f,.27f,side*.27f},
-            {-1.18f,.48f,side*.30f},.018f,carbon);
-    rearWing(-1.25f,.50f,.98f,.14f,carbon);
+        box(-1.22f,.665f,side*.615f,.24f,.15f,.025f,aero);
 }
-
 
 void rally(Color paint,Color glass,Color dark,bool braking) {
     // Compact rallycross hatch: raised suspension, short overhangs and roof scoop.
