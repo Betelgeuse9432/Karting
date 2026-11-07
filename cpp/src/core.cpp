@@ -304,12 +304,9 @@ void Race::reset(bool keepBest) {
 std::optional<double> Race::tick(const Track& track,const Car& car,int outside,double dt) {
     topSpeed=std::max(topSpeed,std::abs(car.speed));
     elapsed+=dt;
-    warningTime=std::max(0.0,warningTime-dt);
-    if (outside==4 && !outsideLastFrame) {
-        elapsed+=1.0;
-        warningTime=2.0;
-    }
-    outsideLastFrame=outside==4;
+    // Going off-track is already penalised by tyre grip and grass drag.
+    // Lap time follows actual elapsed simulation time, without extra seconds.
+    (void)outside;
     const auto spot=track.infoAtHeight(car.position,car.height,car.roadIndex);
     const auto sector=int(spot.index*4/track.size());
     if (sector!=nextSector) return std::nullopt;
