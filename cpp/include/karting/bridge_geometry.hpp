@@ -64,10 +64,25 @@ inline EmbankmentSection embankmentSection(const Track& track,
     }};
 }
 
-// Solid parapets belong ONLY to the elevated viaduct. Elsewhere the
-// original subtle roadside guide lines remain unchanged.
+// Visual barriers are restricted to the elevated bridge and two technical
+// corners. Every other track section keeps its original discreet guide lines.
+// Intervals refer to the control points in Track::Track(), not screen coordinates.
+inline constexpr std::size_t kHairpinStart = 5*Track::subdivisions;
+inline constexpr std::size_t kHairpinEnd = 11*Track::subdivisions;
+inline constexpr std::size_t kChicaneStart = 37*Track::subdivisions;
+inline constexpr std::size_t kChicaneEnd = 42*Track::subdivisions;
+
+inline bool isTechnicalCorner(std::size_t index) {
+    return (index>=kHairpinStart && index<kHairpinEnd) ||
+           (index>=kChicaneStart && index<kChicaneEnd);
+}
 inline bool hasBridgeWalls(double firstRise,double secondRise) {
     return std::max(firstRise,secondRise)>kDeckMinRise;
+}
+inline bool hasSolidWalls(std::size_t firstIndex,std::size_t secondIndex,
+                         double firstRise,double secondRise) {
+    return hasBridgeWalls(firstRise,secondRise) ||
+           isTechnicalCorner(firstIndex) || isTechnicalCorner(secondIndex);
 }
 
 inline bool isFilledEmbankment(double firstRise,double secondRise) {
