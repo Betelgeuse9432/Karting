@@ -500,6 +500,12 @@ void wheels(const Car& car,const VehicleProfile& p,int index,bool desert=false) 
             - (baja?car.jumpHeight*kWorldScale:0.0));
         if(slot==2) wheelHeight=std::clamp(wheelHeight,-.045f,.045f);
         if(slot>=6) wheelHeight=std::clamp(wheelHeight,-.48f,.20f);
+        // In the flat Desert world, braking/acceleration still articulate the
+        // suspension: the front compresses under braking, the rear under power.
+        if(desert) {
+            const float axleSign=x>0.0f?1.0f:-1.0f;
+            wheelHeight+=std::clamp(-float(car.pitch)*axleSign*.72f,-.16f,.16f);
+        }
         if(slot>=6) {
             const float wheelY=r+.015f+wheelHeight;
             const float innerZ=side*(track-.34f);
@@ -512,8 +518,12 @@ void wheels(const Car& car,const VehicleProfile& p,int index,bool desert=false) 
             // Each pair stays on its own side of the vehicle.
             const Vector3 upperA{x-.25f,.78f,side*.54f};
             const Vector3 upperB{x+.25f,.78f,side*.54f};
-            const Vector3 lowerA{x-.29f,.55f,side*.54f};
-            const Vector3 lowerB{x+.29f,.55f,side*.54f};
+            const Vector3 lowerA{x-.29f,.58f,side*.54f};
+            const Vector3 lowerB{x+.29f,.58f,side*.54f};
+            // Upright chassis brackets make the upper pivots visibly part
+            // of the frame instead of leaving them suspended in space.
+            rod({x-.25f,.58f,side*.54f},upperA,.045f,{75,84,94,255});
+            rod({x+.25f,.58f,side*.54f},upperB,.045f,{75,84,94,255});
             rod(upperA,upperHub,.035f,{105,115,126,255});
             rod(upperB,upperHub,.035f,{105,115,126,255});
             rod(lowerA,lowerHub,.042f,{105,115,126,255});
@@ -662,10 +672,10 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
     if(desert) {
         const Color tube{52,59,66,255};
         const float half=.57f;
-        // One simple, open rectangular chassis. No roof cage or diagonal bracing.
+        // Simple rectangular lower space frame, extended to the axle mounts.
         for(float side:{-half,half})
-            rod({-1.12f,.58f,side},{1.12f,.58f,side},.055f,tube);
-        for(float x:{-1.12f,1.12f})
+            rod({-1.48f,.58f,side},{1.48f,.58f,side},.055f,tube);
+        for(float x:{-1.48f,1.48f})
             rod({x,.58f,-half},{x,.58f,half},.055f,tube);
         for(float x:{-.52f,.52f})
             rod({x,.58f,-half},{x,.58f,half},.042f,tube);
