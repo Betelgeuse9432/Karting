@@ -712,9 +712,7 @@ void wheels(const Car& car,const VehicleProfile& p,int index,bool desert=false) 
 
 void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
                            int index,int colorIndex,bool night,bool desert) const {
-    // Desert vehicle intentionally hidden while its model is rebuilt from zero.
-    // Keep the simulation and every other vehicle/world renderer unchanged.
-    if(desert) return;
+    // Desert uses the Trophy Truck model and its articulated long-travel suspension.
 
     const bool baja=index>=6;
     const Vector3 p=worldPoint(car.position,float(car.jumpHeight),baja,false);
@@ -765,7 +763,7 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
                    {-.48f,highlightY-.012f,side*highlightZ*.94f},
                    {255,255,255,36});
     }
-    wheels(car,profile,index,false);
+    wheels(car,profile,index,desert);
     rlPopMatrix();
     rlPopMatrix();
 }
