@@ -62,11 +62,14 @@ const std::array<VehicleProfile, 8>& profiles() {
     return cars;
 }
 
-Track::Track(bool baja) : baja_(baja) {
+Track::Track(bool baja, bool desert) : baja_(baja), desert_(desert) {
     // Apex Ridge: an original, continuous circuit with no crossings.
     // It combines a long opening run, a flowing outer section, a tight
     // technical complex and a fast final sweep back to the start.
-    std::vector<Vec2> raw = baja_ ? std::vector<Vec2>{
+    std::vector<Vec2> raw = desert_ ? std::vector<Vec2>{
+        {5000,4500},{6000,4500},{5707,5207},{5000,5500},
+        {4293,5207},{4000,4500},{4293,3793},{5000,3500}
+    } : baja_ ? std::vector<Vec2>{
         {900,5200},{1250,3900},{2200,2850},{3700,2450},
         {5050,2850},{5800,2250},{6350,2050},{7100,1940},{7900,2250},
         {8500,2700},{9100,3300},{9400,4050},{9400,4750},
@@ -154,6 +157,7 @@ TrackInfo Track::info(Vec2 world) const {
         const double d2 = dot(delta, delta);
         if (d2 < nearest2) { nearest2 = d2; best = i; }
     }
+    if (desert_) return {0,0,0,false,false};
     const double signedOffset = dot(world - center_[best], normals_[best]);
     const bool pits = pit_[best] && signedOffset > halfWidth + kerb &&
                       signedOffset < halfWidth + kerb + pitWidth;
@@ -161,6 +165,7 @@ TrackInfo Track::info(Vec2 world) const {
     return {best, std::sqrt(nearest2), signedOffset, pits, grass};
 }
 bool Track::wheelOutside(Vec2 world, std::size_t approxIndex) const {
+    if (desert_) return false;
     const auto n = center_.size();
     std::size_t nearest = approxIndex;
     double best2 = std::numeric_limits<double>::infinity();
@@ -176,6 +181,7 @@ bool Track::wheelOutside(Vec2 world, std::size_t approxIndex) const {
              side<halfWidth+kerb+pitWidth);
 }
 double Track::collide(Car& car, double dt) const {
+    if (desert_) return 0.0;
     const auto nearest = info(car.position);
     const bool pitSide = pit_[nearest.index] && nearest.signedOffset>0;
     const double limit = pitSide ? halfWidth + kerb + pitWidth + 25 : wall - 18;
@@ -237,8 +243,9 @@ std::optional<double> Race::tick(const Track& track,const Car& car,int outside,d
 
 Simulation::Simulation() { reset(false); }
 
-void Simulation::setMode(bool baja) {
-    track_ = Track(baja);
+void Simulation::setMode(int mode) {
+    const bool baja=mode==1, desert=mode==2;
+    track_ = Track(baja,desert);
     vehicleIndex_ = baja ? 6 : 2;
     colorIndex_ = profile().defaultColor;
     reset(false);
@@ -331,7 +338,7 @@ void Simulation::update(const Controls& controls,double dt) {
     // Scale steering response progressively with the number of wheels off-track.
     rotation *= 1.0 - 0.45 * (double(off) / 4.0);
 
-    const auto groundHeight=[&](Vec2 point){return track_.isBaja()?bajaElevation(point):elevation(point);};
+    const auto groundHeight=[&](Vec2 point){return track_.isBaja()?bajaElevation(point):track_.isDesert()?0.0:elevation(point);};
     const double slope=(groundHeight(oldPosition+forward*6)-groundHeight(oldPosition))/6;
     double nextSpeed=v+motor*dt;
     if (v>0.5) nextSpeed-=aBrake*dt;
