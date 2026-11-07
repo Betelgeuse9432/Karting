@@ -18,54 +18,18 @@ void HudRenderer::modeMenu(int selectedMode,double time) const {
     const int w=ui.width,h=ui.height;
     BeginMode2D(ui.camera());
     DrawText("GAME VROUM",w/2-190,48,48,GOLD);
-    DrawText("CHOISIS TON MONDE",w/2-190,112,27,RAYWHITE);
-    const Rectangle cards[3]={{float(w/2-555),205,350,320},
-                              {float(w/2-175),205,350,320},
-                              {float(w/2+205),205,350,320}};
-    const Color idle{35,42,55,255},active{57,67,82,255};
-    for(int i=0;i<3;++i) {
-        DrawRectangleRounded(cards[i],.055f,10,selectedMode==i?active:idle);
-        DrawRectangleLinesEx(cards[i],selectedMode==i?4.f:1.5f,
-            selectedMode==i?GOLD:Color{91,101,117,255});
-    }
-    DrawRectangleRounded({cards[0].x+24,cards[0].y+25,302,145},.08f,8,{25,30,39,255});
-    DrawText("GT3",int(cards[0].x+118),cards[0].y+76,42,GOLD);
-    DrawText("PISTE",int(cards[0].x+28),cards[0].y+198,29,GOLD);
-    DrawText("Asphalte et circuit",int(cards[0].x+28),cards[0].y+245,18,RAYWHITE);
-    DrawRectangleRounded({cards[1].x+24,cards[1].y+25,302,145},.08f,8,{45,35,28,255});
-    DrawTriangle({cards[1].x+24,cards[1].y+155},{cards[1].x+150,cards[1].y+48},{cards[1].x+302,cards[1].y+155},{177,119,65,255});
-    DrawText("TROPHY BAJA",int(cards[1].x+28),cards[1].y+198,25,{238,177,104,255});
-    DrawText("Hors-piste et grands sauts",int(cards[1].x+28),cards[1].y+245,17,RAYWHITE);
-    DrawRectangleRounded({cards[2].x+24,cards[2].y+25,302,145},.08f,8,{205,164,105,255});
-    DrawText("SABLE",int(cards[2].x+92),cards[2].y+82,36,{75,49,25,255});
-    DrawText("DESERT",int(cards[2].x+28),cards[2].y+198,29,{238,177,104,255});
-    DrawText("Sable plat a perte de vue",int(cards[2].x+28),cards[2].y+245,17,RAYWHITE);
-    const char* hints[]={"PISTE GT3 SELECTIONNEE","TROPHY BAJA SELECTIONNE","DESERT SELECTIONNE"};
-    DrawText(hints[std::clamp(selectedMode,0,2)],w/2-150,h-105,18,GOLD);
-    DrawText("GAUCHE / DROITE : choisir     ENTREE : valider",w/2-270,h-65,19,RAYWHITE);
+    DrawText("MONDE DISPONIBLE",w/2-190,112,27,RAYWHITE);
+    const Rectangle card{float(w/2-175),205,350,320};
+    DrawRectangleRounded(card,.055f,10,{57,67,82,255});
+    DrawRectangleLinesEx(card,4,GOLD);
+    DrawRectangleRounded({card.x+24,card.y+25,302,145},.08f,8,{25,30,39,255});
+    DrawText("GT3",int(card.x+118),card.y+76,42,GOLD);
+    DrawText("PISTE",int(card.x+28),card.y+198,29,GOLD);
+    DrawText("Asphalte et circuit",int(card.x+28),card.y+245,18,RAYWHITE);
+    DrawText("PISTE GT3 SELECTIONNEE",w/2-150,h-105,18,GOLD);
+    DrawText("ENTREE : continuer",w/2-115,h-65,19,RAYWHITE);
     DrawText(TextFormat("GAME VROUM  |  MENU %02d",int(time*2)%100),20,h-28,14,GRAY);
-    EndMode2D();
-}
-
-void HudRenderer::bajaPreview(double time) const {
-    const auto ui=uiViewport();
-    const int w=ui.width,h=ui.height;
-    BeginMode2D(ui.camera());
-    DrawText("TROPHY BAJA",w/2-175,74,42,{238,177,104,255});
-    DrawText("LE DESERT ARRIVE DANS GAME VROUM",w/2-260,132,23,RAYWHITE);
-
-    DrawRectangleRounded({float(w/2-390),float(h/2-115),780.0f,260.0f},.045f,10,
-                         {39,35,31,255});
-    DrawRectangleLinesEx({float(w/2-390),float(h/2-115),780,260},2,
-                         {190,132,75,255});
-    DrawText("PROCHAINE ETAPE : LE MONDE BAJA",w/2-285,h/2-75,25,GOLD);
-    DrawText("- Deux Trophy Trucks selectionnables",w/2-300,h/2-22,20,RAYWHITE);
-    DrawText("- Un camion adverse pilote par l'IA",w/2-300,h/2+16,20,RAYWHITE);
-    DrawText("- Desert, dunes, bosses et grands sauts",w/2-300,h/2+54,20,RAYWHITE);
-    DrawText("- Chassis tubulaire et suspensions visibles",w/2-300,h/2+92,20,RAYWHITE);
-    DrawText("ENTREE ou ECHAP : retour au choix du mode",
-             w/2-250,h-65,18,LIGHTGRAY);
-    (void)time;
+    (void)selectedMode;
     EndMode2D();
 }
 
@@ -75,13 +39,13 @@ void HudRenderer::menu(const Simulation& sim,double time) const {
     BeginMode2D(ui.camera());
     DrawText(sim.isBaja()?"TROPHY BAJA  /  GAME VROUM":sim.isDesert()?"DESERT  /  GAME VROUM":"KARTING V6  /  C++20 + raylib",
              w/2-280,24,34,GOLD);
-    DrawText((sim.isBaja()||sim.isDesert())?"CHOISIS TON TROPHY TRUCK":"CHOISIS TON VEHICULE",
+    DrawText("CHOISIS TON VEHICULE",
              w/2-210,74,27,RAYWHITE);
     const auto& cars=profiles();
-    const int first=(sim.isBaja()||sim.isDesert())?6:0;
-    const int count=sim.isDesert()?3:sim.isBaja()?2:6;
+    constexpr std::array<int,5> vehicleSlots{{0,2,3,4,5}};
+    const int count=int(vehicleSlots.size());
     for (int i=0;i<count;++i) {
-        const int index=first+i;
+        const int index=vehicleSlots[std::size_t(i)];
         const int x=w/2-count*80+i*160;
         const bool selected=index==sim.vehicleIndex();
         DrawRectangleRounded({float(x),121,150,42},.15f,8,
@@ -129,8 +93,7 @@ void HudRenderer::menu(const Simulation& sim,double time) const {
         if (i==sim.colorIndex())
             DrawRectangleLines(x-4,h-111,51,43,RAYWHITE);
     }
-    DrawText((sim.isBaja()||sim.isDesert())?"GAUCHE/DROITE camion    HAUT/BAS couleur    ENTREE rouler":
-             "GAUCHE/DROITE voiture    HAUT/BAS couleur    ENTREE jouer",
+    DrawText("GAUCHE/DROITE voiture    HAUT/BAS couleur    ENTREE jouer",
              w/2-336,h-55,19,LIGHTGRAY);
     DrawText("ESC quitter",w/2-55,h-28,15,GRAY);
     (void)time;
