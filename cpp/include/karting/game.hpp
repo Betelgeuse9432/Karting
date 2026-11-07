@@ -69,11 +69,10 @@ class HudRenderer {
 public:
     void draw(const Simulation& sim, int quality, int fps) const;
     void modeMenu(int selectedMode, double time) const;
-    void bajaPreview(double time) const;
     void menu(const Simulation& sim, double time) const;
 };
 
-enum class MenuScreen { Mode, Vehicle, BajaPreview };
+enum class MenuScreen { Mode, Vehicle };
 
 class Game {
 public:
@@ -96,7 +95,7 @@ private:
     Camera3D camera_{};
     bool menu_ = true;
     MenuScreen menuScreen_ = MenuScreen::Mode;
-    int selectedMode_ = 0; // 0 = circuit GT3, 1 = Trophy Baja, 2 = desert
+    int selectedMode_ = 0; // Only the GT3 circuit remains
     bool paused_ = false;
     bool boostQueued_ = false;
     int quality_ = 2;
