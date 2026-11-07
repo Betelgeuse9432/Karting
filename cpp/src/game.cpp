@@ -168,8 +168,8 @@ void Game::handleMenu() {
         menuScreen_=MenuScreen::Mode;
         return;
     }
-    const int first=sim_.isBaja()?6:0;
-    const int count=sim_.isBaja()?2:6;
+    const int first=(sim_.isBaja()||sim_.isDesert())?6:0;
+    const int count=sim_.isDesert()?1:sim_.isBaja()?2:6;
     if (left) sim_.selectVehicle(first+(sim_.vehicleIndex()-first+count-1)%count);
     else if (right) sim_.selectVehicle(first+(sim_.vehicleIndex()-first+1)%count);
     if (IsKeyPressed(KEY_UP))
