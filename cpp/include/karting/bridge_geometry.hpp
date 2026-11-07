@@ -64,6 +64,12 @@ inline EmbankmentSection embankmentSection(const Track& track,
     }};
 }
 
+// Solid parapets belong ONLY to the elevated viaduct. Elsewhere the
+// original subtle roadside guide lines remain unchanged.
+inline bool hasBridgeWalls(double firstRise,double secondRise) {
+    return std::max(firstRise,secondRise)>kDeckMinRise;
+}
+
 inline bool isFilledEmbankment(double firstRise,double secondRise) {
     const double maximum=std::max(firstRise,secondRise);
     return maximum>kFillMinRise && maximum<kFillMaxRise;
