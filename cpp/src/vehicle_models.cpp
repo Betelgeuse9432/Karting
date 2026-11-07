@@ -511,7 +511,9 @@ void wheels(const Car& car,const VehicleProfile& p,int index,bool desert=false) 
              (desert?0.0:(baja?bajaElevation(car.position):elevation(car.position))))*kWorldScale
             - (baja?car.jumpHeight*kWorldScale:0.0));
         if(slot==2) wheelHeight=std::clamp(wheelHeight,-.045f,.045f);
-        if(slot>=6) wheelHeight=std::clamp(wheelHeight,-.62f,.30f);
+        // Trophy Truck long-travel suspension: deliberately generous wheel
+        // movement while keeping the tyres beneath the chassis footprint.
+        if(slot>=6) wheelHeight=std::clamp(wheelHeight,-.78f,.48f);
         // In the flat Desert world, braking/acceleration still articulate the
         // suspension: the front compresses under braking, the rear under power.
         if(desert) {
@@ -521,129 +523,113 @@ void wheels(const Car& car,const VehicleProfile& p,int index,bool desert=false) 
         }
         if(slot>=6) {
             const float wheelY=r+.015f+wheelHeight;
-            const float innerZ=side*(track-.34f);
-            const Vector3 upperHub{x,wheelY+.13f,side*(track-.012f)};
-            const Vector3 lowerHub{x,wheelY-.13f,side*(track-.012f)};
+            const float railZ=side*.62f;
+            const float outerZ=side*(track-.015f);
+            const Vector3 upperHub{x,wheelY+.17f,outerZ};
+            const Vector3 lowerHub{x,wheelY-.17f,outerZ};
+            const Color arm{133,145,157,255};
+            const Color joint{198,205,211,255};
+            const Color mount{72,82,94,255};
 
-            // Each wishbone pivots on the chassis and converges on the
-            // upright. The outer ball joints move with the wheel travel.
-            // Inner pivots sit directly on the chassis side rail.
-            // Each pair stays on its own side of the vehicle.
-            const float railZ=side*.57f;
-            const Vector3 upperA{x-.36f,.78f,railZ};
-            const Vector3 upperB{x+.36f,.78f,railZ};
-            const Vector3 lowerA{x-.42f,.58f,railZ};
-            const Vector3 lowerB{x+.42f,.58f,railZ};
-            // Reinforced upright brackets are welded directly to the side rail.
-            // Both wishbones pivot on these brackets, not on floating points.
-            rod({x-.36f,.58f,railZ},upperA,.052f,{75,84,94,255});
-            rod({x+.36f,.58f,railZ},upperB,.052f,{75,84,94,255});
-            rod({x-.42f,.58f,railZ},{x+.42f,.58f,railZ},.052f,{75,84,94,255});
             if(desert && x==rear) {
-                // Rear trailing-arm layout: two long longitudinal links per side,
-                // pivoting at the reinforced rear bulkhead and carrying the upright.
-                const Vector3 armFront{x-.62f,.55f,side*.57f};
-                const Vector3 armRear{x+.48f,wheelY-.02f,side*(track-.02f)};
-                const Vector3 armBrace{x-.12f,wheelY-.10f,side*(track-.02f)};
-                rod(armFront,armRear,.055f,{125,137,149,255});
-                rod({x-.62f,.55f,side*.70f},armBrace,.045f,{105,115,126,255});
-                rod(armFront,{x-.62f,.55f,side*.70f},.045f,{75,84,94,255});
-                rod(upperHub,lowerHub,.050f,{75,83,94,255});
-                rod({x-.18f,.58f,side*.57f},{x+.18f,.58f,side*.57f},.045f,{75,84,94,255});
+                // Rear trailing arm: two longitudinal rails from a shared,
+                // chassis-mounted pivot crossmember to the moving wheel upright.
+                const Vector3 pivotA{x+.62f,.62f,side*.48f};
+                const Vector3 pivotB{x+.62f,.62f,side*.72f};
+                const Vector3 hubA{x-.48f,wheelY-.12f,outerZ-.10f*side};
+                const Vector3 hubB{x-.48f,wheelY-.12f,outerZ+.10f*side};
+                rod(pivotA,hubA,.065f,arm);
+                rod(pivotB,hubB,.065f,arm);
+                rod(hubA,hubB,.055f,arm);
+                rod(upperHub,lowerHub,.050f,mount);
+                // Diagonal braces close the trailing arm into a rigid triangle.
+                rod(pivotA,hubB,.038f,{105,117,130,255});
+                rod(pivotB,hubA,.038f,{105,117,130,255});
+                DrawSphere(pivotA,.052f,joint);
+                DrawSphere(pivotB,.052f,joint);
+                DrawSphere(hubA,.045f,joint);
+                DrawSphere(hubB,.045f,joint);
             } else {
-                // Front double wishbones: each triangular arm has two chassis pivots.
-                rod(upperA,upperHub,.035f,{105,115,126,255});
-                rod(upperB,upperHub,.035f,{105,115,126,255});
-                rod(lowerA,lowerHub,.042f,{105,115,126,255});
-                rod(lowerB,lowerHub,.042f,{105,115,126,255});
-                rod(upperHub,lowerHub,.038f,{75,83,94,255});
-                // Steering arm and tie rod: the upright is visibly connected
-                // to the steering rack rather than steering as a bare wheel.
-                const Vector3 steeringArm{x-.06f,wheelY-.015f,
-                                           side*(track-.045f)};
-                const Vector3 rackJoint{x-.34f,.49f,side*.28f};
-                rod(lowerHub,steeringArm,.030f,{170,178,187,255});
-                rod(steeringArm,rackJoint,.022f,{205,166,91,255});
-                DrawSphere(steeringArm,.026f,{190,197,204,255});
-                DrawSphere(rackJoint,.024f,{190,197,204,255});
+                // Front double wishbones. Both inner pivots of each arm sit
+                // on reinforced chassis brackets; both outer ends meet the upright.
+                const Vector3 upperA{x-.48f,.91f,railZ};
+                const Vector3 upperB{x+.48f,.91f,railZ};
+                const Vector3 lowerA{x-.55f,.63f,railZ};
+                const Vector3 lowerB{x+.55f,.63f,railZ};
+                // Mounting brackets physically connect each pivot to the side rail.
+                rod({x-.48f,.55f,side*.58f},upperA,.055f,mount);
+                rod({x+.48f,.55f,side*.58f},upperB,.055f,mount);
+                rod({x-.55f,.55f,side*.58f},lowerA,.055f,mount);
+                rod({x+.55f,.55f,side*.58f},lowerB,.055f,mount);
+                rod(upperA,upperHub,.050f,arm);
+                rod(upperB,upperHub,.050f,arm);
+                rod(lowerA,lowerHub,.062f,arm);
+                rod(lowerB,lowerHub,.062f,arm);
+                rod(upperHub,lowerHub,.052f,mount);
+                for(const Vector3 pvt:{upperA,upperB,lowerA,lowerB})
+                    DrawSphere(pvt,.047f,joint);
+                // Steering link joins the upright to a rack mounted on the frame.
+                const Vector3 steeringArm{x-.10f,wheelY-.02f,outerZ};
+                const Vector3 rack{x-.34f,.57f,side*.28f};
+                rod(lowerHub,steeringArm,.032f,mount);
+                rod(steeringArm,rack,.026f,{194,158,91,255});
+                DrawSphere(steeringArm,.030f,joint);
+                DrawSphere(rack,.030f,joint);
             }
-            for(const Vector3 pivot:{upperA,upperB,lowerA,lowerB})
-                DrawSphere(pivot,.045f,{65,73,83,255});
-            DrawSphere(upperHub,.034f,{190,197,204,255});
-            DrawSphere(lowerHub,.038f,{190,197,204,255});
+            DrawSphere(upperHub,.040f,joint);
+            DrawSphere(lowerHub,.044f,joint);
 
-            // Coil-over top eye is fixed to the chassis. Its lower eye is
-            // attached to the moving lower wishbone, so the whole damper
-            // changes length and angle as the tyre travels.
-            const Vector3 shockTop{x-.22f,.61f,side*.57f};
-            const Vector3 shockBottom{x+.22f,wheelY-.12f,side*(track-.20f)};
+            // Long-travel coilover. Both eyes are attached: upper to tower,
+            // lower to the moving arm/upright assembly.
+            const Vector3 shockTop{x-.22f,1.20f,side*.58f};
+            const Vector3 shockBottom{x+.20f,wheelY-.12f,side*(track-.18f)};
             const Vector3 axis{shockBottom.x-shockTop.x,
-                                shockBottom.y-shockTop.y,
-                                shockBottom.z-shockTop.z};
-            const float axisLength=std::max(.001f,std::sqrt(
-                axis.x*axis.x+axis.y*axis.y+axis.z*axis.z));
-            const Vector3 axisN{axis.x/axisLength,axis.y/axisLength,
-                                axis.z/axisLength};
-            Vector3 sideN{axisN.y,-axisN.x,0.0f};
-            const float sideLength=std::sqrt(sideN.x*sideN.x+
-                                             sideN.y*sideN.y);
-            if(sideLength>.001f) {
-                sideN.x/=sideLength;
-                sideN.y/=sideLength;
-            } else sideN={1,0,0};
-            // Blue coil wraps the actual shock axis, between its two eyes.
-            for(int coil=0;coil<44;++coil) {
-                const float t0=float(coil)/44.f,t1=float(coil+1)/44.f;
-                const float a0=t0*8.f*2*PI,a1=t1*8.f*2*PI;
-                const auto springPoint=[&](float t,float angle) {
-                    const Vector3 center{
-                        shockTop.x+axis.x*t,
-                        shockTop.y+axis.y*t,
-                        shockTop.z+axis.z*t
-                    };
-                    const Vector3 offset{
-                        sideN.x*std::cos(angle)*.043f,
-                        sideN.y*std::cos(angle)*.043f,
-                        std::sin(angle)*.043f
-                    };
-                    return Vector3{center.x+offset.x,center.y+offset.y,
-                                   center.z+offset.z};
+                               shockBottom.y-shockTop.y,
+                               shockBottom.z-shockTop.z};
+            const float len=std::max(.001f,std::sqrt(axis.x*axis.x+
+                                  axis.y*axis.y+axis.z*axis.z));
+            const Vector3 n{axis.x/len,axis.y/len,axis.z/len};
+            Vector3 u{n.y,-n.x,0};
+            const float ul=std::sqrt(u.x*u.x+u.y*u.y);
+            if(ul>.001f){u.x/=ul;u.y/=ul;} else u={1,0,0};
+            rod(shockTop,shockBottom,.032f,{65,77,92,255});
+            for(int i=0;i<64;++i) {
+                const float t0=float(i)/64.f,t1=float(i+1)/64.f;
+                const float a0=t0*9.f*2*PI,a1=t1*9.f*2*PI;
+                const auto spring=[&](float t,float a) {
+                    return Vector3{
+                        shockTop.x+axis.x*t+u.x*std::cos(a)*.052f,
+                        shockTop.y+axis.y*t+u.y*std::cos(a)*.052f,
+                        shockTop.z+axis.z*t+std::sin(a)*.052f};
                 };
-                DrawLine3D(springPoint(t0,a0),springPoint(t1,a1),
-                           {25,115,255,255});
+                DrawLine3D(spring(t0,a0),spring(t1,a1),{25,115,255,255});
             }
-            rod(shockTop,shockBottom,.026f,{69,79,93,255});
-            // A separate bypass damper beside each coilover, with its own
-            // chassis eye and moving lower mount, makes the long-travel setup legible.
+            DrawSphere(shockTop,.060f,joint);
+            DrawSphere(shockBottom,.055f,joint);
+
             if(desert) {
-                const Vector3 bypassTop{x-.43f,.78f,side*.56f};
-                const Vector3 bypassBottom{x+.34f,wheelY-.18f,side*(track-.10f)};
-                rod(bypassTop,bypassBottom,.035f,{185,133,54,255});
-                rod({bypassTop.x,bypassTop.y+.04f,bypassTop.z},
-                    {bypassTop.x,bypassTop.y+.16f,bypassTop.z},.050f,{91,101,112,255});
-                // External remote reservoir and hydraulic hose.
-                const Vector3 reservoir{bypassTop.x-.20f,bypassTop.y+.02f,
-                                         side*.78f};
-                rod({reservoir.x,reservoir.y-.13f,reservoir.z},
-                    {reservoir.x,reservoir.y+.13f,reservoir.z},.052f,
-                    {105,116,130,255});
-                rod({reservoir.x,reservoir.y+.13f,reservoir.z},
-                    {reservoir.x,reservoir.y+.13f,reservoir.z+.035f},.030f,
-                    {190,197,204,255});
-                rod({bypassTop.x,bypassTop.y+.12f,bypassTop.z},
-                    {reservoir.x,reservoir.y+.08f,reservoir.z},.012f,
-                    {45,53,63,255});
-                // Bump stop and limit strap show the two ends of wheel travel.
-                rod({x-.18f,.69f,side*.58f},
-                    {x-.18f,.80f,side*.58f},.035f,{215,177,73,255});
-                rod({x+.18f,.75f,side*.60f},
-                    {x+.25f,wheelY-.08f,side*(track-.04f)},.012f,
+                // Bypass damper mounted alongside the coilover, with both ends
+                // attached to the same chassis tower and moving suspension arm.
+                const Vector3 bypassTop{x-.43f,1.10f,side*.58f};
+                const Vector3 bypassBottom{x+.34f,wheelY-.20f,side*(track-.08f)};
+                rod(bypassTop,bypassBottom,.040f,{185,133,54,255});
+                DrawSphere(bypassTop,.047f,joint);
+                DrawSphere(bypassBottom,.043f,joint);
+                // Reservoir fixed to the chassis tower and hose linked to bypass.
+                const Vector3 reservoir{x-.62f,1.02f,side*.70f};
+                rod({reservoir.x,reservoir.y-.15f,reservoir.z},
+                    {reservoir.x,reservoir.y+.15f,reservoir.z},.052f,
+                    {104,116,130,255});
+                rod(bypassTop,reservoir,.018f,{45,53,63,255});
+                // Bump stop is attached to the tower; limit strap joins tower
+                // and moving arm, so neither detail floats independently.
+                const Vector3 bumpTop{x-.18f,.96f,side*.58f};
+                const Vector3 bumpBottom{x-.18f,.78f,side*.58f};
+                rod(bumpTop,bumpBottom,.040f,{215,177,73,255});
+                rod({x+.12f,.96f,side*.60f},
+                    {x+.28f,wheelY-.08f,side*(track-.04f)},.014f,
                     {125,91,58,255});
-                DrawSphere(bypassTop,.045f,{190,197,204,255});
-                DrawSphere(bypassBottom,.040f,{190,197,204,255});
             }
-            DrawSphere(shockTop,.055f,{190,197,204,255});
-            DrawSphere(shockBottom,.050f,{190,197,204,255});
         }
         if(slot==5) {
             const Color carbon{22,26,32,255};
@@ -688,6 +674,7 @@ void wheels(const Car& car,const VehicleProfile& p,int index,bool desert=false) 
                 {springX,springBottom,springZ},.025f,{70,80,95,255});
         }
         rlPushMatrix();
+        // The tyre centre follows the same long-travel position as its upright.
         rlTranslatef(x,r+.015f+wheelHeight,side*track);
         if(x==front) rlRotatef(float(-car.steering*RAD2DEG),0,1,0);
         DrawCylinderEx({0,0,-width*.5f},{0,0,width*.5f},r,r,slot==2||slot==3?24:16,
