@@ -409,67 +409,66 @@ void formulaOne(Color paint,Color glass,bool braking) {
 }
 
 void trophyTruck(Color paint,Color glass,bool braking,bool second) {
-    const Color cage{34,39,44,255};
-    const Color chassis{53,59,65,255};
-    const Color alloy{155,163,170,255};
+    const Color cage{39,45,52,255};
+    const Color rail{61,69,77,255};
+    const Color alloy{151,161,171,255};
+    const Color dark{24,29,35,255};
     const Color lamp=braking?Color{255,42,35,255}:Color{235,226,184,255};
     const float half=second?1.02f:.96f;
-    // Fully exposed Trophy Truck: tubular space frame, no painted body panels.
-    // Main lower perimeter rails and cross-members.
+
+    // Lower spaceframe: two long chassis rails, cross-members and triangulation.
     for(float side:{-1.f,1.f}) {
-        rod({-1.28f,.43f,side*half*.72f},{1.42f,.43f,side*half*.72f},.055f,cage);
-        rod({-1.12f,.58f,side*.48f},{1.24f,.58f,side*.48f},.045f,chassis);
-        rod({-.86f,.82f,side*.48f},{-.48f,1.58f,side*.43f},.048f,cage);
-        rod({-.48f,1.58f,side*.43f},{.47f,1.58f,side*.43f},.048f,cage);
-        rod({.47f,1.58f,side*.43f},{.83f,.82f,side*.48f},.048f,cage);
-        rod({-.86f,.82f,side*.48f},{.83f,.82f,side*.48f},.038f,cage);
-        rod({-.45f,1.55f,side*.42f},{.48f,.94f,side*.52f},.034f,cage);
-        // Door X-bracing and front/rear protective hoops.
-        rod({-.52f,.62f,side*.49f},{.48f,1.42f,side*.44f},.032f,alloy);
-        rod({-.52f,1.42f,side*.44f},{.48f,.62f,side*.49f},.032f,alloy);
-        rod({1.25f,.48f,side*.45f},{1.43f,.78f,side*.40f},.045f,cage);
-        rod({-1.20f,.48f,side*.45f},{-1.38f,.76f,side*.40f},.045f,cage);
-        // Exposed long-travel suspension arms and coil-over dampers.
-        for(float x:{-.94f,.94f}) {
-            const Vector3 hub{x,.43f,side*.88f};
-            rod({x-.30f,.35f,side*.35f},hub,.035f,alloy);
-            rod({x+.30f,.35f,side*.35f},hub,.035f,alloy);
-            rod({x,.88f,side*.38f},{x,.59f,side*.78f},.025f,{65,133,205,255});
-            const Vector3 springTop{x,.91f,side*.42f};
-            const Vector3 springBottom{x,.57f,side*.79f};
-            for(int coil=0;coil<18;++coil) {
-                const float t0=float(coil)/18.f,t1=float(coil+1)/18.f;
-                const float a0=t0*6.0f*2*PI,a1=t1*6.0f*2*PI;
-                const Vector3 p0{springTop.x+std::cos(a0)*.045f,
-                    springTop.y+(springBottom.y-springTop.y)*t0,
-                    springTop.z+(springBottom.z-springTop.z)*t0+std::sin(a0)*.045f};
-                const Vector3 p1{springTop.x+std::cos(a1)*.045f,
-                    springTop.y+(springBottom.y-springTop.y)*t1,
-                    springTop.z+(springBottom.z-springTop.z)*t1+std::sin(a1)*.045f};
-                DrawLine3D(p0,p1,{25,115,255,255});
-            }
+        rod({-1.48f,.55f,side*.58f},{1.48f,.55f,side*.58f},.060f,rail);
+        rod({-1.30f,.42f,side*.88f},{1.34f,.42f,side*.88f},.052f,cage);
+        rod({-1.30f,.42f,side*.88f},{-.92f,.82f,side*.58f},.045f,cage);
+        rod({1.34f,.42f,side*.88f},{.98f,.82f,side*.58f},.045f,cage);
+        // Main cabin cage and side impact structure.
+        rod({-.92f,.72f,side*.58f},{-.52f,1.62f,side*.46f},.052f,cage);
+        rod({-.52f,1.62f,side*.46f},{.50f,1.62f,side*.46f},.052f,cage);
+        rod({.50f,1.62f,side*.46f},{.88f,.72f,side*.58f},.052f,cage);
+        rod({-.92f,.72f,side*.58f},{.88f,.72f,side*.58f},.040f,rail);
+        rod({-.78f,.58f,side*.60f},{.66f,1.45f,side*.47f},.034f,alloy);
+        rod({-.78f,1.43f,side*.47f},{.66f,.58f,side*.60f},.034f,alloy);
+        // Front and rear shock towers tied into the cage.
+        rod({.98f,.55f,side*.58f},{.78f,1.18f,side*.50f},.052f,cage);
+        rod({-1.02f,.55f,side*.58f},{-.82f,1.16f,side*.50f},.052f,cage);
+    }
+    for(float x:{-1.42f,-.82f,-.30f,.48f,1.30f}) {
+        rod({x,.55f,-.58f},{x,.55f,.58f},.047f,rail);
+    }
+    // Roof and rear bulkhead cross-bracing.
+    for(float x:{-.52f,.50f}) rod({x,1.62f,-.46f},{x,1.62f,.46f},.040f,cage);
+    rod({-.92f,.72f,-.58f},{.88f,.72f,.58f},.034f,alloy);
+    rod({-.92f,.72f,.58f},{.88f,.72f,-.58f},.034f,alloy);
+
+    // Reinforced front suspension pickup towers and rear trailing-arm mounts.
+    for(float side:{-1.f,1.f}) {
+        for(float x:{.62f,1.02f}) {
+            rod({x,.50f,side*.58f},{x,.78f,side*.68f},.055f,alloy);
+        }
+        for(float x:{-1.30f,-.92f}) {
+            rod({x,.48f,side*.58f},{x,.70f,side*.70f},.055f,alloy);
         }
     }
-    // Cross-braced roof, engine cradle and simple open cockpit hardware.
-    for(float x:{-.48f,.47f}) rod({x,1.58f,-.43f},{x,1.58f,.43f},.038f,cage);
-    rod({-.90f,.82f,-.48f},{.88f,.82f,.48f},.032f,alloy);
-    rod({-.90f,.82f,.48f},{.88f,.82f,-.48f},.032f,alloy);
-    for(float z:{-.42f,.42f}) {
-        rod({-.78f,.62f,z},{.78f,.62f,z},.035f,chassis);
-        rod({-.15f,.60f,z},{-.15f,1.05f,z*.82f},.028f,alloy);
-    }
-    // Visible seat backs, dashboard tube, bumpers and skid rails.
-    box(-.08f,.92f,0,.30f,.48f,.48f,{42,47,54,255});
-    box(.48f,.88f,0,.30f,.035f,.78f,chassis);
-    rod({1.35f,.72f,-.50f},{1.35f,.72f,.50f},.065f,alloy);
-    rod({-1.32f,.70f,-.52f},{-1.32f,.70f,.52f},.065f,alloy);
-    rod({-.95f,.38f,-.62f},{1.05f,.38f,-.62f},.045f,cage);
-    rod({-.95f,.38f,.62f},{1.05f,.38f,.62f},.045f,cage);
-    // Small exposed LED bar and protected spare wheel.
-    box(1.39f,.78f,0,.035f,.07f,.54f,lamp);
-    rod({-1.00f,1.00f,-.12f},{-1.28f,1.00f,-.12f},.30f,{29,32,37,255});
-    box(-1.28f,1.00f,0,.07f,.32f,.34f,alloy);
-    (void)paint;(void)glass;
+
+    // Visible mechanical package: engine, transmission, seat, dash and skid plates.
+    box(-.88f,.86f,0,.58f,.48f,.68f,{77,83,90,255});
+    for(int fin=0;fin<6;++fin)
+        box(-1.13f+fin*.09f,1.12f,0,.025f,.12f,.62f,alloy);
+    box(-.10f,.91f,0,.36f,.52f,.44f,dark);
+    box(.48f,.90f,0,.30f,.045f,.86f,rail);
+    box(.12f,.66f,0,.32f,.06f,.72f,dark);
+    box(.30f,.72f,0,.10f,.24f,.08f,alloy);
+    // Protective front/rear bumpers and side rock sliders.
+    rod({1.48f,.53f,-.86f},{1.48f,.53f,.86f},.075f,alloy);
+    rod({-1.48f,.53f,-.86f},{-1.48f,.53f,.86f},.075f,alloy);
+    for(float side:{-1.f,1.f})
+        rod({-1.05f,.40f,side*.91f},{1.05f,.40f,side*.91f},.045f,cage);
+    box(1.46f,.80f,0,.035f,.08f,.62f,lamp);
+    // Spare wheel mounted behind the cabin.
+    rod({-1.00f,1.17f,-.12f},{-1.30f,1.17f,-.12f},.30f,dark);
+    rod({-1.30f,1.17f,-.12f},{-1.32f,1.17f,-.12f},.12f,alloy);
+    (void)paint;(void)glass;(void)half;
 }
 
 void wheels(const Car& car,const VehicleProfile& p,int index,bool desert=false) {
@@ -673,15 +672,7 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
     rlRotatef(float(car.roll*RAD2DEG),1,0,0);
     rlRotatef(float(car.pitch*RAD2DEG),0,0,1);
     if(desert) {
-        const Color tube{52,59,66,255};
-        const float half=.57f;
-        // Simple rectangular lower space frame, extended to the axle mounts.
-        for(float side:{-half,half})
-            rod({-1.48f,.58f,side},{1.48f,.58f,side},.055f,tube);
-        for(float x:{-1.48f,1.48f})
-            rod({x,.58f,-half},{x,.58f,half},.055f,tube);
-        for(float x:{-.52f,.52f})
-            rod({x,.58f,-half},{x,.58f,half},.042f,tube);
+        trophyTruck(paint,glass,car.brake>.1,false);
     } else switch(index) {
     case 0: kart(paint);break;
     case 1: offRoad(paint,glass,dark,car.brake>.1);break;
