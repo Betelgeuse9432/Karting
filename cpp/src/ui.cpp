@@ -79,7 +79,7 @@ void HudRenderer::menu(const Simulation& sim,double time) const {
              w/2-210,74,27,RAYWHITE);
     const auto& cars=profiles();
     const int first=(sim.isBaja()||sim.isDesert())?6:0;
-    const int count=(sim.isBaja()||sim.isDesert())?2:6;
+    const int count=sim.isDesert()?3:sim.isBaja()?2:6;
     for (int i=0;i<count;++i) {
         const int index=first+i;
         const int x=w/2-count*80+i*160;
