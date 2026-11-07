@@ -11,7 +11,7 @@
 namespace karting {
 
 constexpr float kScale = static_cast<float>(kWorldScale);
-Vector3 worldPoint(Vec2 p, float heightOffset = 0, bool baja = false);
+Vector3 worldPoint(Vec2 p, float heightOffset = 0, bool baja = false, bool desert = false);
 Color palette(int index);
 
 struct Particle {
@@ -48,7 +48,7 @@ private:
 class VehicleRenderer {
 public:
     void draw(const Car& car, const VehicleProfile& profile,
-              int vehicleIndex, int colorIndex, bool night) const;
+              int vehicleIndex, int colorIndex, bool night, bool desert = false) const;
 };
 
 // Logical HUD dimensions preserve the original 1100x720 layout at any
