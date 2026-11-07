@@ -4,12 +4,12 @@ Ce dossier contient la version native **C++20 / raylib** de Karting, utilisée s
 
 ## Viaduc moderne (barrières et talus volumiques)
 
-**En dehors du pont, le circuit conserve exactement les deux petits traits
-de guidage d'origine : aucun mur ni garde-corps volumétrique n'y est ajouté.**
-Les protections solides apparaissent uniquement sur la portion suffisamment
-surélevée du tablier. Elles sont abaissées de 84 à 48 cm, avec un socle en
-béton, une poutre métallique fermée et de vraies faces latérales. Leur
-emplacement correspond au seuil de collision, sans modifier la conduite.
+**Le circuit conserve ses deux traits discrets sur les portions ordinaires.**
+Les murs volumétriques sont réservés à trois zones : le tablier du pont,
+l'épingle orientale et la chicane en S du secteur ouest. Le reste du parcours
+conserve les deux lignes originales, sans nouvelles barrières imposantes.
+Les protections solides mesurent 48 cm avec un socle en béton et une poutre
+métallique fermée. Les limites de collision restent inchangées.
 Le tablier conserve ses appuis et le dégagement de la route inférieure.
 
 Les talus ne sont plus deux plaques verdâtres ouvertes. Les rampes sont
