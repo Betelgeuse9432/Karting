@@ -242,6 +242,15 @@ void testBridgeStructures() {
             "Safety barrier wraps the simulated collision boundary");
     require(bridge::kDeckHalfWidth>bridge::kBarrierOuter,
             "Concrete bridge deck extends beneath the full barrier");
+    // Regression: regular asphalt must retain the two original thin lines.
+    require(!bridge::hasBridgeWalls(0,0),
+            "Ordinary roads must never display solid bridge walls");
+    require(!bridge::hasBridgeWalls(bridge::kDeckMinRise*.5,
+                                    bridge::kDeckMinRise*.5),
+            "Low approach ramps keep regular roadside guides");
+    require(bridge::hasBridgeWalls(track.bridgeRise(14*Track::subdivisions),
+                                   track.bridgeRise(14*Track::subdivisions+1)),
+            "Only the elevated viaduct uses solid walls");
 
     // The ramps are closed cross sections of actual soil, with footings
     // buried into terrain, rather than hollow green sheets.
