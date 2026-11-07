@@ -462,7 +462,7 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
 
     if(track.isBaja()) {
         // Seven sculpted dirt launch ramps distributed around the Baja lap.
-        const std::array<double,7> jumpProgress{{.08,.18,.31,.48,.62,.77,.90}};
+        const std::array<double,5> jumpProgress{{.10,.29,.49,.69,.88}};
         for(std::size_t rampIndex=0;rampIndex<jumpProgress.size();++rampIndex) {
             const std::size_t index=std::min(count-1,
                 std::size_t(double(count)*jumpProgress[rampIndex]));
@@ -474,8 +474,8 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
             const Vec2 side{-tangent.y,tangent.x};
             const Vec2 c=center[index];
             const double halfWidth=Track::halfWidth*.92;
-            const double run=92.0+double(rampIndex%3)*18.0;
-            const float crestHeight=4.0f+float((rampIndex*3)%4)*.9f;
+            const double run=128.0+double(rampIndex%3)*16.0;
+            const float crestHeight=11.0f+float((rampIndex*3)%4)*1.35f;
             const auto rampPoint=[&](double along,double lateral,float lift) {
                 const Vec2 q=c+tangent*along+side*lateral;
                 return worldPoint(q,lift,true);
