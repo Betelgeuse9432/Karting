@@ -251,25 +251,25 @@ void testBridgeStructures() {
     require(bridge::isFilledEmbankment(rise,
                 track.bridgeRise(ramp+1)),
             "Earth support exists on the approach ramp");
-    require(section.size()==7,"Solid ramp profile has seven closed vertices");
+    require(section.size()==9,"Solid ramp profile has nine closed vertices");
     for(const auto& vertex:section)
         require(std::isfinite(vertex.position.x) &&
                 std::isfinite(vertex.position.y) &&
                 std::isfinite(vertex.altitude),
                 "Embankment geometry has finite vertices");
-    for(const int foot:{0,5,6})
+    for(const int foot:{0,7,8})
         require(section[foot].altitude <
                 track.terrainHeight(section[foot].position),
                 "Bottom and both embankment toes are buried in the ground");
     const auto left=track.point(ramp,-bridge::kDeckHalfWidth);
     const auto right=track.point(ramp,bridge::kDeckHalfWidth);
-    close(length(section[2].position-left),0,1e-10,
+    close(length(section[3].position-left),0,1e-10,
           "Left top edge meets concrete shoulder");
-    close(length(section[3].position-right),0,1e-10,
+    close(length(section[4].position-right),0,1e-10,
           "Right top edge meets concrete shoulder");
-    close(section[2].altitude,track.terrainHeight(left)+rise-5,1e-9,
+    close(section[3].altitude,track.terrainHeight(left)+rise-5,1e-9,
           "Embankment connects below left road shoulder");
-    close(section[3].altitude,track.terrainHeight(right)+rise-5,1e-9,
+    close(section[4].altitude,track.terrainHeight(right)+rise-5,1e-9,
           "Embankment connects below right road shoulder");
     require(!bridge::isFilledEmbankment(track.bridgeRise(14*Track::subdivisions),
                                          track.bridgeRise(14*Track::subdivisions+1)),
