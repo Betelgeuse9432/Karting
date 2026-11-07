@@ -250,7 +250,20 @@ void testBridgeStructures() {
             "Low approach ramps keep regular roadside guides");
     require(bridge::hasBridgeWalls(track.bridgeRise(14*Track::subdivisions),
                                    track.bridgeRise(14*Track::subdivisions+1)),
-            "Only the elevated viaduct uses solid walls");
+            "Elevated viaduct has solid walls");
+    const auto wallsAt=[&](std::size_t control) {
+        const std::size_t i=control*Track::subdivisions;
+        return bridge::hasSolidWalls(i,i+1,track.bridgeRise(i),
+                                    track.bridgeRise(i+1));
+    };
+    require(wallsAt(7),"Hairpin has solid protection");
+    require(wallsAt(39),"Chicane has solid protection");
+    require(wallsAt(14),"Viaduct retains solid protection");
+    require(!wallsAt(1),"Approach straight keeps original guide lines");
+    require(!wallsAt(31),"Open sweeping sector keeps guide lines");
+    require(!wallsAt(43),"Return straight keeps guide lines");
+    require(!bridge::hasSolidWalls(0,1,0,0),
+            "Flat road outside technical corners has no solid barrier");
 
     // The ramps are closed cross sections of actual soil, with footings
     // buried into terrain, rather than hollow green sheets.
