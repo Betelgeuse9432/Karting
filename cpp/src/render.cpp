@@ -127,33 +127,6 @@ void draw3DLandscape(Vector3 camera, int quality, float night, double time, bool
         }
     }
 
-    if(baja) {
-        const std::array<Vector3,8> dunes{{
-            {-120,-1.5f,-90},{-40,-1.5f,-155},{55,-1.5f,-165},
-            {155,-1.5f,-95},{235,-1.5f,-20},{190,-1.5f,115},
-            {65,-1.5f,205},{-75,-1.5f,155}
-        }};
-        for(std::size_t i=0;i<dunes.size();++i) {
-            const auto p=dunes[i];
-            if(Vector3Distance(camera,p)>260.0f) continue;
-            const float radius=24.0f+float(i%3)*7.0f;
-            const Color duneColor=Fade(
-                i%2?Color{180,132,82,255}:Color{199,153,96,255},
-                quality==0?.72f:.92f);
-            // Flattened, overlapping ellipsoids create dune ridges rather
-            // than the conspicuous spherical "boulders" of the old pass.
-            rlPushMatrix();
-            rlTranslatef(p.x,p.y+1.1f,p.z);
-            rlScalef(1.0f,.20f,1.28f);
-            DrawSphere({0,0,0},radius,duneColor);
-            rlPopMatrix();
-            rlPushMatrix();
-            rlTranslatef(p.x+radius*.42f,p.y+.65f,p.z-radius*.20f);
-            rlScalef(1.05f,.16f,1.18f);
-            DrawSphere({0,0,0},radius*.58f,Fade({211,166,109,255},.82f));
-            rlPopMatrix();
-        }
-    }
 
     // Volumetric cloud banks remain high above the circuit and drift slowly.
     const std::array<Vector3,7> cloudCenters{{
