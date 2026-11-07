@@ -489,10 +489,10 @@ void wheels(const Car& car,const VehicleProfile& p,int index,bool desert=false) 
     const float axleVisualScale=index==3?1.12f:1.0f;
     const float front=float(p.frontAxle*kWorldScale*axleVisualScale);
     const float rear=float(p.rearAxle*kWorldScale*axleVisualScale);
-    constexpr std::array<float,8> sizes{{.155f,.265f,.205f,.195f,.180f,.220f,.315f,.325f}};
-    constexpr std::array<float,8> widths{{.19f,.26f,.22f,.21f,.21f,.245f,.34f,.36f}};
-    constexpr std::array<float,8> tracks{{.45f,.65f,.48f,.58f,.58f,.63f,.88f,.92f}};
-    const std::size_t slot=std::size_t(std::clamp(index,0,7));
+    constexpr std::array<float,9> sizes{{.155f,.265f,.205f,.195f,.180f,.220f,.315f,.325f,.335f}};
+    constexpr std::array<float,9> widths{{.19f,.26f,.22f,.21f,.21f,.245f,.34f,.36f,.37f}};
+    constexpr std::array<float,9> tracks{{.45f,.65f,.48f,.58f,.58f,.63f,.88f,.92f,.94f}};
+    const std::size_t slot=std::size_t(std::clamp(index,0,8));
     const float r=sizes[slot],width=widths[slot];
     const float track=std::max(float(p.halfWheelTrack*kWorldScale),tracks[slot]);
 
@@ -746,6 +746,9 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
         trophyTruck(paint,glass,car.brake>.1,false);
         break;
     case 7:
+        trophyTruck(paint,glass,car.brake>.1,true);
+        break;
+    case 8:
         trophyTruck(paint,glass,car.brake>.1,true);
         break;
     case 4:
