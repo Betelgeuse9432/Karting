@@ -188,9 +188,9 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
                 const Color stone=shaded({102,96,82,255},1-.39f*night);
                 for(const int side:{-1,1}) {
                     const auto slice=bridge::embankmentSection(track,i);
-                    const auto toe=vertex3(slice[side<0?0:7]);
+                    const auto exposedBank=vertex3(slice[side<0?1:6]);
                     const float radius=.14f+float((i/11)%4)*.045f;
-                    DrawSphereEx(raised(toe,radius*.8f),
+                    DrawSphereEx(raised(exposedBank,radius*.45f),
                                  radius,3,6,stone);
                 }
             }
