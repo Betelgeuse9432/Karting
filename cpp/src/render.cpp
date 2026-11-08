@@ -89,25 +89,30 @@ static void solidEmbankment(const Track& track,std::size_t i,std::size_t j,
         quad(vertex3(first[k]),vertex3(second[k]),
              vertex3(second[next]),vertex3(first[next]),strata[k]);
     }
-    // Explicitly seal both ends, including LOD boundaries. A side view
-    // through the ramp now shows packed soil, never an empty green sheet.
-    const std::array<std::pair<std::size_t,bridge::EmbankmentSection>,2> ends{{
-        {i,first},{j,second}
-    }};
-    for(const auto& end:ends) {
-        const Vec2 xy=track.point(end.first);
+    // Seal only the exposed ends of a ramp. Internal caps were drawn at
+    // every sample, creating transverse walls inside the earth volume.
+    const auto n=track.size();
+    const bool startExposed=!bridge::isFilledEmbankment(
+        track.bridgeRise((i+n-1)%n),track.bridgeRise(i));
+    const bool endExposed=!bridge::isFilledEmbankment(
+        track.bridgeRise(j),track.bridgeRise((j+1)%n));
+    const auto cap=[&](std::size_t index,
+                       const bridge::EmbankmentSection& section) {
+        const Vec2 xy=track.point(index);
         const Vector3 center{
             float(xy.x*kWorldScale),
-            float((elevation(xy)+track.bridgeRise(end.first)*.42-18)*kWorldScale),
+            float((elevation(xy)+track.bridgeRise(index)*.42-18)*kWorldScale),
             float(xy.y*kWorldScale)};
-        for(std::size_t k=0;k<end.second.size();++k) {
-            const auto next=(k+1)%end.second.size();
-            const auto a=vertex3(end.second[k]);
-            const auto b=vertex3(end.second[next]);
+        for(std::size_t k=0;k<section.size();++k) {
+            const auto next=(k+1)%section.size();
+            const auto a=vertex3(section[k]);
+            const auto b=vertex3(section[next]);
             DrawTriangle3D(center,a,b,shaded(packed,variation*.82f));
             DrawTriangle3D(center,b,a,shaded(packed,variation*.82f));
         }
-    }
+    };
+    if(startExposed) cap(i,first);
+    if(endExposed) cap(j,second);
 }
 
 void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
@@ -205,28 +210,33 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
             paint(-deckWidth,-Track::halfWidth-Track::kerb,shoulder);
             paint(Track::halfWidth+Track::kerb,deckWidth,shoulder);
         }
-        if(riseHigh>bridge::kDeckMinRise) {
+        // Gradually grow the concrete deck out of the approach ramp.
+        // A hard rise threshold previously left abrupt vertical slab ends.
+        const auto deckDepth=[](double rise) {
+            double t=std::clamp((rise-105.0)/70.0,0.0,1.0);
+            t=t*t*(3.0-2.0*t);
+            return 29.0*t;
+        };
+        const double depthI=deckDepth(riseI),depthJ=deckDepth(riseJ);
+        if(depthI>0.0 || depthJ>0.0) {
             const Color face=shaded({192,194,198,255},1-.34f*night);
             const Color band=shaded({139,146,157,255},1-.38f*night);
             const Color underside=shaded({112,123,138,255},1-.43f*night);
             for(const int side:{-1,1}) {
                 const double edge=side*deckWidth;
                 quad(roadPoint(i,edge,-3),roadPoint(j,edge,-3),
-                     roadPoint(j,edge,-32),roadPoint(i,edge,-32),face);
-                quad(roadPoint(i,edge,-25),roadPoint(j,edge,-25),
-                     roadPoint(j,edge,-32),roadPoint(i,edge,-32),band);
+                     roadPoint(j,edge,-3-depthJ),
+                     roadPoint(i,edge,-3-depthI),face);
+                quad(roadPoint(i,edge,-3-.76*depthI),
+                     roadPoint(j,edge,-3-.76*depthJ),
+                     roadPoint(j,edge,-3-depthJ),
+                     roadPoint(i,edge,-3-depthI),band);
             }
-            // Solid soffit and sealed abutment sections instead of a
-            // thin roof open when viewed from the underpass.
-            quad(roadPoint(i,-deckWidth,-32),roadPoint(j,-deckWidth,-32),
-                 roadPoint(j,deckWidth,-32),roadPoint(i,deckWidth,-32),
-                 underside);
-            quad(roadPoint(i,-deckWidth,-3),roadPoint(i,deckWidth,-3),
-                 roadPoint(i,deckWidth,-32),roadPoint(i,-deckWidth,-32),
-                 face);
-            quad(roadPoint(j,-deckWidth,-3),roadPoint(j,deckWidth,-3),
-                 roadPoint(j,deckWidth,-32),roadPoint(j,-deckWidth,-32),
-                 face);
+            // Continuous underside, without internal transverse end caps.
+            quad(roadPoint(i,-deckWidth,-3-depthI),
+                 roadPoint(j,-deckWidth,-3-depthJ),
+                 roadPoint(j,deckWidth,-3-depthJ),
+                 roadPoint(i,deckWidth,-3-depthI),underside);
         }
         // Keep volumetric protection only on the bridge and around the
         // eastern hairpin / western chicane. Regular straights retain
