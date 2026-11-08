@@ -1,0 +1,479 @@
+#include "karting/core.hpp"
+#include "karting/bridge_geometry.hpp"
+#include <algorithm>
+#include <cmath>
+#include <exception>
+#include <iostream>
+#include <limits>
+#include <stdexcept>
+#include <string>
+
+using namespace karting;
+
+void require(bool condition, const char* message) {
+    if (!condition) throw std::runtime_error(message);
+}
+
+void close(double actual,double expected,double tolerance,const char* message) {
+    if (std::abs(actual-expected)>tolerance)
+        throw std::runtime_error(message);
+}
+
+void testCircuit() {
+    const Track track;
+    require(track.size()==45*Track::subdivisions,
+            "Four-sector circuit has 42 Catmull-Rom control points");
+    require(track.lapLength()>70000 && track.lapLength()<80000,
+            "Four-sector circuit preserves a long lap");
+    const auto start=track.startPosition();
+    require(start.x>0 && start.x<Track::worldWidth &&
+            start.y>0 && start.y<Track::worldHeight,
+            "Starting point fits the extended world");
+    require(std::isfinite(track.startHeading()),"Finite starting heading");
+    require(track.heights().size()==track.size(),"Cached relief per vertex");
+    // New relief must be more pronounced without steep discontinuities.
+    const auto& deck=track.heights();
+    const auto [minElevation,maxElevation]=std::minmax_element(deck.begin(),deck.end());
+    require(*maxElevation-*minElevation>700,
+            "The same XY course now has meaningful climbs and descents");
+    for(std::size_t i=0;i<track.size();++i) {
+        const std::size_t next=(i+1)%track.size();
+        const double run=length(track.point(next)-track.point(i));
+        require(run>1e-8,"Track samples remain distinct");
+        const double grade=std::abs(track.roadHeight(next)-track.roadHeight(i))/run;
+        require(grade<.20,"No sudden slope or unrealistic road crest");
+    }
+    const auto near=track.info(start);
+    require(near.distance<1e-6,"Start line is on the track");
+    require(!near.grass,"No grass at start");
+
+    // Separate terrain altitude from per-road-sample altitude. For the
+    // unchanged circuit, they must produce the exact old surface height.
+    for(std::size_t i=0;i<track.size();i+=Track::subdivisions) {
+        const Vec2 location=track.point(i);
+        close(track.terrainHeight(location),elevation(location),1e-10,
+              "Terrain height preserves existing map");
+        close(track.roadHeight(i),
+              elevation(location)+track.bridgeRise(i),1e-9,
+              "Road height equals terrain plus its own bridge deck offset");
+        const auto onDeck=track.infoAtHeight(location,track.roadHeight(i),i);
+        require(onDeck.index==i,
+                "3D lookup returns the corresponding current road sample");
+        require(onDeck.distance<1e-5 && !onDeck.grass,
+                "3D lookup preserves the drivable road surface");
+    }
+    require(track.roadHeight(track.size())==track.roadHeight(0),
+            "Deck height wraps at the finish line");
+    bool invalidHeight=false;
+    try {
+        (void)track.infoAtHeight(track.startPosition(),
+                                std::numeric_limits<double>::infinity());
+    } catch(const std::invalid_argument&) { invalidHeight=true; }
+    require(invalidHeight,"Height lookup rejects non-finite altitude");
+    const auto noHint=track.infoAtHeight(track.startPosition(),
+                                         track.roadHeight(0));
+    require(noHint.index==0,"3D lookup works without route hint");
+
+    // Simulate a bridge DECK without changing a single XY control point.
+    // The ground remains the same, while 3D lookup follows the elevated
+    // sample instead of a nearby segment at ground level.
+    Track layered;
+    auto profile=layered.heights();
+    const std::size_t raised=8*Track::subdivisions;
+    const Vec2 crossing=layered.point(raised);
+    const double originalGround=layered.terrainHeight(crossing);
+    profile[raised]=originalGround+600.0;
+    layered.setRoadHeightProfile(profile);
+    close(layered.roadHeight(raised),originalGround+600,1e-10,
+          "Deck can be raised independently from terrain");
+    close(layered.terrainHeight(crossing),originalGround,1e-10,
+          "Raising a deck never modifies the ground");
+    require(layered.infoAtHeight(crossing,originalGround+600,raised).index==raised,
+            "Elevated road level is correctly selected");
+    require(layered.infoAtHeight(crossing,originalGround).index!=raised,
+            "Ground level lookup does not select an elevated deck");
+    bool invalidProfile=false;
+    try { layered.setRoadHeightProfile({1.0,2.0}); }
+    catch(const std::invalid_argument&) {invalidProfile=true;}
+    require(invalidProfile,"Deck profile must match track sample count");
+    invalidProfile=false;
+    profile[raised]=std::numeric_limits<double>::quiet_NaN();
+    try { layered.setRoadHeightProfile(profile); }
+    catch(const std::invalid_argument&) {invalidProfile=true;}
+    require(invalidProfile,"Deck profile rejects non-finite heights");
+
+
+    // The upper road must genuinely cross the earlier straight in plan,
+    // while remaining far enough above it for a car to pass beneath.
+    const auto lower=track.info({14689,2401});
+    const auto upper=track.infoAtHeight({14689,2401},
+                                        track.roadHeight(14*Track::subdivisions),
+                                        14*Track::subdivisions);
+    require(lower.index<5*Track::subdivisions,
+            "Approach straight lies under the bridge");
+    require(upper.index>12*Track::subdivisions &&
+            upper.index<16*Track::subdivisions,
+            "Overpass returns the correct upper track segment");
+    require(track.roadHeightAt({14689,2401},upper.index)-
+            track.roadHeightAt({14689,2401},lower.index)>400,
+            "Bridge has at least 7.2 rendering metres of vertical separation");
+    require(track.bridgeRise(0)==0 && track.bridgeRise(30*Track::subdivisions)==0,
+            "Road remains on ground outside the bridge ramps");
+    // Along the whole ordinary road, both edges must match the terrain:
+    // using the centreline height for lateral vertices used to bury or
+    // float one side of the asphalt on steep hills.
+    for(std::size_t i=0;i<track.size();i+=7) {
+        for(double offset:{-Track::halfWidth,Track::halfWidth}) {
+            const Vec2 edge=track.point(i,offset);
+            const double residual=track.roadHeightAt(edge,i)-
+                                  track.terrainHeight(edge);
+            close(residual,track.bridgeRise(i),1e-7,
+                  "Road edges have consistent terrain-relative deck rise");
+        }
+    }
+    for(std::size_t i=0;i<track.size();i+=Track::subdivisions) {
+        if(track.bridgeRise(i)>1e-8) continue;
+        const Vec2 leftEdge=track.point(i,-Track::halfWidth);
+        const Vec2 rightEdge=track.point(i,Track::halfWidth);
+        close(track.roadHeightAt(leftEdge,i),elevation(leftEdge),1e-8,
+              "Grounded left road edge must sit on its own terrain height");
+        close(track.roadHeightAt(rightEdge,i),elevation(rightEdge),1e-8,
+              "Grounded right road edge must sit on its own terrain height");
+    }
+
+    // Collision handling must accept both superposed lanes independently.
+    // Passing beneath the bridge must not snap to the deck above.
+    Car below{};
+    below.position={14689,2401};
+    below.roadIndex=lower.index;
+    below.height=track.roadHeightAt(below.position,below.roadIndex);
+    const Vec2 beforeBelow=below.position;
+    close(track.collide(below,1.0/60.0),0,1e-12,
+          "Lower road does not collide with the bridge deck");
+    require(length(below.position-beforeBelow)<1e-9,
+            "Underpass preserves lower-road position");
+    Car above{};
+    above.position=below.position;
+    above.roadIndex=upper.index;
+    above.height=track.roadHeightAt(above.position,above.roadIndex);
+    close(track.collide(above,1.0/60.0),0,1e-12,
+          "Upper bridge lane remains driveable at same XY position");
+
+    // Arc-length lookup must remain valid after changing the spline density.
+    require(track.indexAtDistance(0)==0,
+            "Distance zero selects the start");
+    require(track.indexAtDistance(track.lapLength())==0,
+            "Lap length wraps to the start");
+    require(track.indexAtDistance(-track.lapLength())==0,
+            "Negative full lap wraps to the start");
+    for(int sector=1;sector<20;++sector) {
+        const double d=track.lapLength()*sector/20.;
+        const std::size_t i=track.indexAtDistance(d);
+        const std::size_t prev=track.indexAtDistance(d-200.);
+        require(i<track.size(),"Distance lookup is in bounds");
+        require(i>=prev || (sector==1 && prev>track.size()-5),
+                "Distance-based scenic placement follows the lap order");
+    }
+    bool invalidDistance=false;
+    try { (void)track.indexAtDistance(std::numeric_limits<double>::infinity()); }
+    catch(const std::invalid_argument&) { invalidDistance=true; }
+    require(invalidDistance,"Non-finite arc distance is rejected");
+    require(Track::halfWidth==175 && Track::wall==275,
+            "Road widened with matching barrier clearance");
+    require(!track.info(track.point(0,Track::halfWidth-8)).grass,
+            "Outer road lane remains drivable");
+    require(track.info(track.point(0,Track::halfWidth+Track::kerb+45)).grass,
+            "Grass begins past the wider road shoulder");
+
+    // At the reversed hairpin the car turns north and exits west.
+    const auto tangent=[&](std::size_t pointIndex) {
+        const auto& c=track.center();
+        return c[(pointIndex+1)%c.size()]-
+               c[(pointIndex+c.size()-1)%c.size()];
+    };
+    const Vec2 entry=tangent(4*Track::subdivisions);
+    const Vec2 apex=tangent(7*Track::subdivisions);
+    const Vec2 exit=tangent(10*Track::subdivisions);
+    require(dot(entry,exit)<-.9*length(entry)*length(exit),
+            "Hairpin reverses travel direction by roughly 180 degrees");
+    require(dot(entry,apex)<.2*length(entry)*length(apex),
+            "Hairpin includes a strong perpendicular apex");
+    const Vec2 entryPoint=track.point(4*Track::subdivisions);
+    const Vec2 exitPoint=track.point(10*Track::subdivisions);
+    require(length(entryPoint-exitPoint)>Track::wall*2+100,
+            "Hairpin arms have separate collision and scenery clearances");
+    // Four sectors should exhibit direction changes beyond the hairpin,
+    // rather than falling back to a featureless oval.
+    int leftTurns=0,rightTurns=0;
+    const auto& route=track.center();
+    for(std::size_t i=12*Track::subdivisions;
+        i+Track::subdivisions<route.size()-Track::subdivisions;
+        i+=Track::subdivisions) {
+        const Vec2 a=route[i]-route[i-Track::subdivisions];
+        const Vec2 b=route[i+Track::subdivisions]-route[i];
+        const double signedTurn=a.x*b.y-a.y*b.x;
+        if(signedTurn>1e4) ++leftTurns;
+        if(signedTurn< -1e4) ++rightTurns;
+    }
+    require(leftTurns>=4 && rightTurns>=4,
+            "Technical sectors contain turns in both directions");
+    for(const Vec2 p:track.center())
+        require(p.x>0 && p.x<Track::worldWidth &&
+                p.y>0 && p.y<Track::worldHeight,
+                "Whole track fits within world bounds");
+    for(std::size_t i=0;i<track.size();i+=Track::subdivisions) {
+        const auto point=track.point(i);
+        require(track.info(point).distance<1e-5,
+                "Interpolated points remain on the track");
+    }
+}
+
+void testBridgeStructures() {
+    const Track track;
+    // Thin but solid guardrails, aligned with the simulated road boundary.
+    require(bridge::kBarrierTotalHeight<.60f &&
+            bridge::kBarrierTotalHeight>.35f,
+            "Bridge barriers are lower than the old 84 cm parapets");
+    require(bridge::kBarrierFootHeight<bridge::kBarrierRailBottom &&
+            bridge::kBarrierRailBottom<bridge::kBarrierTotalHeight,
+            "Both solid pieces of the safety rail remain separated");
+    require(bridge::kBarrierInner<Track::wall &&
+            bridge::kBarrierOuter>=Track::wall,
+            "Safety barrier wraps the simulated collision boundary");
+    require(bridge::kDeckHalfWidth>bridge::kBarrierOuter,
+            "Concrete bridge deck extends beneath the full barrier");
+    // Regression: regular asphalt must retain the two original thin lines.
+    require(!bridge::hasBridgeWalls(0,0),
+            "Ordinary roads must never display solid bridge walls");
+    require(!bridge::hasBridgeWalls(bridge::kDeckMinRise*.5,
+                                    bridge::kDeckMinRise*.5),
+            "Low approach ramps keep regular roadside guides");
+    require(bridge::hasBridgeWalls(track.bridgeRise(14*Track::subdivisions),
+                                   track.bridgeRise(14*Track::subdivisions+1)),
+            "Elevated viaduct has solid walls");
+    const auto wallsAt=[&](std::size_t control) {
+        const std::size_t i=control*Track::subdivisions;
+        return bridge::hasSolidWalls(i,i+1,track.bridgeRise(i),
+                                    track.bridgeRise(i+1));
+    };
+    require(wallsAt(7),"Hairpin has solid protection");
+    require(wallsAt(39),"Chicane has solid protection");
+    require(wallsAt(14),"Viaduct retains solid protection");
+    require(!wallsAt(1),"Approach straight keeps original guide lines");
+    require(!wallsAt(31),"Open sweeping sector keeps guide lines");
+    require(!wallsAt(43),"Return straight keeps guide lines");
+    require(!bridge::hasSolidWalls(0,1,0,0),
+            "Flat road outside technical corners has no solid barrier");
+
+    // The ramps are closed cross sections of actual soil, with footings
+    // buried into terrain, rather than hollow green sheets.
+    const std::size_t ramp=11*Track::subdivisions;
+    const auto section=bridge::embankmentSection(track,ramp);
+    const double rise=track.bridgeRise(ramp);
+    require(bridge::isFilledEmbankment(rise,
+                track.bridgeRise(ramp+1)),
+            "Earth support exists on the approach ramp");
+    require(section.size()==9,"Solid ramp profile has nine closed vertices");
+    for(const auto& vertex:section)
+        require(std::isfinite(vertex.position.x) &&
+                std::isfinite(vertex.position.y) &&
+                std::isfinite(vertex.altitude),
+                "Embankment geometry has finite vertices");
+    for(const int foot:{0,7,8})
+        require(section[foot].altitude <
+                track.terrainHeight(section[foot].position),
+                "Bottom and both embankment toes are buried in the ground");
+    const auto left=track.point(ramp,-bridge::kDeckHalfWidth);
+    const auto right=track.point(ramp,bridge::kDeckHalfWidth);
+    close(length(section[3].position-left),0,1e-10,
+          "Left top edge meets concrete shoulder");
+    close(length(section[4].position-right),0,1e-10,
+          "Right top edge meets concrete shoulder");
+    close(section[3].altitude,track.terrainHeight(left)+rise-5,1e-9,
+          "Embankment connects below left road shoulder");
+    close(section[4].altitude,track.terrainHeight(right)+rise-5,1e-9,
+          "Embankment connects below right road shoulder");
+    require(!bridge::isFilledEmbankment(track.bridgeRise(14*Track::subdivisions),
+                                         track.bridgeRise(14*Track::subdivisions+1)),
+            "High viaduct spans stay hollow underneath for the lower road");
+    require(!bridge::isFilledEmbankment(0,0),
+            "Ordinary ground does not generate redundant embankments");
+}
+
+void testProfiles() {
+    require(profiles().size()==4,"4 cars");
+    require(profiles()[0].name=="KART","Kart present");
+    require(profiles()[1].name=="4x4","4x4 present");
+    require(profiles()[2].name=="GT3","GT3 present");
+    require(profiles()[3].name=="WEC","WEC present");
+    const int maxSpeed[]={300,320,400,450};
+    const int maxPower[]={320,280,390,460};
+    for (std::size_t i=0;i<profiles().size();++i) {
+        const auto& p=profiles()[i];
+        close(p.topSpeed,maxSpeed[i],1e-9,"Reduced speed cap matches driving balance");
+        close(p.power,maxPower[i],1e-9,"Reduced engine power matches balance");
+        require(p.throttleRate<=0.65,"Throttle response is manageable");
+        require(p.frontAxle>0 && p.rearAxle<0,"Wheel position valid");
+    }
+}
+
+void testCarAcceleration() {
+    for (int i=0;i<4;++i) {
+        Simulation sim;
+        sim.selectVehicle(i);
+        const auto initial=sim.car().position;
+        for (int k=0;k<60;++k) sim.update({true,false,0,false},1./60);
+        require(sim.car().speed>35,"Car accelerates progressively within one second");
+        require(length(sim.car().position-initial)>5,"Car moves forward");
+        require(std::isfinite(sim.car().position.x),"Finite physics");
+    }
+}
+
+void testSpeedDistanceCalibration() {
+    // The speedometer and rendered displacement use the same physical unit.
+    close(3.6*kWorldScale*kTravelScale,kKmHPerSpeedUnit,1e-12,
+          "Speedometer and world-distance calibration must agree");
+    close(toKmH(1000.0),300.0,1e-9,"Speedometer 300 km/h reference");
+
+    Simulation sim;
+    sim.selectVehicle(2);
+    for(int i=0;i<10;++i)
+        sim.update({true,false,0,false},1.0/60.0);
+    const Vec2 before=sim.car().position;
+    sim.update({true,false,0,false},1.0/60.0);
+    const double worldDistance=length(sim.car().position-before);
+    const double observedKmH=worldDistance*kWorldScale*60.0*3.6;
+    close(observedKmH,std::abs(toKmH(sim.car().speed)),1e-5,
+          "Displayed speed equals world motion on starting straight");
+    require(std::isfinite(sim.car().heading),
+            "Speed calibration preserves finite steering");
+}
+
+void testGripRainAndDrift() {
+    Simulation dry,rain,braking;
+    dry.selectVehicle(2);
+    rain.selectVehicle(2);
+    braking.selectVehicle(2);
+    rain.toggleRain();
+    // Weather gradually converges; no instantaneous rain switch.
+    // Keep the comparison near the starting straight, before wall impacts
+    // can skew vehicle speed or aerodynamic grip.
+    for (int i=0;i<45;++i) {
+        dry.update({true,false,0,false},1./60);
+        rain.update({true,false,0,false},1./60);
+        braking.update({true,false,1,true},1./60);
+    }
+    require(rain.weather().rainLevel>0.3,"Weather transition");
+    require(rain.telemetry().grip<dry.telemetry().grip,"Rain reduces grip");
+    require(braking.car().speed<dry.car().speed,"Handbrake decelerates");
+    require(std::isfinite(braking.car().lateralSpeed),"Drift remains finite");
+}
+
+void testSlopeGravity() {
+    // A 10% slope should produce ~0.976 m/s² along the road, not
+    // the approximately tenfold force of the previous arcade constant.
+    const double grade=0.10;
+    const double expected=-9.81*grade/std::hypot(1.0,grade);
+    const double worldConversion=kWorldScale*kTravelScale;
+    close(slopeAcceleration(grade)*worldConversion,expected,1e-10,
+          "10% uphill gravity equals physical road-axis acceleration");
+    close(slopeAcceleration(-grade),-slopeAcceleration(grade),1e-10,
+          "Downhill gravity mirrors the climb");
+    close(slopeAcceleration(0.0),0.0,1e-12,
+          "Flat road has zero gravitational drag");
+    require(std::abs(slopeAcceleration(grade))<15.0,
+            "Moderate hill no longer removes 120 speed-units/s");
+    bool invalid=false;
+    try { (void)slopeAcceleration(std::numeric_limits<double>::quiet_NaN()); }
+    catch (const std::invalid_argument&) { invalid=true; }
+    require(invalid,"Non-finite road grade rejected");
+}
+
+void testGrassDoesNotAddLapTime() {
+    const Track track;
+    Race race;
+    Car car;
+    car.position = track.startPosition();
+    car.roadIndex = 0;
+    car.height = track.roadHeight(0);
+
+    constexpr double dt = 1.0/60.0;
+    race.tick(track, car, 4, dt);
+    close(race.elapsed, dt, 1e-12,
+          "Four wheels on grass must not add a one-second penalty");
+    race.tick(track, car, 4, dt);
+    close(race.elapsed, 2*dt, 1e-12,
+          "Staying on grass must not add a penalty either");
+    race.tick(track, car, 0, dt);
+    close(race.elapsed, 3*dt, 1e-12,
+          "Returning to tarmac must preserve real elapsed time");
+}
+
+void testFixedTiming() {
+    FixedClock clock;
+    int steps=0;
+    for (int i=0;i<10;++i) steps+=clock.consume(.1);
+    require(steps==60,"10 FPS must advance a simulated second");
+    clock.reset();
+    steps=0;
+    for (int i=0;i<120;++i) steps+=clock.consume(1./120);
+    require(steps==60,"120 FPS must advance a simulated second");
+    clock.reset();
+    require(clock.consume(.5)==8,"Extreme lag is bounded");
+    bool error=false;
+    try { clock.consume(-1); } catch(const std::invalid_argument&) { error=true; }
+    require(error,"Negative frame duration rejected");
+}
+
+void testResetAndParameters() {
+    Simulation sim;
+    sim.selectVehicle(3,1);
+    for (int i=0;i<60;++i) sim.update({true,false,0,false},1./60);
+    sim.reset();
+    require(sim.car().speed==0,"Reset stops the car");
+    require(sim.vehicleIndex()==3 && sim.colorIndex()==1,
+            "Reset preserves selection");
+    require(sim.race().laps==0,"Reset resets laps");
+    bool error=false;
+    try { sim.update({},-1); } catch(const std::invalid_argument&) { error=true; }
+    require(error,"Invalid timestep rejected");
+    sim.setBestLap(74.5);
+    sim.reset();
+    close(sim.race().bestLap,74.5,.0001,"Best lap survives reset");
+}
+
+void testBarrier() {
+    Simulation sim;
+    const auto& track=sim.track();
+    const auto idx=std::size_t(70);
+    const auto wall=track.point(idx,Track::wall+150);
+    Car impact;
+    impact.position=wall;
+    impact.heading=track.startHeading();
+    impact.speed=180;
+    track.collide(impact,1./60);
+    const auto nearest=track.info(impact.position);
+    require(nearest.distance<Track::wall+165,"Collision clamps outside world");
+    require(std::isfinite(impact.position.x),"Collision remains finite");
+}
+
+int main() {
+    try {
+        testCircuit();
+        testBridgeStructures();
+        testProfiles();
+        testCarAcceleration();
+        testSpeedDistanceCalibration();
+        testGripRainAndDrift();
+        testSlopeGravity();
+        testGrassDoesNotAddLapTime();
+        testFixedTiming();
+        testResetAndParameters();
+        testBarrier();
+        std::cout<<"11 suites de tests C++ reussies.\n";
+        return 0;
+    } catch (const std::exception& e) {
+        std::cerr<<"TEST FAILED: "<<e.what()<<'\n';
+        return 1;
+    }
+}
