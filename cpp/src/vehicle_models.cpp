@@ -261,6 +261,44 @@ void gt3(Color paint,Color glass,Color dark,bool braking) {
             {-1.13f,.685f,side*.325f},.032f,carbon);
     rearWing(-1.19f,.705f,1.12f,.245f,carbon);
 }
+
+void gt3Monster(Color glass,bool braking) {
+    const Color black{10,13,17,255};
+    const Color green{105,220,35,255};
+    const Color greenDark{48,126,24,255};
+    const Color carbon{18,22,27,255};
+    // Start with the aggressive wide-body GT3 silhouette, then apply a fixed
+    // black-and-neon-green Monster-style racing livery.
+    gt3(black,glass,carbon,braking);
+    // Sharp green bonnet blades, aligned with the bonnet surface.
+    for(float side:{-1.f,1.f}) {
+        panel({1.08f,.435f,side*.12f},{.30f,.482f,side*.19f},
+              {.12f,.484f,side*.255f},{.93f,.438f,side*.235f},green);
+        // Neon shoulder stripe continues from front arch to rear quarter.
+        box(.02f,.337f,side*.558f,.78f,.025f,.014f,green);
+        box(-.62f,.352f,side*.545f,.34f,.025f,.018f,greenDark);
+        // Three claw-like diagonal marks on each door/side panel.
+        for(int claw=0;claw<3;++claw) {
+            const float x=.12f-claw*.17f;
+            panel({x+.13f,.39f,side*.571f},
+                  {x-.03f,.39f,side*.571f},
+                  {x-.20f,.255f,side*.571f},
+                  {x-.07f,.255f,side*.571f},green);
+        }
+        // Green accents on the front canard and rear wing endplate.
+        panel({1.22f,.19f,side*.47f},{.98f,.29f,side*.57f},
+              {.91f,.25f,side*.57f},{1.16f,.15f,side*.47f},green);
+        box(-1.20f,.70f,side*.555f,.22f,.018f,.014f,green);
+    }
+    // Roof stripe and rear deck flashes make the livery visible from above.
+    box(-.20f,.795f,0,.78f,.012f,.035f,green);
+    box(-.91f,.452f,0,.38f,.012f,.08f,greenDark);
+    // Deep front splitter with a bright centre blade.
+    box(1.31f,.105f,0,.18f,.018f,.72f,green);
+    // Small roof number panel, a clean motorsport detail.
+    box(-.20f,.808f,0,.25f,.008f,.20f,{235,238,230,255});
+}
+
 void wec(Color paint,Color glass,Color dark,bool braking) {
     // Modern WEC Hypercar: low closed-cockpit prototype with sculpted fenders,
     // deep aero floor, front dive planes, cooling channels and a tall rear wing.
@@ -558,10 +596,10 @@ void wheels(const Car& car,const VehicleProfile& p,int index,bool desert=false) 
     const float axleVisualScale=index==3?1.12f:1.0f;
     const float front=float(p.frontAxle*kWorldScale*axleVisualScale);
     const float rear=float(p.rearAxle*kWorldScale*axleVisualScale);
-    constexpr std::array<float,9> sizes{{.155f,.265f,.205f,.195f,.180f,.220f,.315f,.325f,.335f}};
-    constexpr std::array<float,9> widths{{.19f,.26f,.22f,.21f,.21f,.245f,.34f,.36f,.37f}};
-    constexpr std::array<float,9> tracks{{.45f,.65f,.48f,.58f,.58f,.63f,.88f,.92f,.94f}};
-    const std::size_t slot=std::size_t(std::clamp(index,0,8));
+    constexpr std::array<float,10> sizes{{.155f,.265f,.205f,.195f,.180f,.220f,.315f,.325f,.335f,.205f}};
+    constexpr std::array<float,10> widths{{.19f,.26f,.22f,.21f,.21f,.245f,.34f,.36f,.37f,.22f}};
+    constexpr std::array<float,10> tracks{{.45f,.65f,.48f,.58f,.58f,.63f,.88f,.92f,.94f,.48f}};
+    const std::size_t slot=std::size_t(std::clamp(index,0,9));
     const float r=sizes[slot],width=widths[slot];
     const float track=std::max(float(p.halfWheelTrack*kWorldScale),tracks[slot]);
 
@@ -798,6 +836,7 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
     case 0: kart(paint);break;
     case 1: offRoad(paint,glass,dark,car.brake>.1);break;
     case 2: gt3(paint,glass,dark,car.brake>.1);break;
+    case 9: gt3Monster(glass,car.brake>.1);break;
     case 3:
         rlPushMatrix();
         rlTranslatef(0,.035f,0);
@@ -828,8 +867,8 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
         break;
     default: gt3(paint,glass,dark,car.brake>.1);break;
     }
-    const float highlightY=index==1?.82f:index==2?.445f:index==3?.285f:index==4?.80f:index==5?.39f:index>=6?.94f:.205f;
-    const float highlightZ=index==1?.47f:index==2?.49f:index==3?.34f:index==4?.48f:index==5?.36f:index>=6?.62f:.20f;
+    const float highlightY=index==1?.82f:index==2?.445f:index==3?.285f:index==4?.80f:index==5?.39f:index==9?.445f:index>=6?.94f:.205f;
+    const float highlightZ=index==1?.47f:index==2?.49f:index==3?.34f:index==4?.48f:index==5?.36f:index==9?.49f:index>=6?.62f:.20f;
     for(float side:{-1.f,1.f}) {
         DrawLine3D({.62f,highlightY,side*highlightZ},
                    {-.48f,highlightY-.012f,side*highlightZ*.94f},
