@@ -34,7 +34,7 @@ struct VehicleProfile {
     double frontAxle, rearAxle, halfWheelTrack;
     int defaultColor;
 };
-const std::array<VehicleProfile, 9>& profiles();
+const std::array<VehicleProfile, 10>& profiles();
 
 struct Controls {
     bool accelerate = false;
@@ -143,8 +143,8 @@ public:
     const Track& track() const { return track_; }
     const Car& car() const { return car_; }
     const Car& opponent() const { return opponent_; }
-    int opponentVehicleIndex() const { return vehicleIndex_==6?7:6; }
-    int opponentColorIndex() const { return vehicleIndex_==6?1:0; }
+    int opponentVehicleIndex() const { return vehicleIndex_==7?8:7; }
+    int opponentColorIndex() const { return vehicleIndex_==7?1:0; }
     const Weather& weather() const { return weather_; }
     const Race& race() const { return race_; }
     const Telemetry& telemetry() const { return telemetry_; }
