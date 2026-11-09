@@ -42,7 +42,7 @@ void HudRenderer::menu(const Simulation& sim,double time) const {
     DrawText("CHOISIS TON VEHICULE",
              w/2-210,74,27,RAYWHITE);
     const auto& cars=profiles();
-    constexpr std::array<int,5> vehicleSlots{{0,2,3,4,5}};
+    constexpr std::array<int,4> vehicleSlots{{0,2,3,5}};
     const int count=int(vehicleSlots.size());
     for (int i=0;i<count;++i) {
         const int index=vehicleSlots[std::size_t(i)];
