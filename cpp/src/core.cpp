@@ -436,8 +436,10 @@ void Simulation::update(const Controls& controls,double dt) {
         const auto& aiProfile=profiles()[opponentVehicleIndex()];
         const double steerTarget=std::clamp(headingError*.82,-.52,.52);
         opponent_.steering+=(steerTarget-opponent_.steering)*std::min(1.0,3.5*dt);
-        const double turnRate=std::max(-.82,std::min(.82,
-            opponent_.speed*std::tan(opponent_.steering)/aiProfile.wheelbase));
+        const double rawTurnRate=
+            opponent_.speed*std::tan(opponent_.steering)/aiProfile.wheelbase;
+        const double turnRate=rawTurnRate<-.82?-.82:
+                              rawTurnRate>.82?.82:rawTurnRate;
         const double aiTargetSpeed=std::clamp(820.0-std::abs(headingError)*430.0,
                                               430.0,790.0);
         opponent_.speed+=std::clamp(aiTargetSpeed-opponent_.speed,
