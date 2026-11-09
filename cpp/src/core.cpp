@@ -429,19 +429,18 @@ void Simulation::update(const Controls& controls,double dt) {
     if(track_.isBaja()) {
         const auto aiInfo=track_.info(opponent_.position);
         const std::size_t targetIndex=(aiInfo.index+22)%track_.size();
-        const Vec2 target=track_.point(targetIndex,0.0);
-        const Vec2 toTarget=target-opponent_.position;
+        const Vec2 aiTargetPoint=track_.point(targetIndex,0.0);
+        const Vec2 toTarget=aiTargetPoint-opponent_.position;
         const double targetHeading=std::atan2(toTarget.y,toTarget.x);
         const double headingError=wrapAngle(targetHeading-opponent_.heading);
         const auto& aiProfile=profiles()[opponentVehicleIndex()];
         const double steerTarget=std::clamp(headingError*.82,-.52,.52);
         opponent_.steering+=(steerTarget-opponent_.steering)*std::min(1.0,3.5*dt);
-        const double turnRate=std::clamp(
-            opponent_.speed*std::tan(opponent_.steering)/aiProfile.wheelbase,
-            -.82,.82);
-        const double targetSpeed=std::clamp(820.0-std::abs(headingError)*430.0,
-                                            430.0,790.0);
-        opponent_.speed+=std::clamp(targetSpeed-opponent_.speed,
+        const double turnRate=std::max(-.82,std::min(.82,
+            opponent_.speed*std::tan(opponent_.steering)/aiProfile.wheelbase));
+        const double aiTargetSpeed=std::clamp(820.0-std::abs(headingError)*430.0,
+                                              430.0,790.0);
+        opponent_.speed+=std::clamp(aiTargetSpeed-opponent_.speed,
                                     -720.0*dt,430.0*dt);
         opponent_.heading=wrapAngle(opponent_.heading+turnRate*dt);
         opponent_.position=opponent_.position+
@@ -450,8 +449,8 @@ void Simulation::update(const Controls& controls,double dt) {
         opponent_.jumpCooldown=std::max(0.0,opponent_.jumpCooldown-dt);
         const auto aiJumpSpot=track_.info(opponent_.position);
         const double aiProgress=double(aiJumpSpot.index)/double(track_.size());
-        for(const double target:{.08,.18,.31,.48,.62,.77,.90}) {
-            if(std::abs(aiProgress-target)<.0035 && opponent_.jumpCooldown<=0.0 &&
+        for(const double jumpProgressTarget:{.08,.18,.31,.48,.62,.77,.90}) {
+            if(std::abs(aiProgress-jumpProgressTarget)<.0035 && opponent_.jumpCooldown<=0.0 &&
                opponent_.speed>240.0) {
                 const double launchVariation=1.0+0.16*std::sin(double(aiJumpSpot.index)*.013);
                 opponent_.verticalSpeed=(58.0+opponent_.speed*.14)*launchVariation;
