@@ -821,7 +821,7 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
                            int index,int colorIndex,bool night,bool desert) const {
     // Desert uses the Trophy Truck model and its articulated long-travel suspension.
 
-    const bool baja=index>=6;
+    const bool baja=index>=7 && index<=9;
     const Vector3 p=worldPoint(car.position,float(car.jumpHeight),baja,false);
     const Color paint=palette(colorIndex);
     const Color dark{31,34,42,255};
@@ -851,7 +851,7 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
         rlPopMatrix();
         break;
     case 9:
-        trophyTruck(paint,glass,car.brake>.1,false);
+        trophyTruck(paint,glass,car.brake>.1,true);
         break;
     case 7:
         trophyTruck(paint,glass,car.brake>.1,true);
