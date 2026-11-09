@@ -596,14 +596,14 @@ void wheels(const Car& car,const VehicleProfile& p,int index,bool desert=false) 
     const float axleVisualScale=index==3?1.12f:1.0f;
     const float front=float(p.frontAxle*kWorldScale*axleVisualScale);
     const float rear=float(p.rearAxle*kWorldScale*axleVisualScale);
-    constexpr std::array<float,10> sizes{{.155f,.265f,.205f,.195f,.180f,.220f,.315f,.325f,.335f,.205f}};
-    constexpr std::array<float,10> widths{{.19f,.26f,.22f,.21f,.21f,.245f,.34f,.36f,.37f,.22f}};
-    constexpr std::array<float,10> tracks{{.45f,.65f,.48f,.58f,.58f,.63f,.88f,.92f,.94f,.48f}};
+    constexpr std::array<float,10> sizes{{.155f,.265f,.205f,.195f,.180f,.220f,.205f,.315f,.325f,.335f}};
+    constexpr std::array<float,10> widths{{.19f,.26f,.22f,.21f,.21f,.245f,.22f,.34f,.36f,.37f}};
+    constexpr std::array<float,10> tracks{{.45f,.65f,.48f,.58f,.58f,.63f,.48f,.88f,.92f,.94f}};
     const std::size_t slot=std::size_t(std::clamp(index,0,9));
     const float r=sizes[slot],width=widths[slot];
     const float track=std::max(float(p.halfWheelTrack*kWorldScale),tracks[slot]);
 
-    const bool baja=index>=6;
+    const bool baja=index>=7 && index<=9;
     const Vec2 forward{std::cos(car.heading),std::sin(car.heading)};
     const Vec2 lateral{-forward.y,forward.x};
     const float visualWheelRotation=float(car.wheelRotation)*(desert?4.0f:1.0f);
@@ -620,7 +620,7 @@ void wheels(const Car& car,const VehicleProfile& p,int index,bool desert=false) 
         if(slot==2) wheelHeight=std::clamp(wheelHeight,-.045f,.045f);
         // Trophy Truck long-travel suspension: deliberately generous wheel
         // movement while keeping the tyres beneath the chassis footprint.
-        if(slot>=6) wheelHeight=std::clamp(wheelHeight,-.78f,.48f);
+        if(slot>=7) wheelHeight=std::clamp(wheelHeight,-.78f,.48f);
         // In the flat Desert world, braking/acceleration still articulate the
         // suspension: the front compresses under braking, the rear under power.
         if(desert) {
@@ -628,7 +628,7 @@ void wheels(const Car& car,const VehicleProfile& p,int index,bool desert=false) 
             wheelHeight-=float(car.jumpHeight*kWorldScale);
             wheelHeight+=std::clamp(-float(car.pitch)*axleSign*.72f,-.16f,.16f);
         }
-        if(slot>=6) {
+        if(slot>=7) {
             const float wheelY=r+.015f+wheelHeight;
             const float railZ=side*.62f;
             const float outerZ=side*(track-.015f);
@@ -836,7 +836,7 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
     case 0: kart(paint);break;
     case 1: offRoad(paint,glass,dark,car.brake>.1);break;
     case 2: gt3(paint,glass,dark,car.brake>.1);break;
-    case 9: gt3Monster(glass,car.brake>.1);break;
+    case 6: gt3Monster(glass,car.brake>.1);break;
     case 3:
         rlPushMatrix();
         rlTranslatef(0,.035f,0);
@@ -850,7 +850,7 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
         formulaOne(paint,glass,car.brake>.1);
         rlPopMatrix();
         break;
-    case 6:
+    case 9:
         trophyTruck(paint,glass,car.brake>.1,false);
         break;
     case 7:
@@ -867,8 +867,8 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
         break;
     default: gt3(paint,glass,dark,car.brake>.1);break;
     }
-    const float highlightY=index==1?.82f:index==2?.445f:index==3?.285f:index==4?.80f:index==5?.39f:index==9?.445f:index>=6?.94f:.205f;
-    const float highlightZ=index==1?.47f:index==2?.49f:index==3?.34f:index==4?.48f:index==5?.36f:index==9?.49f:index>=6?.62f:.20f;
+    const float highlightY=index==1?.82f:index==2?.445f:index==3?.285f:index==4?.80f:index==5?.39f:index==6?.445f:index>=7?.94f:.205f;
+    const float highlightZ=index==1?.47f:index==2?.49f:index==3?.34f:index==4?.48f:index==5?.36f:index==6?.49f:index>=7?.62f:.20f;
     for(float side:{-1.f,1.f}) {
         DrawLine3D({.62f,highlightY,side*highlightZ},
                    {-.48f,highlightY-.012f,side*highlightZ*.94f},
