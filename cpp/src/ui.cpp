@@ -42,7 +42,7 @@ void HudRenderer::menu(const Simulation& sim,double time) const {
     DrawText("CHOISIS TON VEHICULE",
              w/2-210,74,27,RAYWHITE);
     const auto& cars=profiles();
-    constexpr std::array<int,4> vehicleSlots{{0,2,3,5}};
+    constexpr std::array<int,5> vehicleSlots{{0,2,3,5,9}};
     const int count=int(vehicleSlots.size());
     for (int i=0;i<count;++i) {
         const int index=vehicleSlots[std::size_t(i)];
@@ -70,7 +70,7 @@ void HudRenderer::menu(const Simulation& sim,double time) const {
                       i%2==0?ORANGE:LIME);
     }
     DrawText("PHYSIQUE ET STYLE",w-385,205,22,RAYWHITE);
-    const char* description[9] = {
+    const char* description[10] = {
         "Kart nerveux, tres leger, agilite",
         "4x4 stable, grand debattement",
         "GT3 polyvalente et efficace",
@@ -79,7 +79,8 @@ void HudRenderer::menu(const Simulation& sim,double time) const {
         "F1 legere, appui aero et suspensions apparentes",
         "Trophy Truck long-travel, V8 et gros debattement",
         "Trophy Truck spec course, chassis tubulaire renforce",
-        "Trophy Truck grand debattement, configuration desert"
+        "Trophy Truck grand debattement, configuration desert",
+        "GT3 agressive, livree Monster Energy"
     };
     DrawText(description[sim.vehicleIndex()],w-385,244,18,LIGHTGRAY);
     DrawText(TextFormat("Vitesse max : %d km/h",
