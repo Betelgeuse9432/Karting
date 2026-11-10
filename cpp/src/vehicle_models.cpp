@@ -909,7 +909,7 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
     const Vector3 p=worldPoint(car.position,float(car.jumpHeight),baja,false);
     const Color paint=palette(colorIndex);
     const Color dark{31,34,42,255};
-    const Color glass=night?Color{29,48,70,255}:Color{58,104,139,255};
+    const Color glass=night?Color{48,72,96,112}:Color{91,145,181,88};
     rlPushMatrix();
     rlTranslatef(p.x,p.y,p.z);
     rlRotatef(float(-car.heading*RAD2DEG),0,1,0);
