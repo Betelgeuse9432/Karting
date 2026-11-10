@@ -512,11 +512,22 @@ void rally(Color paint,Color glass,Color dark,bool braking) {
 }
 
 
-void formulaOne(Color paint,Color glass,bool braking) {
+void formulaOne(int livery,Color glass,bool braking) {
     const Color carbon{22,26,32,255};
-    const Color blue{25,115,255,255};
+    const Color white{235,237,232,255};
+    const Color red{220,20,35,255};
+    const Color yellow{255,205,0,255};
+    const Color navy{8,25,65,255};
+    const Color papaya{255,128,25,255};
+    const Color green{0,105,75,255};
+    const Color lime{170,220,35,255};
+    const Color primary[6] = {navy,carbon,red,papaya,green,navy};
+    const Color accent[6] = {red,lime,yellow,carbon,lime,white};
+    const Color secondary[6] = {yellow,white,white,white,white,red};
+    const int team=std::clamp(livery,0,5);
+    const Color paint=primary[team], stripe=accent[team], trim=secondary[team];
 
-    // Narrow pointed nose, raised chassis and sculpted sidepods.
+    // Formula car silhouette with a distinct team colour package.
     bodyShell({{-1.62f,.19f,.28f,.25f},
                {-1.28f,.18f,.38f,.34f},
                {-.78f,.18f,.43f,.39f},
@@ -532,19 +543,48 @@ void formulaOne(Color paint,Color glass,bool braking) {
     rod({-.35f,.60f,-.23f},{.22f,.77f,-.19f},.022f,carbon);
     rod({-.35f,.60f,.23f},{.22f,.77f,.19f},.022f,carbon);
     rod({.22f,.77f,-.19f},{.22f,.77f,.19f},.022f,carbon);
-    // Sidepods and cooling inlets.
+    // Sidepods and cooling inlets, with a bold team stripe on both sides.
     for(float side:{-1.f,1.f}) {
         box(-.02f,.31f,side*.40f,.90f,.22f,.28f,paint);
         box(.42f,.37f,side*.535f,.30f,.12f,.018f,carbon);
-        box(-.48f,.27f,side*.43f,.42f,.045f,.025f,blue);
+        box(-.48f,.27f,side*.43f,.42f,.045f,.025f,stripe);
+        box(.08f,.405f,side*.548f,.68f,.035f,.018f,stripe);
+        // Team-specific rear-quarter slash and lower sidepod trim.
+        panel({-.22f,.415f,side*.555f},{-.02f,.415f,side*.555f},
+              {-.42f,.285f,side*.555f},{-.60f,.285f,side*.555f},trim);
         // Front wing: layered flaps and endplates.
         box(1.73f,.15f,side*.48f,.36f,.045f,.12f,carbon);
-        box(1.78f,.20f,side*.48f,.27f,.025f,.11f,paint);
+        box(1.78f,.20f,side*.48f,.27f,.025f,.11f,stripe);
         box(1.67f,.17f,side*.69f,.32f,.31f,.035f,carbon);
         // Rear wing endplates and support pylons.
         box(-1.48f,.68f,side*.55f,.30f,.52f,.035f,carbon);
+        box(-1.48f,.68f,side*.574f,.20f,.22f,.012f,stripe);
         rod({-1.12f,.30f,side*.18f},{-1.40f,.66f,side*.18f},.035f,carbon);
-        // Clean sidepod silhouette without detached decorative bars.
+    }
+    // Central nose stripe, visible from the cockpit and chase cameras.
+    box(.72f,.405f,0,.95f,.014f,.075f,stripe);
+    box(1.18f,.355f,0,.55f,.012f,.15f,trim);
+    // Three Monster claws on the Monster F1 sidepods.
+    if(team==1) {
+        for(float side:{-1.f,1.f}) for(int claw=0;claw<3;++claw) {
+            const float x=.18f-claw*.105f;
+            panel({x+.08f,.425f,side*.562f},{x+.015f,.425f,side*.562f},
+                  {x-.105f,.315f,side*.562f},{x-.045f,.315f,side*.562f},lime);
+        }
+    }
+    // Ferrari shield-like yellow side flashes; McLaren papaya centre blade;
+    // Aston Martin carries a lime pinstripe, while Racing Bulls gets a red-white split.
+    if(team==2) {
+        for(float side:{-1.f,1.f})
+            box(-.78f,.285f,side*.552f,.26f,.055f,.014f,yellow);
+    } else if(team==3) {
+        box(-.12f,.405f,0,.76f,.018f,.11f,trim);
+    } else if(team==4) {
+        for(float side:{-1.f,1.f})
+            box(.12f,.425f,side*.553f,.78f,.018f,.012f,lime);
+    } else if(team==5) {
+        for(float side:{-1.f,1.f})
+            box(-.50f,.305f,side*.555f,.48f,.025f,.014f,red);
     }
     // Central exhaust outlet integrated into the rear diffuser.
     box(-1.60f,.245f,0,.16f,.11f,.22f,carbon);
@@ -553,10 +593,10 @@ void formulaOne(Color paint,Color glass,bool braking) {
     // Rear diffuser and a broad, two-element rear wing.
     box(-1.43f,.15f,0,.35f,.08f,.88f,carbon);
     box(-1.57f,.83f,0,.30f,.045f,1.28f,carbon);
-    box(-1.53f,.89f,0,.25f,.025f,1.22f,paint);
+    box(-1.53f,.89f,0,.25f,.025f,1.22f,stripe);
     // Small front suspension fairing and nose tip.
     box(1.80f,.22f,0,.18f,.07f,.20f,carbon);
-    box(1.87f,.25f,0,.09f,.035f,.12f,paint);
+    box(1.87f,.25f,0,.09f,.035f,.12f,stripe);
 }
 
 void trophyTruck(Color paint,Color glass,bool braking,bool second) {
@@ -892,7 +932,7 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
     case 5:
         rlPushMatrix();
         rlScalef(.88f,.90f,.90f);
-        formulaOne(paint,glass,car.brake>.1);
+        formulaOne(colorIndex,glass,car.brake>.1);
         rlPopMatrix();
         break;
     case 9:
