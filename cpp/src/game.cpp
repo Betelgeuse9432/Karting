@@ -166,11 +166,11 @@ void Game::handleMenu() {
         menuScreen_=MenuScreen::Mode;
         return;
     }
-    constexpr std::array<int,6> vehicleSlots{{0,2,3,5,6,10}};
+    constexpr std::array<int,5> vehicleSlots{{0,2,5,6,10}};
     const auto current=std::find(vehicleSlots.begin(),vehicleSlots.end(),sim_.vehicleIndex());
     const int selected=current==vehicleSlots.end()?1:int(current-vehicleSlots.begin());
-    if (left) sim_.selectVehicle(vehicleSlots[std::size_t((selected+5)%6)]);
-    else if (right) sim_.selectVehicle(vehicleSlots[std::size_t((selected+1)%6)]);
+    if (left) sim_.selectVehicle(vehicleSlots[std::size_t((selected+4)%5)]);
+    else if (right) sim_.selectVehicle(vehicleSlots[std::size_t((selected+1)%5)]);
     if (IsKeyPressed(KEY_UP))
         sim_.selectVehicle(sim_.vehicleIndex(),(sim_.colorIndex()+5)%6);
     else if (IsKeyPressed(KEY_DOWN)||IsKeyPressed(KEY_C))
