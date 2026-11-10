@@ -255,6 +255,53 @@ std::optional<double> Race::tick(const Track& track,const Car& car,int outside,d
 
 Simulation::Simulation() { reset(false); }
 
+VehicleProfile Simulation::profile() const {
+    VehicleProfile p=profiles().at(std::size_t(vehicleIndex_));
+    if (vehicleIndex_!=2) return p;
+
+    // Five GT3 liveries are also five distinct race setups.
+    switch (colorIndex_) {
+    case 0: // Endurance: stable, kind to the tyres and strong under braking.
+        p.name="GT3 ENDURANCE";
+        p.brakeForce*=1.08;
+        p.frontGrip*=1.035;
+        p.rearGrip*=1.045;
+        p.throttleRate*=.96;
+        p.topSpeed*=.985;
+        break;
+    case 1: // Sprint: sharper response and stronger acceleration.
+        p.name="GT3 SPRINT";
+        p.power*=1.055;
+        p.throttleRate*=1.10;
+        p.brakeForce*=.97;
+        p.rearGrip*=.985;
+        break;
+    case 2: // Aero: more cornering grip and downforce, slightly less top speed.
+        p.name="GT3 AERO";
+        p.downforce*=1.22;
+        p.frontGrip*=1.055;
+        p.rearGrip*=1.055;
+        p.topSpeed*=.975;
+        p.power*=.985;
+        break;
+    case 3: // Balanced: the original factory setup.
+        p.name="GT3 BALANCED";
+        break;
+    case 4: // Qualifying: low drag and punchier engine, more demanding tyres.
+        p.name="GT3 QUALIF";
+        p.topSpeed*=1.035;
+        p.power*=1.035;
+        p.downforce*=.91;
+        p.frontGrip*=.975;
+        p.rearGrip*=.955;
+        p.brakeForce*=.98;
+        break;
+    default:
+        break;
+    }
+    return p;
+}
+
 void Simulation::setMode(int mode) {
     (void)mode;
     track_ = Track();
