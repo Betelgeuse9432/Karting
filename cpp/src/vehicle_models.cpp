@@ -277,20 +277,38 @@ void gt3Monster(Color glass,bool braking) {
         // Neon shoulder stripe continues from front arch to rear quarter.
         box(.02f,.337f,side*.558f,.78f,.025f,.014f,green);
         box(-.62f,.352f,side*.545f,.34f,.025f,.018f,greenDark);
-        // Three claw-like diagonal marks on each door/side panel.
+        // Large three-claw Monster marks on both doors.
+        // Each stroke has a sharp, stepped silhouette so the logo reads at race distance.
         for(int claw=0;claw<3;++claw) {
-            const float x=.12f-claw*.17f;
-            panel({x+.13f,.39f,side*.571f},
-                  {x-.03f,.39f,side*.571f},
-                  {x-.20f,.255f,side*.571f},
-                  {x-.07f,.255f,side*.571f},green);
+            const float x=.28f-claw*.19f;
+            panel({x+.105f,.405f,side*.574f},
+                  {x+.015f,.405f,side*.574f},
+                  {x-.105f,.275f,side*.574f},
+                  {x-.035f,.275f,side*.574f},green);
+            panel({x+.015f,.405f,side*.574f},
+                  {x-.055f,.405f,side*.574f},
+                  {x-.155f,.315f,side*.574f},
+                  {x-.095f,.315f,side*.574f},greenDark);
         }
         // Green accents on the front canard and rear wing endplate.
         panel({1.22f,.19f,side*.47f},{.98f,.29f,side*.57f},
               {.91f,.25f,side*.57f},{1.16f,.15f,side*.47f},green);
         box(-1.20f,.70f,side*.555f,.22f,.018f,.014f,green);
     }
-    // Roof stripe and rear deck flashes make the livery visible from above.
+    // A large three-claw Monster mark on the bonnet, visible from chase cameras.
+    for(int claw=0;claw<3;++claw) {
+        const float z=(claw-1)*.16f;
+        panel({.91f,.447f,z-.035f},{.91f,.447f,z+.035f},
+              {.61f,.458f,z+.095f},{.66f,.458f,z+.025f},green);
+        panel({.61f,.458f,z+.095f},{.66f,.458f,z+.025f},
+              {.39f,.468f,z+.12f},{.43f,.468f,z+.065f},green);
+    }
+    // A smaller matching mark on the roof, plus green roof/rear-deck flashes.
+    for(int claw=0;claw<3;++claw) {
+        const float z=(claw-1)*.055f;
+        panel({-.04f,.802f,z-.018f},{-.04f,.802f,z+.018f},
+              {-.25f,.802f,z+.038f},{-.21f,.802f,z+.008f},green);
+    }
     box(-.20f,.795f,0,.78f,.012f,.035f,green);
     box(-.91f,.452f,0,.38f,.012f,.08f,greenDark);
     // Deep front splitter with a bright centre blade.
