@@ -14,8 +14,11 @@ void Effects::update(const Simulation& sim, double dt) {
     const auto& car=sim.car();
     const auto& p=sim.profile();
     const auto& telemetry=sim.telemetry();
-    const bool skid=telemetry.drifting || telemetry.rearSlip ||
-                    telemetry.frontSlip || car.brake>.9;
+    const bool sustainedSlide=std::abs(car.lateralSpeed)>14.0 &&
+                              (telemetry.rearSlip || std::abs(car.steering)>.10);
+    const bool hardBrakeLock=car.brake>.97 && telemetry.frontSlip &&
+                             car.speed>200.0;
+    const bool skid=telemetry.drifting || sustainedSlide || hardBrakeLock;
     const Vec2 forward{std::cos(car.heading),std::sin(car.heading)};
     const Vec2 side{-forward.y,forward.x};
     const auto wheelPosition=[&](int k) {
