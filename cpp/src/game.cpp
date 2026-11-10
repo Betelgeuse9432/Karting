@@ -205,6 +205,7 @@ void Game::handleMenu() {
         sim_.selectVehicle(sim_.vehicleIndex(),(sim_.colorIndex()+1)%6);
 
     if (confirm) {
+        cockpitView_=false;
         menu_=false;
         reset();
     }
@@ -213,6 +214,7 @@ void Game::handleMenu() {
 void Game::handleRace() {
     if (IsKeyPressed(KEY_R)) reset();
     if (returnToMenuPressed()) {
+        cockpitView_=false;
         menu_=true;
         menuScreen_=MenuScreen::Mode;
         reset();
