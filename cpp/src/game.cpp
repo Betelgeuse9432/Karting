@@ -300,9 +300,10 @@ void Game::renderRace() {
     BeginMode3D(camera_);
     // Distant 3D sun: it travels through the world sky instead of being
     // painted at a fixed screen coordinate over the camera.
-    const float sunPhase=float(gameTime_*.006+.9);
-    const Vector3 sunDirection{std::cos(sunPhase)*.82f,
-                               std::sin(sunPhase)*.82f,-.42f};
+    const float sunPhase=float(gameTime_*.002);
+    const Vector3 sunDirection{std::cos(sunPhase)*.62f,
+                               1.05f-2.1f*n,
+                               std::sin(sunPhase)*.62f};
     const Vector3 sunPosition{
         camera_.position.x+sunDirection.x*3000.f*kScale,
         camera_.position.y+sunDirection.y*3000.f*kScale,
