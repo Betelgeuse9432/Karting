@@ -85,7 +85,7 @@ void HudRenderer::menu(const Simulation& sim,double time) const {
     };
     DrawText(description[sim.vehicleIndex()],w-385,244,18,LIGHTGRAY);
     DrawText(TextFormat("Vitesse max : %d km/h",
-             int(p.topSpeed*.3)),w-385,280,19,RAYWHITE);
+             int(p.topSpeed*0.0648)),w-385,280,19,RAYWHITE);
     DrawText(TextFormat("Puissance : %.0f (jeu)",p.power),
              w-385,309,19,RAYWHITE);
     DrawText("PEINTURE",w/2-110,h-142,22,RAYWHITE);
