@@ -297,12 +297,12 @@ void WorldRenderer::initialize(const Track& track) {
     for (std::size_t i=0;i<track.size();i+=13) {
         for (int side:{-1,1}) {
             const auto p=track.point(i,side*(Track::wall+170)+noise(rng));
-            if (p.x>100 && p.y>100 && p.x<9900 && p.y<8900 &&
+            if (p.x>-1800 && p.y>-1800 && p.x<11800 && p.y<9800 &&
                 track.info(p).distance>Track::wall+35)
                 trees_.push_back(p);
         }
     }
-    std::uniform_real_distribution<double> x(0,10000), y(0,9000);
+    std::uniform_real_distribution<double> x(-1800,11800), y(-1800,9800);
     for (int i=0;i<300;++i) {
         const Vec2 p{x(rng),y(rng)};
         if (track.info(p).distance>Track::wall+140) trees_.push_back(p);
@@ -343,10 +343,12 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
                                          : (quality==0?8:quality==1?11:quality==2?14:17);
     for(int gx=baseX-terrainRadius;gx<=baseX+terrainRadius;++gx) {
         for(int gz=baseZ-terrainRadius;gz<=baseZ+terrainRadius;++gz) {
-            const double x0=std::max(0.0,gx*tile);
-            const double z0=std::max(0.0,gz*tile);
-            const double x1=std::min(10000.0,(gx+1)*tile);
-            const double z1=std::min(9000.0,(gz+1)*tile);
+            // Terrain tiles continue seamlessly beyond the nominal circuit bounds.
+            // This prevents a visible world edge near the far side of the lap.
+            const double x0=gx*tile;
+            const double z0=gz*tile;
+            const double x1=(gx+1)*tile;
+            const double z1=(gz+1)*tile;
             if(x1<=x0 || z1<=z0) continue;
             const auto a=worldPoint({x0,z0},-2.5f,track.isBaja());
             const auto b=worldPoint({x1,z0},-2.5f,track.isBaja());
