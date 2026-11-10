@@ -240,16 +240,16 @@ void Game::follow(double dt) {
     const Vec2 forward{std::cos(car.heading),std::sin(car.heading)};
     const double ground=sim_.isBaja()?bajaElevation(car.position):sim_.isDesert()?0.0:elevation(car.position);
     if(cockpitView_) {
-        const double cockpitHeight=sim_.vehicleIndex()==0?.39:.53;
-        const Vec2 eye=car.position+forward*.18;
-        camera_.position={float(eye.x*kWorldScale),
-                          float((ground+car.jumpHeight+cockpitHeight)*kWorldScale),
-                          float(eye.y*kWorldScale)};
+        // Vehicle model heights are already expressed in rendered world units;
+        // only terrain elevation and vehicle travel are converted by kWorldScale.
+        const int index=sim_.vehicleIndex();
+        const double cockpitHeight=index==0?.58:(index==5?.66:.62);
+        const Vec2 eye=car.position+forward*.10;
+        const float eyeY=float((ground+car.jumpHeight)*kWorldScale+cockpitHeight);
+        camera_.position={float(eye.x*kWorldScale),eyeY,float(eye.y*kWorldScale)};
         const Vec2 look=car.position+forward*35.0;
-        camera_.target={float(look.x*kWorldScale),
-                        float((ground+car.jumpHeight+cockpitHeight+1.1)*kWorldScale),
-                        float(look.y*kWorldScale)};
-        camera_.fovy=84.f;
+        camera_.target={float(look.x*kWorldScale),eyeY-.035f,float(look.y*kWorldScale)};
+        camera_.fovy=76.f;
     } else {
         const Vec2 behind{std::cos(followAngle_),std::sin(followAngle_)};
         const Vec2 view=car.position-behind*spec.cameraDistance;
