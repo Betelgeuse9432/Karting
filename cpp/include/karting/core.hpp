@@ -77,9 +77,10 @@ public:
     static constexpr double pitWidth = 180;
     static constexpr int subdivisions = 45;
 
-    explicit Track(bool baja = false, bool desert = false);
+    explicit Track(bool baja = false, bool desert = false, int layout = 0);
     bool isBaja() const { return baja_; }
     bool isDesert() const { return desert_; }
+    int layoutIndex() const { return layout_; }
     const std::vector<Vec2>& center() const { return center_; }
     const std::vector<Vec2>& normals() const { return normals_; }
     const std::vector<double>& heights() const { return heights_; }
@@ -102,6 +103,7 @@ private:
     double length_ = 0;
     bool baja_ = false;
     bool desert_ = false;
+    int layout_ = 0;
 };
 
 struct Weather {
@@ -155,6 +157,7 @@ public:
     int vehicleIndex() const { return vehicleIndex_; }
     int colorIndex() const { return colorIndex_; }
     void selectVehicle(int index, int color = -1);
+    void selectTrack(int layout);
     void setMode(int mode);
     bool isBaja() const { return track_.isBaja(); }
     bool isDesert() const { return track_.isDesert(); }
