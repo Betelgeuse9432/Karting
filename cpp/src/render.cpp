@@ -632,7 +632,7 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
             DrawCylinderEx(base,top,.38f,.30f,8,concrete);
         }
         // Heavy outer wall around the long corner, with an advance warning sign.
-        for(double progress=.515;progress<.585;progress+=.004) {
+        for(double progress=.445;progress<.485;progress+=.004) {
             const auto a=pointAt(progress,Track::halfWidth+24,.15f);
             const auto b=pointAt(progress+.004,Track::halfWidth+24,.15f);
             const auto at=pointAt(progress,Track::halfWidth+24,1.65f);
@@ -640,10 +640,10 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
             quad(a,b,bt,at,shaded({188,194,201,255},1-night*.35f));
             DrawLine3D(at,bt,Fade(WHITE,1-night*.3f));
         }
-        const auto signBase=pointAt(.495,-Track::halfWidth-42,.1f);
-        const auto signTop=pointAt(.495,-Track::halfWidth-42,3.6f);
+        const auto signBase=pointAt(.425,-Track::halfWidth-42,.1f);
+        const auto signTop=pointAt(.425,-Track::halfWidth-42,3.6f);
         DrawCylinderEx(signBase,signTop,.12f,.12f,8,concrete);
-        const auto signFace=pointAt(.495,-Track::halfWidth-42,3.05f);
+        const auto signFace=pointAt(.425,-Track::halfWidth-42,3.05f);
         DrawCubeV(signFace,{3.9f,.95f,.18f},Color{246,190,35,255});
         DrawTriangle3D({signFace.x-1.25f,signFace.y-.28f,signFace.z-.11f},
                         {signFace.x-.35f,signFace.y+.30f,signFace.z-.11f},
