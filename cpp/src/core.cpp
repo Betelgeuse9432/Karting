@@ -326,7 +326,7 @@ void Simulation::update(const Controls& controls,double dt) {
     const double grip=downforce*(1-0.3*weather_.rainLevel)*(1-p.grassGrip*off/4.0);
     const double frontGrip=std::max(1.0,p.frontGrip*grip);
     const double rearGrip=std::max(1.0,p.rearGrip*grip);
-    const double maxSteer=p.maxSteer/(1+std::abs(v)/p.steerSensitivity);
+    const double maxSteer=p.maxSteer/(1+std::abs(v)/(p.steerSensitivity*1.25));
     car_.steering+=(std::clamp(controls.steer,-1,1)*maxSteer-car_.steering)*
                     std::min(1.0,8*dt);
     double rotation=v*std::tan(car_.steering)/p.wheelbase;
@@ -350,7 +350,7 @@ void Simulation::update(const Controls& controls,double dt) {
         motor*=rearGrip/rearUse;
     }
     // Grass strongly washes out steering, preventing sharp turns off-track.
-    rotation *= 1.0 - 0.85 * (double(off) / 4.0);
+    rotation *= 1.0 - 0.45 * (double(off) / 4.0);
 
     const auto groundHeight=[&](Vec2 point){return track_.isBaja()?bajaElevation(point):track_.isDesert()?0.0:elevation(point);};
     const double slope=(groundHeight(oldPosition+forward*6)-groundHeight(oldPosition))/6;
@@ -366,7 +366,7 @@ void Simulation::update(const Controls& controls,double dt) {
     const double dAngle=rotation*dt;
     if (std::abs(car_.lateralSpeed)>.01) {
         double side=car_.lateralSpeed*std::cos(dAngle)-car_.speed*std::sin(dAngle);
-        const double recovery=950;
+        const double recovery=950.0+double(off)*180.0;
         side=std::copysign(std::max(0.0,std::abs(side)-recovery*dt),side);
         car_.lateralSpeed=std::abs(side)>=.01?side:0.0;
     } else car_.lateralSpeed=0;
