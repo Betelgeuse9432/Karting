@@ -70,6 +70,7 @@ public:
     void draw(const Simulation& sim, int quality, int fps) const;
     void modeMenu(int selectedMode, double time) const;
     void menu(const Simulation& sim, double time) const;
+    void trackMenu(const Track& track, double time) const;
 };
 
 enum class MenuScreen { Mode, Vehicle, Track };
