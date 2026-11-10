@@ -88,10 +88,20 @@ void HudRenderer::menu(const Simulation& sim,double time) const {
              int(p.topSpeed*0.0648)),w-385,280,19,RAYWHITE);
     DrawText(TextFormat("Puissance : %.0f (jeu)",p.power),
              w-385,309,19,RAYWHITE);
-    DrawText("PEINTURE",w/2-110,h-142,22,RAYWHITE);
+    const bool f1Liveries=sim.vehicleIndex()==5;
+    DrawText(f1Liveries?"LIVREES F1":"PEINTURE",w/2-110,h-142,22,RAYWHITE);
+    const std::array<Color,6> f1Colors{{
+        {8,25,65,255}, {10,13,17,255}, {220,20,35,255},
+        {255,128,25,255}, {0,105,75,255}, {8,25,65,255}
+    }};
+    const std::array<const char*,6> f1Names{{
+        "RED BULL","MONSTER","FERRARI","MCLAREN","ASTON","R.BULLS"
+    }};
     for (int i=0;i<6;++i) {
         const int x=w/2-163+i*54;
-        DrawRectangle(x,h-107,43,35,palette(i));
+        if(f1Liveries)
+            DrawText(f1Names[std::size_t(i)],x-5,h-126,9,RAYWHITE);
+        DrawRectangle(x,h-107,43,35,f1Liveries?f1Colors[std::size_t(i)]:palette(i));
         if (i==sim.colorIndex())
             DrawRectangleLines(x-4,h-111,51,43,RAYWHITE);
     }
