@@ -72,7 +72,7 @@ public:
     void menu(const Simulation& sim, double time) const;
 };
 
-enum class MenuScreen { Mode, Vehicle };
+enum class MenuScreen { Mode, Vehicle, Track };
 
 class Game {
 public:
