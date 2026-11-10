@@ -963,7 +963,8 @@ void wheels(const Car& car,const VehicleProfile& p,int index,bool desert=false) 
 } // namespace
 
 void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
-                           int index,int colorIndex,bool night,bool desert) const {
+                           int index,int colorIndex,bool night,bool desert,
+                           bool tunnelLights) const {
     // Desert uses the Trophy Truck model and its articulated long-travel suspension.
 
     const bool baja=index>=7 && index<=9;
@@ -1019,6 +1020,18 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
         DrawLine3D({.62f,highlightY,side*highlightZ},
                    {-.48f,highlightY-.012f,side*highlightZ*.94f},
                    {255,255,255,36});
+    }
+    if(tunnelLights) {
+        // Broad, soft headlight cones become visible only inside Highland's tunnel.
+        const Color beam{255,244,190,34};
+        const Vector3 nearLeft{1.28f,.055f,-.18f};
+        const Vector3 nearRight{1.28f,.055f,.18f};
+        const Vector3 farLeft{15.5f,.025f,-2.35f};
+        const Vector3 farRight{15.5f,.025f,2.35f};
+        DrawTriangle3D(nearLeft,farLeft,farRight,beam);
+        DrawTriangle3D(nearLeft,farRight,nearRight,beam);
+        DrawTriangle3D(nearLeft,farRight,farLeft,Fade(beam,.45f));
+        DrawTriangle3D(nearLeft,nearRight,farRight,Fade(beam,.45f));
     }
     wheels(car,profile,index,desert);
     rlPopMatrix();
