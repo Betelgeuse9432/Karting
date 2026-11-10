@@ -46,15 +46,15 @@ const std::array<VehicleProfile, 11>& profiles() {
          0.00005, 0.03, 0.4, 0.2, 0.5, 48, 125, 17, -15, 18, 0},
         {"4x4", 680, 1050, 1.15, 1.3, 560, 600, 650, 0.05, 52, 0.5, 150,
          0.0003, 0.12, 1.8, 0.04, 0.1, 85, 175, 30, -30, 26, 5},
-        {"GT3", 4200, 3600, 0.95, 1.05, 1050, 740, 780, 0.24, 46, 0.55, 150,
+        {"GT3", 4200, 3600, 0.95, 1.05, 1050, 740, 780, 0.34, 46, 0.55, 150,
          0.00012, 0.07, 1.0, 0.18, 0.45, 65, 150, 50, -48, 21, 3},
-        {"WEC", 4100, 3400, 0.90, 1.10, 1450, 760, 800, 0.23, 50, 0.5, 140,
+        {"WEC", 4100, 3400, 0.90, 1.10, 1450, 760, 800, 0.32, 50, 0.5, 140,
          0.00008, 0.05, 0.6, 0.3, 0.6, 58, 160, 30, -30, 22, 1},
         {"RALLY", 1120, 2200, 1.55, 2.0, 920, 900, 980, 0.22, 48, 0.48, 165,
          0.00018, 0.09, 1.2, 0.08, 0.22, 62, 145, 34, -32, 25, 5},
-        {"F1", 5000, 4200, 0.85, 1.10, 1550, 1180, 1280, 0.16, 38, 0.85, 65,
+        {"F1", 5000, 4200, 0.85, 1.10, 1550, 1180, 1280, 0.22, 38, 0.85, 65,
          0.00010, 0.045, 0.55, 0.12, 0.14, 55, 155, 56, -52, 37, 1},
-        {"GT3 MONSTER", 4300, 3700, 0.95, 1.05, 1100, 755, 800, 0.24, 46, 0.54, 152,
+        {"GT3 MONSTER", 4300, 3700, 0.95, 1.05, 1100, 755, 800, 0.34, 46, 0.54, 152,
          0.00011, 0.068, 0.95, 0.17, 0.43, 65, 150, 50, -48, 21, 0},
         {"TROPHY 1", 980, 1850, 0.78, 1.55, 720, 470, 500, 0.015, 64, 0.62, 175,
          0.00032, 0.15, 2.1, 0.015, 0.08, 105, 205, 63, -61, 48, 5},
@@ -62,7 +62,7 @@ const std::array<VehicleProfile, 11>& profiles() {
          0.00030, 0.14, 2.0, 0.015, 0.08, 110, 212, 66, -64, 50, 1},
         {"TROPHY 3", 1010, 2050, 0.80, 1.58, 790, 485, 540, 0.012, 66, 0.61, 178,
          0.00031, 0.145, 2.05, 0.015, 0.08, 108, 210, 65, -63, 51, 2},
-        {"GT3 RED BULL", 4350, 3750, 0.95, 1.05, 1120, 770, 815, 0.24, 46, 0.54, 152,
+        {"GT3 RED BULL", 4350, 3750, 0.95, 1.05, 1120, 770, 815, 0.34, 46, 0.54, 152,
          0.00011, 0.068, 0.95, 0.17, 0.43, 65, 150, 50, -48, 21, 1}
     }};
     return cars;
@@ -317,7 +317,7 @@ void Simulation::update(const Controls& controls,double dt) {
     const double throttleTarget=controls.accelerate?1.0:0.0;
     const double brakeTarget=controls.brake?1.0:0.0;
     const double throttleResponse=1.0-std::exp(-(controls.accelerate?p.throttleRate:2.4)*dt);
-    const double brakeResponse=1.0-std::exp(-(controls.brake?p.brakeRate:2.0)*dt);
+    const double brakeResponse=1.0-std::exp(-(controls.brake?std::max(p.brakeRate,4.0):2.0)*dt);
     car_.throttle+=(throttleTarget-car_.throttle)*throttleResponse;
     car_.brake+=(brakeTarget-car_.brake)*brakeResponse;
 
@@ -343,7 +343,7 @@ void Simulation::update(const Controls& controls,double dt) {
     const bool rearSlip=rearUse>rearGrip;
     if (rearSlip) {
         const double excess=rearUse/rearGrip-1;
-        rotation*=1+0.65*std::min(excess,1.0);
+        rotation*=1+1.0*std::min(excess,0.8);
         motor*=rearGrip/rearUse;
     }
     // Grass should make the car wash wide instead of turning sharply.
@@ -404,7 +404,7 @@ void Simulation::update(const Controls& controls,double dt) {
     const double impact=track_.collide(car_,dt);
     car_.brakeHeat=std::clamp(car_.brakeHeat+
             (car_.brake>.05 && car_.speed>0?
-                 car_.brake*(std::abs(car_.speed)/p.topSpeed)*1.6*dt :
+                 car_.brake*(std::abs(car_.speed)/p.topSpeed)*2.8*dt :
                  -0.4*dt),0.0,1.0);
     if (before.pits) car_.brakeHeat=0;
 
