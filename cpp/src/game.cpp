@@ -269,9 +269,6 @@ void Game::renderRace() {
     top=lerp(top,{76,85,100,255},r*.6f);
     bottom=lerp(bottom,{108,115,130,255},r*.6f);
     DrawRectangleGradientV(0,0,width,height,top,bottom);
-    if (n<.8f && r<.8f) {
-        const float visibility=(1-r)*(1-n*.6f);
-    }
     if (n>.5f && r<.6f) {
         const float starVisibility=(n-.5f)*2*(1-r);
         for (int i=0;i<90;++i) {
