@@ -151,7 +151,7 @@ public:
     double boostTimeRemaining() const { return boostTimeRemaining_; }
     int boostsRemaining() const { return boostsRemaining_; }
     bool boostActive() const { return boostTimeRemaining_ > 0.0; }
-    const VehicleProfile& profile() const { return profiles().at(vehicleIndex_); }
+    VehicleProfile profile() const;
     int vehicleIndex() const { return vehicleIndex_; }
     int colorIndex() const { return colorIndex_; }
     void selectVehicle(int index, int color = -1);
