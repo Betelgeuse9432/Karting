@@ -262,6 +262,67 @@ void gt3(Color paint,Color glass,Color dark,bool braking) {
     rearWing(-1.19f,.705f,1.12f,.245f,carbon);
 }
 
+void gt3Livery(int scheme,Color glass,bool braking) {
+    const std::array<Color,5> paints{{
+        {8,91,112,255},       // Gulf-inspired turquoise
+        {190,22,34,255},      // Rosso sprint
+        {224,226,218,255},    // Ivory aero
+        {18,48,105,255},      // Blue racing
+        {242,174,18,255}      // Yellow qualifying
+    }};
+    const Color carbon{19,23,29,255};
+    const Color accent=std::array<Color,5>{{
+        {238,112,35,255},{248,207,45,255},{35,112,76,255},
+        {224,35,48,255},{24,28,35,255}
+    }}[std::size_t(std::clamp(scheme,0,4))];
+    const int id=std::clamp(scheme,0,4);
+    gt3(paints[std::size_t(id)],glass,carbon,braking);
+
+    // Broad, body-following graphics: hood stripe, door band and rear-quarter flash.
+    const Color stripe=accent;
+    if(id==0) {
+        box(.69f,.457f,0,.64f,.010f,.105f,stripe);
+        box(.02f,.343f,.566f,.92f,.018f,.012f,stripe);
+        box(.02f,.343f,-.566f,.92f,.018f,.012f,stripe);
+        box(-.76f,.37f,0,.32f,.012f,.22f,{238,238,225,255});
+    } else if(id==1) {
+        panel({1.12f,.425f,-.10f},{.28f,.478f,-.16f},
+              {-.10f,.48f,-.23f},{.88f,.44f,-.25f},stripe);
+        panel({1.12f,.425f,.10f},{.28f,.478f,.16f},
+              {-.10f,.48f,.23f},{.88f,.44f,.25f},stripe);
+        for(float side:{-1.f,1.f})
+            box(.08f,.355f,side*.566f,.95f,.018f,.012f,stripe);
+    } else if(id==2) {
+        for(float side:{-1.f,1.f}) {
+            box(.20f,.481f,side*.28f,.82f,.009f,.035f,stripe);
+            panel({.66f,.405f,side*.574f},{.16f,.405f,side*.574f},
+                  {-.36f,.29f,side*.574f},{.18f,.29f,side*.574f},stripe);
+            box(-.22f,.798f,side*.12f,.52f,.008f,.025f,accent);
+        }
+    } else if(id==3) {
+        for(int band=0;band<3;++band) {
+            const float z=(band-1)*.095f;
+            box(.12f,.483f,z,.92f,.009f,.028f,
+                band==1?Color{245,245,238,255}:stripe);
+        }
+        for(float side:{-1.f,1.f})
+            box(-.08f,.35f,side*.568f,.78f,.016f,.012f,stripe);
+    } else {
+        panel({1.15f,.42f,-.18f},{.30f,.477f,-.26f},
+              {-.16f,.48f,-.36f},{.78f,.44f,-.39f},stripe);
+        panel({1.15f,.42f,.18f},{.30f,.477f,.26f},
+              {-.16f,.48f,.36f},{.78f,.44f,.39f},stripe);
+        for(float side:{-1.f,1.f}) {
+            box(.02f,.35f,side*.566f,.80f,.025f,.012f,carbon);
+            box(-.83f,.40f,side*.40f,.25f,.018f,.018f,stripe);
+        }
+    }
+    // Matching wing endplates and splitter details finish each package.
+    for(float side:{-1.f,1.f})
+        box(-1.20f,.70f,side*.555f,.23f,.018f,.014f,accent);
+    box(1.31f,.105f,0,.18f,.016f,.66f,accent);
+}
+
 void gt3Monster(Color glass,bool braking) {
     const Color black{10,13,17,255};
     const Color green{105,220,35,255};
@@ -919,7 +980,7 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
     switch(index) {
     case 0: kart(paint);break;
     case 1: offRoad(paint,glass,dark,car.brake>.1);break;
-    case 2: gt3(paint,glass,dark,car.brake>.1);break;
+    case 2: gt3Livery(colorIndex,glass,car.brake>.1);break;
     case 6: gt3Monster(glass,car.brake>.1);break;
     case 10: gt3RedBull(glass,car.brake>.1);break;
     case 3:
