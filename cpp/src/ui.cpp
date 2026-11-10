@@ -42,7 +42,7 @@ void HudRenderer::menu(const Simulation& sim,double time) const {
     DrawText("CHOISIS TON VEHICULE",
              w/2-210,74,27,RAYWHITE);
     const auto& cars=profiles();
-    constexpr std::array<int,5> vehicleSlots{{0,2,3,5,6}};
+    constexpr std::array<int,6> vehicleSlots{{0,2,3,5,6,10}};
     const int count=int(vehicleSlots.size());
     for (int i=0;i<count;++i) {
         const int index=vehicleSlots[std::size_t(i)];
@@ -70,7 +70,7 @@ void HudRenderer::menu(const Simulation& sim,double time) const {
                       i%2==0?ORANGE:LIME);
     }
     DrawText("PHYSIQUE ET STYLE",w-385,205,22,RAYWHITE);
-    const char* description[10] = {
+    const char* description[11] = {
         "Kart nerveux, tres leger, agilite",
         "4x4 stable, grand debattement",
         "GT3 polyvalente et efficace",
@@ -80,7 +80,8 @@ void HudRenderer::menu(const Simulation& sim,double time) const {
         "GT3 agressive, livree Monster Energy",
         "Trophy Truck long-travel, V8 et gros debattement",
         "Trophy Truck spec course, chassis tubulaire renforce",
-        "Trophy Truck grand debattement, configuration desert"
+        "Trophy Truck grand debattement, configuration desert",
+        "GT3 Red Bull, livree bleu, rouge et jaune"
     };
     DrawText(description[sim.vehicleIndex()],w-385,244,18,LIGHTGRAY);
     DrawText(TextFormat("Vitesse max : %d km/h",
@@ -167,7 +168,7 @@ void HudRenderer::draw(const Simulation& sim,int quality,int fps) const {
     DrawLineEx({cx,cy},{cx+std::cos(angle)*(r-23),cy+std::sin(angle)*(r-23)},
                4,GOLD);
     DrawCircleV({cx,cy},7,RAYWHITE);
-    DrawText(TextFormat("%03d",int(std::abs(car.speed)*.3)),
+    DrawText(TextFormat("%03d",int(std::abs(car.speed)*0.0648)),
              int(cx-38),int(cy+27),32,RAYWHITE);
     DrawText("km/h",int(cx-22),int(cy+62),15,LIGHTGRAY);
 
@@ -217,7 +218,7 @@ void HudRenderer::draw(const Simulation& sim,int quality,int fps) const {
         if (race.bestLap>0)
             DrawText(TextFormat("Meilleur : %.2f s",race.bestLap),
                      w/2-260,h/2-14,23,GOLD);
-        DrawText(TextFormat("Pointe : %d km/h",int(race.topSpeed*.3)),
+        DrawText(TextFormat("Pointe : %d km/h",int(race.topSpeed*0.0648)),
                  w/2-260,h/2+33,23,RAYWHITE);
     }
     EndMode2D();
