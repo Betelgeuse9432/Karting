@@ -412,7 +412,7 @@ void Simulation::update(const Controls& controls,double dt) {
 
     // Longitudinal weight transfer: braking compresses the front and
     // lifts the rear; acceleration squats the rear and lifts the nose.
-    double pitchTarget=((car_.throttle*.045-car_.brake*.095)*
+    double pitchTarget=.70*((car_.throttle*.045-car_.brake*.095)*
             (track_.isDesert()?1.0:p.pitchFactor)+
             (track_.isBaja()?slope:-slope));
     // In the air, pitch follows vertical velocity: nose rises on take-off,
@@ -420,14 +420,13 @@ void Simulation::update(const Controls& controls,double dt) {
     if(track_.isBaja())
         pitchTarget+=0.34*std::clamp(car_.verticalSpeed/62.0,-1.0,1.0);
     car_.pitch+=(pitchTarget-car_.pitch)*std::min(1.0,6*dt);
-    // The chassis leans into the corner on the Desert Trophy Truck.
-    // The render transform's roll axis has the opposite sign to lateral
-    // acceleration, so invert the target for this world only.
-    const double rollDirection=track_.isDesert()?-1.0:1.0;
+    // Centrifugal load makes the body lean toward the OUTSIDE of a corner.
+    // The render transform's roll axis is opposite to the physical lean.
+    const double rollDirection=track_.isDesert()?1.0:-1.0;
     const double rollTarget=std::clamp(
-        rollDirection*p.rollFactor*car_.speed*rotation,
-        -p.maxRoll,p.maxRoll);
-    car_.roll+=(rollTarget-car_.roll)*std::min(1.0,6*dt);
+        rollDirection*.65*p.rollFactor*car_.speed*rotation,
+        -p.maxRoll*.75,p.maxRoll*.75);
+    car_.roll+=(rollTarget-car_.roll)*std::min(1.0,5.0*dt);
     const double wingTarget=.1+.25*std::abs(car_.speed)/p.topSpeed+.9*car_.brake;
     car_.wing+=(wingTarget-car_.wing)*std::min(1.0,10*dt);
     car_.wheelRotation+=car_.speed*dt/10*.35;
