@@ -343,12 +343,14 @@ void Simulation::update(const Controls& controls,double dt) {
     const bool rearSlip=rearUse>rearGrip;
     if (rearSlip) {
         const double excess=rearUse/rearGrip-1;
-        rotation*=1+1.0*std::min(excess,0.8);
+        // Rear slip can help rotate the car on track, but should not create
+        // extra yaw when the tyres are already running through grass.
+        const double onTrack=1.0-double(off)/4.0;
+        rotation*=1+onTrack*1.0*std::min(excess,0.8);
         motor*=rearGrip/rearUse;
     }
-    // Grass should make the car wash wide instead of turning sharply.
-    // Scale steering response progressively with the number of wheels off-track.
-    rotation *= 1.0 - 0.45 * (double(off) / 4.0);
+    // Grass strongly washes out steering, preventing sharp turns off-track.
+    rotation *= 1.0 - 0.85 * (double(off) / 4.0);
 
     const auto groundHeight=[&](Vec2 point){return track_.isBaja()?bajaElevation(point):track_.isDesert()?0.0:elevation(point);};
     const double slope=(groundHeight(oldPosition+forward*6)-groundHeight(oldPosition))/6;
@@ -356,7 +358,7 @@ void Simulation::update(const Controls& controls,double dt) {
     if (v>0.5) nextSpeed-=aBrake*dt;
     else if (controls.brake) nextSpeed-=250*dt;
     nextSpeed-=nextSpeed*(controls.accelerate?.18:.5)*dt;
-    nextSpeed-=nextSpeed*p.grassDrag*off*dt;
+    nextSpeed-=nextSpeed*p.grassDrag*0.45*off*dt;
     nextSpeed-=slope*1200*dt;
     const double speedLimit=p.topSpeed*(boostActive?1.18:1.0);
     car_.speed=std::clamp(nextSpeed,-150.0,speedLimit);
