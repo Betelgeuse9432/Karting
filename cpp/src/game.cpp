@@ -199,10 +199,13 @@ void Game::handleMenu() {
     const int selected=current==vehicleSlots.end()?1:int(current-vehicleSlots.begin());
     if (left) sim_.selectVehicle(vehicleSlots[std::size_t((selected+4)%5)]);
     else if (right) sim_.selectVehicle(vehicleSlots[std::size_t((selected+1)%5)]);
+    const int liveryCount=sim_.vehicleIndex()==2?5:6;
     if (IsKeyPressed(KEY_UP))
-        sim_.selectVehicle(sim_.vehicleIndex(),(sim_.colorIndex()+5)%6);
+        sim_.selectVehicle(sim_.vehicleIndex(),
+            (sim_.colorIndex()+liveryCount-1)%liveryCount);
     else if (IsKeyPressed(KEY_DOWN)||IsKeyPressed(KEY_C))
-        sim_.selectVehicle(sim_.vehicleIndex(),(sim_.colorIndex()+1)%6);
+        sim_.selectVehicle(sim_.vehicleIndex(),
+            (sim_.colorIndex()+1)%liveryCount);
 
     if (confirm) {
         cockpitView_=false;
