@@ -593,6 +593,68 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
         }
     }
 
+    if(track.layoutIndex()==3) {
+        const auto count=track.size();
+        const auto pointAt=[&](double progress,double offset,float height) {
+            const auto i=std::size_t(progress*double(count))%count;
+            return worldPoint(track.point(i,offset),height);
+        };
+        // Highland's lower tunnel: concrete side walls and a continuous dark roof.
+        const Color concrete=shaded({83,91,103,255},1-night*.25f);
+        const Color roof=shaded({25,30,40,255},1-night*.12f);
+        for(double progress=.285;progress<.385;progress+=.006) {
+            const auto leftA=pointAt(progress,-Track::halfWidth-2,.2f);
+            const auto rightA=pointAt(progress,Track::halfWidth+2,.2f);
+            const auto leftTop=pointAt(progress,-Track::halfWidth-2,4.4f);
+            const auto rightTop=pointAt(progress,Track::halfWidth+2,4.4f);
+            const auto nextLeft=pointAt(progress+.006,-Track::halfWidth-2,.2f);
+            const auto nextRight=pointAt(progress+.006,Track::halfWidth+2,.2f);
+            const auto nextLeftTop=pointAt(progress+.006,-Track::halfWidth-2,4.4f);
+            const auto nextRightTop=pointAt(progress+.006,Track::halfWidth+2,4.4f);
+            quad(leftA,nextLeft,nextLeftTop,leftTop,concrete);
+            quad(rightA,rightTop,nextRightTop,nextRight,concrete);
+            quad(leftTop,nextLeftTop,nextRightTop,rightTop,roof);
+            if(int(progress*1000)%18==0) {
+                const auto lamp=pointAt(progress,0,4.05f);
+                DrawSphere(lamp,.12f,Color{255,221,142,255});
+            }
+        }
+        // Raised crossing deck and piers create the second level above the tunnel.
+        const double bridgeProgress=.345;
+        const auto bridgeL=pointAt(bridgeProgress,-Track::halfWidth-3,5.35f);
+        const auto bridgeR=pointAt(bridgeProgress,Track::halfWidth+3,5.35f);
+        const auto bridgeL2=pointAt(bridgeProgress+.012,-Track::halfWidth-3,5.35f);
+        const auto bridgeR2=pointAt(bridgeProgress+.012,Track::halfWidth+3,5.35f);
+        quad(bridgeL,bridgeL2,bridgeR2,bridgeR,shaded({105,115,128,255},1-night*.3f));
+        for(double side:{-1.0,1.0}) {
+            const auto base=pointAt(bridgeProgress,side*(Track::halfWidth+12),.1f);
+            const auto top=pointAt(bridgeProgress,side*(Track::halfWidth+12),5.2f);
+            DrawCylinderEx(base,top,.38f,.30f,8,concrete);
+        }
+        // Heavy outer wall around the long corner, with an advance warning sign.
+        for(double progress=.515;progress<.585;progress+=.004) {
+            const auto a=pointAt(progress,Track::halfWidth+24,.15f);
+            const auto b=pointAt(progress+.004,Track::halfWidth+24,.15f);
+            const auto at=pointAt(progress,Track::halfWidth+24,1.65f);
+            const auto bt=pointAt(progress+.004,Track::halfWidth+24,1.65f);
+            quad(a,b,bt,at,shaded({188,194,201,255},1-night*.35f));
+            DrawLine3D(at,bt,Fade(WHITE,1-night*.3f));
+        }
+        const auto signBase=pointAt(.495,-Track::halfWidth-42,.1f);
+        const auto signTop=pointAt(.495,-Track::halfWidth-42,3.6f);
+        DrawCylinderEx(signBase,signTop,.12f,.12f,8,concrete);
+        const auto signFace=pointAt(.495,-Track::halfWidth-42,3.05f);
+        DrawCubeV(signFace,{3.9f,.95f,.18f},Color{246,190,35,255});
+        DrawTriangle3D({signFace.x-1.25f,signFace.y-.28f,signFace.z-.11f},
+                        {signFace.x-.35f,signFace.y+.30f,signFace.z-.11f},
+                        {signFace.x+.55f,signFace.y-.28f,signFace.z-.11f},
+                        Color{35,42,52,255});
+        DrawTriangle3D({signFace.x+.45f,signFace.y-.28f,signFace.z-.11f},
+                        {signFace.x+1.15f,signFace.y+.30f,signFace.z-.11f},
+                        {signFace.x+1.85f,signFace.y-.28f,signFace.z-.11f},
+                        Color{35,42,52,255});
+    }
+
     if (!track.isBaja()) drawTrackLandmarks(track,cameraPosition,quality,night);
 
     // Tree positions were generated once, instead of walking the circuit
