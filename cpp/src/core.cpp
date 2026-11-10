@@ -401,8 +401,8 @@ void Simulation::update(const Controls& controls,double dt) {
         car_.verticalSpeed=0.0;
         car_.jumpCooldown=0.0;
     }
-    car_.position.x=std::clamp(car_.position.x,0.0,10000.0);
-    car_.position.y=std::clamp(car_.position.y,0.0,9000.0);
+    car_.position.x=std::clamp(car_.position.x,-2000.0,12000.0);
+    car_.position.y=std::clamp(car_.position.y,-2000.0,11000.0);
     const double impact=track_.collide(car_,dt);
     car_.brakeHeat=std::clamp(car_.brakeHeat+
             (car_.brake>.05 && car_.speed>0?
