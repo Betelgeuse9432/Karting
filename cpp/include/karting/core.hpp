@@ -71,10 +71,10 @@ struct TrackInfo {
 
 class Track {
 public:
-    static constexpr double halfWidth = 150;
-    static constexpr double kerb = 22;
-    static constexpr double wall = 242;
-    static constexpr double pitWidth = 150;
+    static constexpr double halfWidth = 205;
+    static constexpr double kerb = 26;
+    static constexpr double wall = 303;
+    static constexpr double pitWidth = 180;
     static constexpr int subdivisions = 45;
 
     explicit Track(bool baja = false, bool desert = false);
