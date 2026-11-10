@@ -190,6 +190,25 @@ void Game::handleMenu() {
         return;
     }
 
+    if (menuScreen_==MenuScreen::Track) {
+        if (back) { menuScreen_=MenuScreen::Vehicle; return; }
+        int selected=sim_.track().layoutIndex();
+        if (left) selected=(selected+4)%5;
+        else if (right) selected=(selected+1)%5;
+        if (selected!=sim_.track().layoutIndex()) {
+            sim_.selectTrack(selected);
+            world_.initialize(sim_.track());
+            followAngle_=sim_.car().heading;
+            cameraHeight_=elevation(sim_.car().position)+sim_.profile().cameraHeight;
+        }
+        if (confirm) {
+            cockpitView_=false;
+            menu_=false;
+            reset();
+        }
+        return;
+    }
+
     if (back) {
         menuScreen_=MenuScreen::Mode;
         return;
@@ -208,9 +227,7 @@ void Game::handleMenu() {
             (sim_.colorIndex()+1)%liveryCount);
 
     if (confirm) {
-        cockpitView_=false;
-        menu_=false;
-        reset();
+        menuScreen_=MenuScreen::Track;
     }
 }
 
@@ -281,6 +298,10 @@ void Game::renderMenu(double time) {
 
     if (menuScreen_==MenuScreen::Mode) {
         hud_.modeMenu(selectedMode_,time);
+        return;
+    }
+    if (menuScreen_==MenuScreen::Track) {
+        hud_.trackMenu(sim_.track(),time);
         return;
     }
     const float t=float(time*.35);
