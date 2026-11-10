@@ -299,6 +299,33 @@ void gt3Monster(Color glass,bool braking) {
     box(-.20f,.808f,0,.25f,.008f,.20f,{235,238,230,255});
 }
 
+void gt3RedBull(Color glass,bool braking) {
+    const Color blue{5,24,67,255};
+    const Color red{218,25,42,255};
+    const Color yellow{255,204,0,255};
+    const Color carbon{16,21,31,255};
+    gt3(blue,glass,carbon,braking);
+    // Red Bull-inspired colours and abstract wing graphics, not a copied logo.
+    for(float side:{-1.f,1.f}) {
+        panel({1.10f,.431f,side*.16f},{.43f,.468f,side*.22f},
+              {.08f,.478f,side*.30f},{.80f,.438f,side*.31f},red);
+        panel({.64f,.405f,side*.572f},{.28f,.405f,side*.572f},
+              {-.12f,.255f,side*.572f},{.18f,.255f,side*.572f},red);
+        panel({.12f,.39f,side*.575f},{-.18f,.39f,side*.575f},
+              {-.48f,.29f,side*.575f},{-.27f,.29f,side*.575f},yellow);
+        panel({.42f,.355f,side*.582f},{.12f,.405f,side*.582f},
+              {-.04f,.365f,side*.582f},{.23f,.325f,side*.582f},yellow);
+        panel({.14f,.345f,side*.584f},{-.16f,.39f,side*.584f},
+              {-.30f,.345f,side*.584f},{-.03f,.305f,side*.584f},yellow);
+        box(-.67f,.354f,side*.548f,.38f,.025f,.016f,red);
+        box(-1.20f,.70f,side*.555f,.22f,.018f,.014f,yellow);
+    }
+    box(.83f,.454f,0,.55f,.012f,.085f,red);
+    box(1.31f,.108f,0,.18f,.018f,.72f,yellow);
+    box(-.20f,.795f,0,.76f,.012f,.035f,red);
+    box(-.91f,.452f,0,.36f,.012f,.075f,yellow);
+}
+
 void wec(Color paint,Color glass,Color dark,bool braking) {
     // Modern WEC Hypercar: low closed-cockpit prototype with sculpted fenders,
     // deep aero floor, front dive planes, cooling channels and a tall rear wing.
@@ -596,10 +623,10 @@ void wheels(const Car& car,const VehicleProfile& p,int index,bool desert=false) 
     const float axleVisualScale=index==3?1.12f:1.0f;
     const float front=float(p.frontAxle*kWorldScale*axleVisualScale);
     const float rear=float(p.rearAxle*kWorldScale*axleVisualScale);
-    constexpr std::array<float,10> sizes{{.155f,.265f,.205f,.195f,.180f,.220f,.205f,.315f,.325f,.335f}};
-    constexpr std::array<float,10> widths{{.19f,.26f,.22f,.21f,.21f,.245f,.22f,.34f,.36f,.37f}};
-    constexpr std::array<float,10> tracks{{.45f,.65f,.48f,.58f,.58f,.63f,.48f,.88f,.92f,.94f}};
-    const std::size_t slot=std::size_t(std::clamp(index,0,9));
+    constexpr std::array<float,11> sizes{{.155f,.265f,.205f,.195f,.180f,.220f,.205f,.315f,.325f,.335f,.205f}};
+    constexpr std::array<float,11> widths{{.19f,.26f,.22f,.21f,.21f,.245f,.22f,.34f,.36f,.37f,.22f}};
+    constexpr std::array<float,11> tracks{{.45f,.65f,.48f,.58f,.58f,.63f,.48f,.88f,.92f,.94f,.48f}};
+    const std::size_t slot=std::size_t(std::clamp(index,0,10));
     const float r=sizes[slot],width=widths[slot];
     const float track=std::max(float(p.halfWheelTrack*kWorldScale),tracks[slot]);
 
@@ -837,6 +864,7 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
     case 1: offRoad(paint,glass,dark,car.brake>.1);break;
     case 2: gt3(paint,glass,dark,car.brake>.1);break;
     case 6: gt3Monster(glass,car.brake>.1);break;
+    case 10: gt3RedBull(glass,car.brake>.1);break;
     case 3:
         rlPushMatrix();
         rlTranslatef(0,.035f,0);
@@ -867,8 +895,8 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
         break;
     default: gt3(paint,glass,dark,car.brake>.1);break;
     }
-    const float highlightY=index==1?.82f:index==2?.445f:index==3?.285f:index==4?.80f:index==5?.39f:index==6?.445f:index>=7?.94f:.205f;
-    const float highlightZ=index==1?.47f:index==2?.49f:index==3?.34f:index==4?.48f:index==5?.36f:index==6?.49f:index>=7?.62f:.20f;
+    const float highlightY=index==1?.82f:index==2?.445f:index==3?.285f:index==4?.80f:index==5?.39f:index==6?.445f:index==10?.445f:index>=7?.94f:.205f;
+    const float highlightZ=index==1?.47f:index==2?.49f:index==3?.34f:index==4?.48f:index==5?.36f:index==6?.49f:index==10?.49f:index>=7?.62f:.20f;
     for(float side:{-1.f,1.f}) {
         DrawLine3D({.62f,highlightY,side*highlightZ},
                    {-.48f,highlightY-.012f,side*highlightZ*.94f},
