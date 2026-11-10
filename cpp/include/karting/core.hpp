@@ -34,7 +34,7 @@ struct VehicleProfile {
     double frontAxle, rearAxle, halfWheelTrack;
     int defaultColor;
 };
-const std::array<VehicleProfile, 10>& profiles();
+const std::array<VehicleProfile, 11>& profiles();
 
 struct Controls {
     bool accelerate = false;
@@ -179,7 +179,7 @@ private:
 
 class FixedClock {
 public:
-    static constexpr double step = 1.0 / 60.0;
+    static constexpr double step = 1.0 / 120.0;
     int consume(double frameSeconds);
     void reset() { accumulated_ = 0; }
 private:
