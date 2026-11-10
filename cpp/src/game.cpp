@@ -135,6 +135,34 @@ void drawSkyDetails(int width, int height, float night, float rain,
 }
 } // namespace
 
+void drawCockpitWheel(double steering) {
+    const int width=GetScreenWidth(), height=GetScreenHeight();
+    const Vector2 center{width*.5f,height-104.f};
+    const float radius=61.f;
+    DrawRectangle(0,height-48,width,48,{12,15,20,255});
+    DrawTriangle({width*.5f-185.f,float(height-8)},
+                 {width*.5f-115.f,float(height-122)},
+                 {width*.5f+115.f,float(height-122)},{24,29,37,255});
+    DrawTriangle({width*.5f-185.f,float(height-8)},
+                 {width*.5f+115.f,float(height-122)},
+                 {width*.5f+185.f,float(height-8)},{24,29,37,255});
+    DrawCircleLines(int(center.x),int(center.y),radius+5,{10,12,16,255});
+    DrawCircleLines(int(center.x),int(center.y),radius,{205,210,218,255});
+    DrawCircleLines(int(center.x),int(center.y),radius-5,{75,82,93,255});
+    const float angle=float(-steering*1.8);
+    for(int spoke=0;spoke<3;++spoke) {
+        const float a=angle+float(spoke)*2.0943951f-1.5707963f;
+        const Vector2 end{center.x+std::cos(a)*radius*.78f,
+                          center.y+std::sin(a)*radius*.78f};
+        DrawLineEx(center,end,9.f,{35,40,49,255});
+        DrawLineEx(center,end,4.f,{155,163,174,255});
+    }
+    DrawCircleV(center,13.f,{25,30,38,255});
+    DrawCircleLines(int(center.x),int(center.y),13.f,{190,196,205,255});
+    DrawCircleV({center.x,center.y+radius+17.f},5.f,{220,35,35,255});
+    DrawText("C : QUITTER POV",width-190,24,18,RAYWHITE);
+}
+
 void Game::reset() {
     sim_.reset();
     clock_.reset();
@@ -200,18 +228,33 @@ void Game::follow(double dt) {
     followAngle_+=wrapAngle(car.heading-followAngle_)*std::min(1.0,5.0*dt);
     cameraHeight_+=((sim_.isBaja()?bajaElevation(car.position):sim_.isDesert()?0.0:elevation(car.position))+car.jumpHeight+spec.cameraHeight-cameraHeight_)*
                     std::min(1.0,5.5*dt);
-    const Vec2 behind{std::cos(followAngle_),std::sin(followAngle_)};
-    const Vec2 view=car.position-behind*spec.cameraDistance;
-    camera_.position={float(view.x*kWorldScale),
-                      float(cameraHeight_*kWorldScale),
-                      float(view.y*kWorldScale)};
-    camera_.target={float(car.position.x*kWorldScale),
-                    float(((sim_.isBaja()?bajaElevation(car.position):elevation(car.position))+car.jumpHeight+30)*kWorldScale),
-                    float(car.position.y*kWorldScale)};
+    const Vec2 forward{std::cos(car.heading),std::sin(car.heading)};
+    const double ground=sim_.isBaja()?bajaElevation(car.position):sim_.isDesert()?0.0:elevation(car.position);
+    if(cockpitView_) {
+        const double cockpitHeight=sim_.vehicleIndex()==0?.39:.53;
+        const Vec2 eye=car.position+forward*.18;
+        camera_.position={float(eye.x*kWorldScale),
+                          float((ground+car.jumpHeight+cockpitHeight)*kWorldScale),
+                          float(eye.y*kWorldScale)};
+        const Vec2 look=car.position+forward*35.0;
+        camera_.target={float(look.x*kWorldScale),
+                        float((ground+car.jumpHeight+cockpitHeight+1.1)*kWorldScale),
+                        float(look.y*kWorldScale)};
+        camera_.fovy=84.f;
+    } else {
+        const Vec2 behind{std::cos(followAngle_),std::sin(followAngle_)};
+        const Vec2 view=car.position-behind*spec.cameraDistance;
+        camera_.position={float(view.x*kWorldScale),
+                          float(cameraHeight_*kWorldScale),
+                          float(view.y*kWorldScale)};
+        camera_.target={float(car.position.x*kWorldScale),
+                        float((ground+car.jumpHeight+30)*kWorldScale),
+                        float(car.position.y*kWorldScale)};
+        const float speedRatio=float(std::abs(car.speed)/spec.topSpeed);
+        camera_.fovy=64.f+speedRatio*9.f;
+    }
     camera_.up={0,1,0};
     camera_.projection=CAMERA_PERSPECTIVE;
-    const float speedRatio=float(std::abs(car.speed)/spec.topSpeed);
-    camera_.fovy=64.f+speedRatio*9.f;
 }
 
 void Game::showFault(const std::string& subsystem,const std::string& message) {
@@ -340,6 +383,7 @@ void Game::renderRace() {
         if (quality_>0)
             DrawRectangle(0,0,width,height,Fade({90,110,135,255},r*.08f));
     }
+    if(cockpitView_) drawCockpitWheel(sim_.car().steering);
     safe("hud",[&]{ hud_.draw(sim_,quality_,GetFPS()); });
     if (paused_ || !faultMessage_.empty()) {
         const auto ui=uiViewport();
