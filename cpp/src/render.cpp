@@ -334,10 +334,13 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
                             1-0.08f*rain-0.35f*night);
     // Build the visible terrain from the same elevation field as the road.
     // This removes the flat green "table" underneath the hilly circuit.
-    const double tile=track.isBaja()?85.0:(quality>=3?300.0:480.0);
+    const double tile=track.isBaja()?85.0:600.0;
     const int baseX=int(std::floor((cameraPosition.x/kWorldScale)/tile));
     const int baseZ=int(std::floor((cameraPosition.z/kWorldScale)/tile));
-    const int terrainRadius=quality==0?4:quality==1?5:quality==2?6:7;
+    // Keep the ground visible beyond the road horizon. The old small radius
+    // exposed the edge of the terrain shortly after the pedestrian bridge.
+    const int terrainRadius=track.isBaja()? (quality==0?4:quality==1?5:quality==2?6:7)
+                                         : (quality==0?8:quality==1?11:quality==2?14:17);
     for(int gx=baseX-terrainRadius;gx<=baseX+terrainRadius;++gx) {
         for(int gz=baseZ-terrainRadius;gz<=baseZ+terrainRadius;++gz) {
             const double x0=std::max(0.0,gx*tile);
