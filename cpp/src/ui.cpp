@@ -89,7 +89,9 @@ void HudRenderer::menu(const Simulation& sim,double time) const {
     DrawText(TextFormat("Puissance : %.0f (jeu)",p.power),
              w-385,309,19,RAYWHITE);
     const bool f1Liveries=sim.vehicleIndex()==5;
-    DrawText(f1Liveries?"LIVREES F1":"PEINTURE",w/2-110,h-142,22,RAYWHITE);
+    const bool gt3Liveries=sim.vehicleIndex()==2;
+    DrawText(gt3Liveries?"LIVREES / SETUPS GT3":f1Liveries?"LIVREES F1":"PEINTURE",
+             w/2-150,h-142,22,RAYWHITE);
     const std::array<Color,6> f1Colors{{
         {8,25,65,255}, {10,13,17,255}, {220,20,35,255},
         {255,128,25,255}, {0,105,75,255}, {8,25,65,255}
@@ -97,15 +99,29 @@ void HudRenderer::menu(const Simulation& sim,double time) const {
     const std::array<const char*,6> f1Names{{
         "RED BULL","MONSTER","FERRARI","MCLAREN","ASTON","R.BULLS"
     }};
+    const std::array<Color,5> gt3Colors{{
+        {8,91,112,255},{190,22,34,255},{224,226,218,255},
+        {18,48,105,255},{242,174,18,255}
+    }};
+    const std::array<const char*,5> gt3Names{{
+        "ENDUR.","SPRINT","AERO","BALANCE","QUALIF"
+    }};
     for (int i=0;i<6;++i) {
         const int x=w/2-163+i*54;
-        if(f1Liveries)
+        if(gt3Liveries && i<5)
+            DrawText(gt3Names[std::size_t(i)],x-5,h-126,9,RAYWHITE);
+        else if(f1Liveries)
             DrawText(f1Names[std::size_t(i)],x-5,h-126,9,RAYWHITE);
-        DrawRectangle(x,h-107,43,35,f1Liveries?f1Colors[std::size_t(i)]:palette(i));
+        const Color swatch=gt3Liveries
+            ?(i<5?gt3Colors[std::size_t(i)]:Color{35,39,47,255})
+            :(f1Liveries?f1Colors[std::size_t(i)]:palette(i));
+        DrawRectangle(x,h-107,43,35,swatch);
         if (i==sim.colorIndex())
             DrawRectangleLines(x-4,h-111,51,43,RAYWHITE);
     }
-    DrawText("GAUCHE/DROITE voiture    HAUT/BAS couleur    ENTREE jouer",
+    DrawText(gt3Liveries?
+             "5 LIVREES = 5 SETUPS  |  HAUT/BAS choisir  |  ENTREE jouer":
+             "GAUCHE/DROITE voiture    HAUT/BAS couleur    ENTREE jouer",
              w/2-336,h-55,19,LIGHTGRAY);
     DrawText("ESC quitter",w/2-55,h-28,15,GRAY);
     (void)time;
