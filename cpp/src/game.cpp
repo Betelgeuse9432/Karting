@@ -400,8 +400,13 @@ void Game::renderRace() {
             vehicle_.draw(sim_.opponent(),profiles()[rivalIndex],
                           rivalIndex,sim_.opponentColorIndex(),n>.2,sim_.isDesert());
         }
+        const auto trackInfo=sim_.track().info(sim_.car().position);
+        const double trackProgress=double(trackInfo.index)/double(sim_.track().size());
+        const bool highlandTunnel=sim_.track().layoutIndex()==3 &&
+                                  trackProgress>.285 && trackProgress<.385;
         vehicle_.draw(sim_.car(),sim_.profile(),
-                      sim_.vehicleIndex(),sim_.colorIndex(),n>.2,sim_.isDesert());
+                      sim_.vehicleIndex(),sim_.colorIndex(),n>.2,sim_.isDesert(),
+                      highlandTunnel);
     });
     EndMode3D();
 
