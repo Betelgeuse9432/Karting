@@ -40,28 +40,30 @@ double bajaElevation(Vec2 p) {
     return elevation(p)*.18+rolling*.48+ripples*.34+rocks*.55+ramps;
 }
 
-const std::array<VehicleProfile, 10>& profiles() {
-    static const std::array<VehicleProfile, 10> cars{{
+const std::array<VehicleProfile, 11>& profiles() {
+    static const std::array<VehicleProfile, 11> cars{{
         {"KART", 650, 1300, 1.7, 2.0, 800, 950, 950, 0.0, 30, 0.7, 200,
          0.00005, 0.03, 0.4, 0.2, 0.5, 48, 125, 17, -15, 18, 0},
         {"4x4", 680, 1050, 1.15, 1.3, 560, 600, 650, 0.05, 52, 0.5, 150,
          0.0003, 0.12, 1.8, 0.04, 0.1, 85, 175, 30, -30, 26, 5},
-        {"GT3", 1280, 2450, 1.35, 1.6, 760, 740, 780, 0.55, 46, 0.55, 150,
+        {"GT3", 4200, 3600, 0.95, 1.05, 1050, 740, 780, 0.55, 46, 0.55, 150,
          0.00012, 0.07, 1.0, 0.18, 0.45, 65, 150, 50, -48, 21, 3},
-        {"WEC", 1250, 2000, 1.25, 2.4, 1100, 760, 800, 1.3, 50, 0.5, 140,
+        {"WEC", 4100, 3400, 0.90, 1.10, 1450, 760, 800, 1.3, 50, 0.5, 140,
          0.00008, 0.05, 0.6, 0.3, 0.6, 58, 160, 30, -30, 22, 1},
         {"RALLY", 1120, 2200, 1.55, 2.0, 920, 900, 980, 0.22, 48, 0.48, 165,
          0.00018, 0.09, 1.2, 0.08, 0.22, 62, 145, 34, -32, 25, 5},
-        {"F1", 1500, 2100, 0.95, 2.5, 1250, 1180, 1280, 2.2, 38, 0.85, 65,
+        {"F1", 5000, 4200, 0.85, 1.10, 1550, 1180, 1280, 2.2, 38, 0.85, 65,
          0.00010, 0.045, 0.55, 0.12, 0.14, 55, 155, 56, -52, 37, 1},
-        {"GT3 MONSTER", 1300, 2520, 1.30, 1.65, 790, 755, 800, 0.62, 46, 0.54, 152,
+        {"GT3 MONSTER", 4300, 3700, 0.95, 1.05, 1100, 755, 800, 0.62, 46, 0.54, 152,
          0.00011, 0.068, 0.95, 0.17, 0.43, 65, 150, 50, -48, 21, 0},
         {"TROPHY 1", 980, 1850, 0.78, 1.55, 720, 470, 500, 0.015, 64, 0.62, 175,
          0.00032, 0.15, 2.1, 0.015, 0.08, 105, 205, 63, -61, 48, 5},
         {"TROPHY 2", 1040, 1980, 0.82, 1.60, 760, 495, 525, 0.018, 67, 0.60, 180,
          0.00030, 0.14, 2.0, 0.015, 0.08, 110, 212, 66, -64, 50, 1},
         {"TROPHY 3", 1010, 2050, 0.80, 1.58, 790, 485, 540, 0.012, 66, 0.61, 178,
-         0.00031, 0.145, 2.05, 0.015, 0.08, 108, 210, 65, -63, 51, 2}
+         0.00031, 0.145, 2.05, 0.015, 0.08, 108, 210, 65, -63, 51, 2},
+        {"GT3 RED BULL", 4350, 3750, 0.95, 1.05, 1120, 770, 815, 0.62, 46, 0.54, 152,
+         0.00011, 0.068, 0.95, 0.17, 0.43, 65, 150, 50, -48, 21, 1}
     }};
     return cars;
 }
@@ -90,12 +92,18 @@ Track::Track(bool baja, bool desert) : baja_(baja), desert_(desert) {
         {1450,3550},{1250,3750},{1120,4050},{1080,4400},
         {1160,4750},{1330,5050},{1450,5550}
     };
-    // Expand the circuit footprint while keeping it inside the enlarged world.
-    // The extra north-south stretch creates a much longer lap without pinching
-    // the existing corners against the map boundaries.
+    // Round tight control-point corners before spline interpolation.
+    const auto unsmoothed=raw;
+    for (std::size_t i=0;i<raw.size();++i) {
+        const auto& prev=unsmoothed[(i+raw.size()-1)%raw.size()];
+        const auto& next=unsmoothed[(i+1)%raw.size()];
+        raw[i].x=unsmoothed[i].x*.76+(prev.x+next.x)*.12;
+        raw[i].y=unsmoothed[i].y*.76+(prev.y+next.y)*.12;
+    }
+    // A larger footprint adds distance to the lap while retaining runoff.
     for (auto& p : raw) {
-        p.x = 5300.0 + (p.x - 5300.0) * 1.115;
-        p.y = 5000.0 + (p.y - 5000.0) * 1.55;
+        p.x = 5300.0 + (p.x - 5300.0) * 1.14;
+        p.y = 5000.0 + (p.y - 5000.0) * 1.66;
     }
     center_.reserve(raw.size() * subdivisions);
     for (std::size_t i = 0; i < raw.size(); ++i) {
@@ -306,12 +314,12 @@ void Simulation::update(const Controls& controls,double dt) {
             off+=int(track_.wheelOutside(oldPosition+forward*x+left*z,before.index));
     }
 
-    car_.throttle=controls.accelerate?
-        std::min(1.0,car_.throttle+p.throttleRate*dt):
-        std::max(0.0,car_.throttle-5*dt);
-    car_.brake=controls.brake?
-        std::min(1.0,car_.brake+p.brakeRate*dt):
-        std::max(0.0,car_.brake-3*dt);
+    const double throttleTarget=controls.accelerate?1.0:0.0;
+    const double brakeTarget=controls.brake?1.0:0.0;
+    const double throttleResponse=1.0-std::exp(-(controls.accelerate?p.throttleRate:2.4)*dt);
+    const double brakeResponse=1.0-std::exp(-(controls.brake?p.brakeRate:2.0)*dt);
+    car_.throttle+=(throttleTarget-car_.throttle)*throttleResponse;
+    car_.brake+=(brakeTarget-car_.brake)*brakeResponse;
 
     const double v=car_.speed;
     const double downforce=1+p.downforce*std::pow(std::abs(v)/p.topSpeed,2);
@@ -323,7 +331,7 @@ void Simulation::update(const Controls& controls,double dt) {
                     std::min(1.0,8*dt);
     double rotation=v*std::tan(car_.steering)/p.wheelbase;
     const double aLateral=std::abs(v*rotation);
-    const double aBrake=v>0.5?p.brakeForce*std::pow(car_.brake,1.5):0.0;
+    const double aBrake=v>0.5?p.brakeForce*std::pow(car_.brake,1.25):0.0;
     const double frontUse=std::hypot(aBrake,aLateral);
     const bool frontSlip=frontUse>frontGrip;
     if (frontSlip) rotation*=frontGrip/frontUse;
