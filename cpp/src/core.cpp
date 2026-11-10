@@ -68,7 +68,8 @@ const std::array<VehicleProfile, 11>& profiles() {
     return cars;
 }
 
-Track::Track(bool baja, bool desert) : baja_(baja), desert_(desert) {
+Track::Track(bool baja, bool desert, int layout)
+    : baja_(baja), desert_(desert), layout_(std::clamp(layout,0,4)) {
     // Apex Ridge: an original, continuous circuit with no crossings.
     // It combines a long opening run, a flowing outer section, a tight
     // technical complex and a fast final sweep back to the start.
@@ -82,6 +83,31 @@ Track::Track(bool baja, bool desert) : baja_(baja), desert_(desert) {
         {9000,5550},{8650,6250},{7900,6800},{7300,7150},
         {6400,7350},{5550,7250},{4700,6900},{3950,7150},
         {3100,7350},{2500,7200},{1800,7000},{1250,6700}
+    } : (layout_==1 ? std::vector<Vec2>{
+        // Coastline GP: two long full-throttle straights and broad sweepers.
+        {1100,4200},{1900,3000},{3600,2350},{5600,2200},
+        {7600,2450},{9300,3300},{9600,4300},{9000,5100},
+        {7300,5550},{5200,5650},{3300,5450},{1500,5000}
+    } : layout_==2 ? std::vector<Vec2>{
+        // Switchback Park: tight hairpins, linked esses and heavy braking zones.
+        {1800,6500},{3000,7000},{4200,6500},{4700,5600},
+        {3900,5000},{2800,5200},{2200,4300},{3100,3600},
+        {4500,3900},{5400,4800},{6600,4700},{7200,3700},
+        {6500,2800},{5100,2700},{4300,3300},{3000,2800},
+        {1800,3600},{1200,4800}
+    } : layout_==3 ? std::vector<Vec2>{
+        // Highland Ring: flowing, undulating route with a fast ridge section.
+        {1200,6500},{1900,5200},{3000,4300},{4300,3900},
+        {5700,4200},{6800,5200},{8200,5900},{9400,5200},
+        {9000,3900},{7900,3000},{6500,2500},{5000,2700},
+        {3900,1900},{2500,2200},{1300,3400}
+    } : layout_==4 ? std::vector<Vec2>{
+        // Club 90: compact lap with two deliberate chicanes and a hairpin.
+        {2200,6600},{3600,7000},{5000,6800},{5700,6000},
+        {5100,5500},{6100,5000},{7600,5200},{8200,4500},
+        {7500,3900},{6000,4100},{5200,3400},{6100,2800},
+        {4700,2400},{3400,3000},{2200,2800},{1400,3900},
+        {1600,5200}
     } : std::vector<Vec2>{
         {1700,6500},{2300,7100},{3400,7350},{4400,7000},
         {5000,6250},{5700,5900},{6500,6100},{7300,6800},
@@ -91,7 +117,7 @@ Track::Track(bool baja, bool desert) : baja_(baja), desert_(desert) {
         {3300,3000},{2700,3650},{2050,3900},{1700,3500},
         {1450,3550},{1250,3750},{1120,4050},{1080,4400},
         {1160,4750},{1330,5050},{1450,5550}
-    };
+    });
     // Round tight control-point corners before spline interpolation.
     const auto unsmoothed=raw;
     for (std::size_t i=0;i<raw.size();++i) {
@@ -304,10 +330,18 @@ VehicleProfile Simulation::profile() const {
 
 void Simulation::setMode(int mode) {
     (void)mode;
-    track_ = Track();
+    track_ = Track(false,false,0);
     vehicleIndex_ = 2;
     colorIndex_ = profile().defaultColor;
     reset(false);
+}
+
+void Simulation::selectTrack(int layout) {
+    if (layout<0 || layout>4) throw std::out_of_range("Invalid track layout");
+    const double oldBest=race_.bestLap;
+    track_=Track(false,false,layout);
+    reset(false);
+    race_.bestLap=oldBest;
 }
 
 void Simulation::selectVehicle(int index,int color) {
