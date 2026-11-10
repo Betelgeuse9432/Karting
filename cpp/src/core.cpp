@@ -405,7 +405,7 @@ void Simulation::update(const Controls& controls,double dt) {
     car_.brakeHeat=std::clamp(car_.brakeHeat+
             (car_.brake>.05 && car_.speed>0?
                  car_.brake*(std::abs(car_.speed)/p.topSpeed)*2.8*dt :
-                 -0.4*dt),0.0,1.0);
+                 -0.32*dt),0.0,1.0);
     if (before.pits) car_.brakeHeat=0;
 
     // Longitudinal weight transfer: braking compresses the front and
