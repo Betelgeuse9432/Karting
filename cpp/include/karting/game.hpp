@@ -96,7 +96,8 @@ private:
     bool menu_ = true;
     MenuScreen menuScreen_ = MenuScreen::Mode;
     int selectedMode_ = 0; // Only the GT3 circuit remains
-    bool paused_ = false;\n    bool cockpitView_ = false;
+    bool paused_ = false;
+    bool cockpitView_ = false;
     bool boostQueued_ = false;
     int quality_ = 2;
     double gameTime_ = 0;
