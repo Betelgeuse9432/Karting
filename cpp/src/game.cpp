@@ -212,6 +212,13 @@ void Game::handleMenu() {
 }
 
 void Game::handleRace() {
+    if (IsKeyPressed(KEY_C)) {
+        const int index=sim_.vehicleIndex();
+        if (index==0 || index==2 || index==5 || index==6 || index==10)
+            cockpitView_=!cockpitView_;
+        else
+            cockpitView_=false;
+    }
     if (IsKeyPressed(KEY_R)) reset();
     if (returnToMenuPressed()) {
         cockpitView_=false;
