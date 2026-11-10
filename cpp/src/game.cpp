@@ -166,11 +166,11 @@ void Game::handleMenu() {
         menuScreen_=MenuScreen::Mode;
         return;
     }
-    constexpr std::array<int,5> vehicleSlots{{0,2,3,5,6}};
+    constexpr std::array<int,6> vehicleSlots{{0,2,3,5,6,10}};
     const auto current=std::find(vehicleSlots.begin(),vehicleSlots.end(),sim_.vehicleIndex());
     const int selected=current==vehicleSlots.end()?1:int(current-vehicleSlots.begin());
-    if (left) sim_.selectVehicle(vehicleSlots[std::size_t((selected+4)%5)]);
-    else if (right) sim_.selectVehicle(vehicleSlots[std::size_t((selected+1)%5)]);
+    if (left) sim_.selectVehicle(vehicleSlots[std::size_t((selected+5)%6)]);
+    else if (right) sim_.selectVehicle(vehicleSlots[std::size_t((selected+1)%6)]);
     if (IsKeyPressed(KEY_UP))
         sim_.selectVehicle(sim_.vehicleIndex(),(sim_.colorIndex()+5)%6);
     else if (IsKeyPressed(KEY_DOWN)||IsKeyPressed(KEY_C))
@@ -197,9 +197,9 @@ void Game::handleRace() {
 void Game::follow(double dt) {
     const auto& car=sim_.car();
     const auto& spec=sim_.profile();
-    followAngle_+=wrapAngle(car.heading-followAngle_)*std::min(1.0,3.5*dt);
+    followAngle_+=wrapAngle(car.heading-followAngle_)*std::min(1.0,5.0*dt);
     cameraHeight_+=((sim_.isBaja()?bajaElevation(car.position):sim_.isDesert()?0.0:elevation(car.position))+car.jumpHeight+spec.cameraHeight-cameraHeight_)*
-                    std::min(1.0,4.0*dt);
+                    std::min(1.0,5.5*dt);
     const Vec2 behind{std::cos(followAngle_),std::sin(followAngle_)};
     const Vec2 view=car.position-behind*spec.cameraDistance;
     camera_.position={float(view.x*kWorldScale),
@@ -270,14 +270,7 @@ void Game::renderRace() {
     bottom=lerp(bottom,{108,115,130,255},r*.6f);
     DrawRectangleGradientV(0,0,width,height,top,bottom);
     if (n<.8f && r<.8f) {
-        const float x=float(width*.78);
-        const float y=92.f+120.f*n;
         const float visibility=(1-r)*(1-n*.6f);
-        DrawCircleGradient(int(x),int(y),66.f,
-                           Fade({255,220,145,255},visibility*.30f),
-                           Fade({255,220,145,255},0));
-        DrawCircle(int(x),int(y),28.f*(1-n*.5f),
-                   Fade(n>.4f?ORANGE:YELLOW,visibility));
     }
     if (n>.5f && r<.6f) {
         const float starVisibility=(n-.5f)*2*(1-r);
@@ -308,6 +301,21 @@ void Game::renderRace() {
         }
     };
     BeginMode3D(camera_);
+    // Distant 3D sun: it travels through the world sky instead of being
+    // painted at a fixed screen coordinate over the camera.
+    const float sunPhase=float(gameTime_*.006+.9);
+    const Vector3 sunDirection{std::cos(sunPhase)*.82f,
+                               std::sin(sunPhase)*.82f,-.42f};
+    const Vector3 sunPosition{
+        camera_.position.x+sunDirection.x*3000.f*kScale,
+        camera_.position.y+sunDirection.y*3000.f*kScale,
+        camera_.position.z+sunDirection.z*3000.f*kScale
+    };
+    const float sunVisibility=std::clamp((1.f-n*.92f)*(1.f-r*.85f),0.f,1.f);
+    DrawSphere(sunPosition,190.f*kScale,
+               Fade({255,218,145,255},sunVisibility));
+    DrawSphere(sunPosition,285.f*kScale,
+               Fade({255,191,110,255},sunVisibility*.12f));
     safe("world",[&]{
         world_.draw(sim_.track(),weather,quality_,camera_.position,gameTime_);
     });
@@ -363,7 +371,7 @@ int Game::run() {
     InitWindow(1280,720,"Karting V6 - C++20 / raylib");
     SetWindowMinSize(960,600);
     MaximizeWindow();
-    SetTargetFPS(60);
+    SetTargetFPS(120);
     try {
         world_.initialize(sim_.track());
         reset();
