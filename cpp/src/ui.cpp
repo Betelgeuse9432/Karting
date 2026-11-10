@@ -128,6 +128,52 @@ void HudRenderer::menu(const Simulation& sim,double time) const {
     EndMode2D();
 }
 
+void HudRenderer::trackMenu(const Track& track,double time) const {
+    const auto ui=uiViewport();
+    const int w=ui.width,h=ui.height;
+    BeginMode2D(ui.camera());
+    constexpr std::array<const char*,5> names{{
+        "APEX RIDGE","COASTLINE GP","SWITCHBACK PARK","HIGHLAND RING","CLUB 90"
+    }};
+    constexpr std::array<const char*,5> features{{
+        "Le circuit original : grandes courbes, secteurs rapides et technique",
+        "Deux longues lignes droites, virages rapides et aspiration",
+        "Enchainements serres, epingles et gros freinages",
+        "Trace vallonne, courbes en appui et changements de rythme",
+        "Petit circuit nerveux, chicanes et epingle lente"
+    }};
+    const int id=std::clamp(track.layoutIndex(),0,4);
+    DrawText("SELECTION DU CIRCUIT",w/2-245,42,34,GOLD);
+    DrawText(TextFormat("CIRCUIT %d / 5",id+1),w/2-75,103,20,LIGHTGRAY);
+    DrawRectangleRounded({float(w/2-380),155,760,410},.045f,10,{35,42,55,255});
+    DrawRectangleLinesEx({float(w/2-380),155,760,410},3,GOLD);
+    DrawText(names[std::size_t(id)],w/2-300,190,32,RAYWHITE);
+    DrawText(features[std::size_t(id)],w/2-300,238,19,LIGHTGRAY);
+    const auto& points=track.center();
+    double minX=1e9,maxX=-1e9,minY=1e9,maxY=-1e9;
+    for(const auto& p:points) {
+        minX=std::min(minX,p.x); maxX=std::max(maxX,p.x);
+        minY=std::min(minY,p.y); maxY=std::max(maxY,p.y);
+    }
+    const Rectangle area{float(w/2-245),300,490,205};
+    const float scale=std::min((area.width-24)/float(std::max(1.0,maxX-minX)),
+                               (area.height-24)/float(std::max(1.0,maxY-minY)));
+    const float dx=area.x+(area.width-float(maxX-minX)*scale)*.5f;
+    const float dy=area.y+(area.height-float(maxY-minY)*scale)*.5f;
+    const auto map=[&](Vec2 p) {
+        return Vector2{dx+float(p.x-minX)*scale,dy+float(p.y-minY)*scale};
+    };
+    for(std::size_t i=0;i<points.size();i+=3)
+        DrawLineEx(map(points[i]),map(points[(i+3)%points.size()]),5.f,
+                   id==1?SKYBLUE:id==2?ORANGE:id==3?LIME:id==4?GOLD:RAYWHITE);
+    DrawCircleV(map(points.front()),6,RED);
+    DrawText("GAUCHE / DROITE : CIRCUIT",w/2-175,h-95,19,RAYWHITE);
+    DrawText("ENTREE : PRENDRE LE DEPART     ESC : RETOUR VOITURE",
+             w/2-285,h-58,17,LIGHTGRAY);
+    (void)time;
+    EndMode2D();
+}
+
 void HudRenderer::draw(const Simulation& sim,int quality,int fps) const {
     const auto ui=uiViewport();
     const int w=ui.width,h=ui.height;
