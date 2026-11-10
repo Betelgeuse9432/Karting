@@ -48,7 +48,8 @@ private:
 class VehicleRenderer {
 public:
     void draw(const Car& car, const VehicleProfile& profile,
-              int vehicleIndex, int colorIndex, bool night, bool desert = false) const;
+              int vehicleIndex, int colorIndex, bool night, bool desert = false,
+               bool tunnelLights = false) const;
 };
 
 // Logical HUD dimensions preserve the original 1100x720 layout at any
