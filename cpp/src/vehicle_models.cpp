@@ -455,9 +455,10 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
 void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
                            int index,int colorIndex,bool night,
                            bool followRoad,const Track* track) const {
-    const Color paint=palette(colorIndex);
+    const Color paint=followRoad?surface(palette(colorIndex),Surface::Paint):palette(colorIndex);
     const Color dark{31,34,42,255};
-    const Color glass=night?Color{29,48,70,255}:Color{58,104,139,255};
+    const Color glassBase=night?Color{29,48,70,255}:Color{58,104,139,255};
+    const Color glass=followRoad?surface(glassBase,Surface::Glass):glassBase;
     const Vec2 forward{std::cos(car.heading),std::sin(car.heading)};
     const Vec2 side{-forward.y,forward.x};
     // Sample the four wheel contact locations. Compute the road plane in

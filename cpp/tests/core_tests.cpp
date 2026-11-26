@@ -112,6 +112,28 @@ void testChaseCamera() {
     }
 }
 
+void testSmoothRoadAndRenderInterpolation() {
+    Track track;
+    for(std::size_t i=0;i<track.size();++i) {
+        const auto n=track.size(),j=(i+1)%n;
+        const Vec2 p=(track.point(i)+track.point(j))*.5;
+        close(track.roadHeightAt(p,i),track.roadHeightAt(p,j),1e-7,
+              "Adjacent route hints agree on road height");
+        if(track.bridgeRise(i)==0 && track.bridgeRise(j)==0) {
+            close(track.roadHeightAt(p,i),elevation(p),1e-8,
+                  "Ordinary road retains natural relief");
+        }
+    }
+    Car a{},b{};
+    a.position={10,20}; b.position={30,40};
+    a.height=50; b.height=60;
+    a.heading=kPi-.1; b.heading=-kPi+.1;
+    const Car mid=interpolateCar(a,b,.5);
+    close(mid.position.x,20,1e-9,"Render position interpolated");
+    close(mid.height,55,1e-9,"Render altitude interpolated");
+    close(std::abs(mid.heading),kPi,1e-9,"Render heading takes shortest path");
+}
+
 void testCircuit() {
     const Track track;
     require(track.size()==45*Track::subdivisions,
@@ -554,6 +576,7 @@ int main() {
     try {
         testScenicDriving();
         testChaseCamera();
+        testSmoothRoadAndRenderInterpolation();
         testCircuit();
         testBridgeStructures();
         testProfiles();

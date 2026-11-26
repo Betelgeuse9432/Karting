@@ -13,6 +13,23 @@ Vec2 operator*(Vec2 a, double s) { return {a.x * s, a.y * s}; }
 double dot(Vec2 a, Vec2 b) { return a.x * b.x + a.y * b.y; }
 double length(Vec2 a) { return std::hypot(a.x, a.y); }
 double wrapAngle(double a) { return std::remainder(a, 2 * kPi); }
+Car interpolateCar(const Car& previous,const Car& current,double alpha) {
+    const double t=std::clamp(alpha,0.0,1.0);
+    const auto lerp=[t](double a,double b){return a+(b-a)*t;};
+    Car out=current;
+    out.position=previous.position+(current.position-previous.position)*t;
+    out.height=lerp(previous.height,current.height);
+    out.heading=previous.heading+wrapAngle(current.heading-previous.heading)*t;
+    out.pitch=lerp(previous.pitch,current.pitch);
+    out.roll=lerp(previous.roll,current.roll);
+    out.steering=lerp(previous.steering,current.steering);
+    out.wheelRotation=lerp(previous.wheelRotation,current.wheelRotation);
+    out.speed=lerp(previous.speed,current.speed);
+    out.throttle=lerp(previous.throttle,current.throttle);
+    out.brake=lerp(previous.brake,current.brake);
+    out.wing=lerp(previous.wing,current.wing);
+    return out;
+}
 
 // The previous factor of 1200 treated one simulated speed unit as if it
 // were one metre/second, despite kTravelScale and kWorldScale. Consequently
@@ -156,27 +173,45 @@ double Track::bridgeRise(std::size_t index) const {
     return bridgeRise_.at(index % bridgeRise_.size());
 }
 double Track::roadHeightAt(Vec2 position,std::size_t nearIndex) const {
-    // Elevation of the terrain at the exact requested XY, plus the bridge
-    // ramp offset interpolated along the nearest local route segment.
-    // This keeps normal asphalt embedded consistently in the terrain,
-    // even at the outer edge of a banked or curved road.
+    // Interpolate between the route's transverse cross sections rather than
+    // two arbitrary closest centerline segments. Wheels may be more than
+    // one sample away from the car's route hint, especially in the hairpin.
     const std::size_t n=center_.size(), index=nearIndex%n;
     double best=std::numeric_limits<double>::infinity();
-    double rise=bridgeRise_[index];
-    for(const std::size_t first:{(index+n-1)%n,index}) {
+    std::size_t firstBest=index;
+    double tBest=0;
+    for(int offset=-5;offset<=5;++offset) {
+        const std::size_t first=(index+n+offset)%n;
         const std::size_t second=(first+1)%n;
+        const Vec2 tangentA{normals_[first].y,-normals_[first].x};
+        const Vec2 tangentB{normals_[second].y,-normals_[second].x};
+        const double da=dot(position-center_[first],tangentA);
+        const double db=dot(position-center_[second],tangentB);
+        const double span=da-db;
         const Vec2 leg=center_[second]-center_[first];
-        const double t=std::clamp(dot(position-center_[first],leg)/
-                                   std::max(1e-9,dot(leg,leg)),0.0,1.0);
-        const Vec2 projection=center_[first]+leg*t;
-        const double d2=dot(position-projection,position-projection);
-        if(d2<best) {
-            best=d2;
-            rise=bridgeRise_[first]+
-                 (bridgeRise_[second]-bridgeRise_[first])*t;
-        }
+        const double projected=std::clamp(dot(position-center_[first],leg)/
+                                           std::max(1e-9,dot(leg,leg)),0.0,1.0);
+        const bool inside=span>1e-9 && da>=-1e-8 && db<=1e-8;
+        const double t=inside?std::clamp(da/span,0.0,1.0):projected;
+        const Vec2 delta=position-(center_[first]+leg*t);
+        const double score=dot(delta,delta)+(inside?0.0:1e9);
+        if(score<best) { best=score; firstBest=first; tBest=t; }
     }
-    return elevation(position)+rise;
+    // Shape-preserving cubic Hermite interpolation: continuous grade at
+    // every sample, without overshoot at the start or top of the ramps.
+    const auto prev=(firstBest+n-1)%n, next=(firstBest+1)%n, after=(next+1)%n;
+    const double run=std::max(1e-9,length(center_[next]-center_[firstBest]));
+    const double y0=bridgeRise_[firstBest],y1=bridgeRise_[next];
+    const double d0=(y0-bridgeRise_[prev])/std::max(1e-9,length(center_[firstBest]-center_[prev]));
+    const double d1=(y1-y0)/run;
+    const double d2=(bridgeRise_[after]-y1)/std::max(1e-9,length(center_[after]-center_[next]));
+    const auto slope=[](double a,double b) {
+        return a*b<=0.0?0.0:2.0*a*b/(a+b);
+    };
+    const double t=tBest,t2=t*t,t3=t2*t;
+    const double rise=(2*t3-3*t2+1)*y0+(t3-2*t2+t)*run*slope(d0,d1)
+                     +(-2*t3+3*t2)*y1+(t3-t2)*run*slope(d1,d2);
+    return elevation(position)+std::clamp(rise,std::min(y0,y1),std::max(y0,y1));
 }
 void Track::setRoadHeightProfile(std::vector<double> heights) {
     if(heights.size()!=heights_.size() ||
@@ -437,6 +472,8 @@ void Simulation::update(const Controls& controls,double dt,bool timed) {
     car_.roadIndex=roadIndex_;
     car_.height=track_.roadHeightAt(car_.position,roadIndex_);
     const double impact=track_.collide(car_,dt);
+    // Collision can correct XY; recompute height at the corrected position.
+    car_.height=track_.roadHeightAt(car_.position,roadIndex_);
     car_.brakeHeat=std::clamp(car_.brakeHeat+
             (car_.brake>.05 && car_.speed>0?
                  car_.brake*(std::abs(car_.speed)/p.topSpeed)*1.6*dt :

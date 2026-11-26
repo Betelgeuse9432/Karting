@@ -26,7 +26,7 @@ Color palette(int index) {
 static Color shaded(Color c, float multiplier) {
     return {static_cast<unsigned char>(std::clamp(c.r*multiplier,0.0f,255.0f)),
             static_cast<unsigned char>(std::clamp(c.g*multiplier,0.0f,255.0f)),
-            static_cast<unsigned char>(std::clamp(c.b*multiplier,0.0f,255.0f)),255};
+            static_cast<unsigned char>(std::clamp(c.b*multiplier,0.0f,255.0f)),c.a};
 }
 
 static void quad(Vector3 a,Vector3 b,Vector3 c,Vector3 d,Color color) {
@@ -70,11 +70,11 @@ static void solidEmbankment(const Track& track,std::size_t i,std::size_t j,
                             float night) {
     const auto first=bridge::embankmentSection(track,i);
     const auto second=bridge::embankmentSection(track,j);
-    const Color sod=shaded({78,116,59,255},1-.46f*night);
-    const Color packed=shaded({126,116,86,255},1-.40f*night);
-    const Color exposed=shaded({118,92,67,255},1-.43f*night);
-    const Color rock=shaded({99,92,81,255},1-.43f*night);
-    const Color deep=shaded({72,66,59,255},1-.43f*night);
+    const Color sod=surface(shaded({78,116,59,255},1-.46f*night),Surface::Grass);
+    const Color packed=surface(shaded({126,116,86,255},1-.40f*night),Surface::Soil);
+    const Color exposed=surface(shaded({118,92,67,255},1-.43f*night),Surface::Soil);
+    const Color rock=surface(shaded({99,92,81,255},1-.43f*night),Surface::Soil);
+    const Color deep=surface(shaded({72,66,59,255},1-.43f*night),Surface::Soil);
     const float variation=0.94f+float((i/5)%7)*.015f;
     const std::array<Color,9> strata{{
         shaded(rock,variation*.87f),shaded(exposed,variation),
@@ -126,10 +126,10 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
     frustum.disabled=shadowPass;
     const float rain=float(weather.rainLevel);
     const float night=float(weather.nightLevel);
-    const auto asphalt=shaded({84,86,95,255},1-0.35f*rain-0.52f*night);
+    const auto asphalt=surface(shaded({84,86,95,255},1-0.35f*rain-0.52f*night),Surface::Asphalt);
     const auto kerbRed=shaded({223,37,37,255},1-0.25f*night);
     const auto kerbWhite=shaded({230,228,218,255},1-0.4f*night);
-    const auto grass=shaded({53,153,57,255},1-0.1f*rain-0.55f*night);
+    const auto grass=surface(shaded({71,125,58,255},1-0.1f*rain-0.55f*night),Surface::Grass);
     // A distant lower base hides the far edge of the camera-local terrain.
     // Keep the distant backdrop safely beneath the deeper valleys.
     DrawPlane({float(Track::worldWidth*kWorldScale*.5f),-18.f,
@@ -149,7 +149,6 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
                        float(p.y*kWorldScale)};
     };
     const float farDistance=quality==0?47.f:quality==1?63.f:81.f;
-    const auto& center=track.center();
     for (std::size_t i=0;i<count;) {
         const Vector3 mid=roadPoint(i,0);
         const float dx=mid.x-cameraPosition.x, dz=mid.z-cameraPosition.z;
@@ -167,22 +166,23 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
         const auto l=[&](std::size_t k,double off) {
             return roadPoint(k,off,1);
         };
-        const auto paint=[&](double left,double right,Color color) {
-            quad(l(i,left),l(j,left),l(j,right),l(i,right),color);
+        const auto paint=[&](double left,double right,Color color,double lift=0.0) {
+            const float dy=float(lift*kWorldScale);
+            quad(raised(l(i,left),dy),raised(l(j,left),dy),
+                 raised(l(j,right),dy),raised(l(i,right),dy),color);
         };
-        paint(-Track::halfWidth,Track::halfWidth,
-              shaded(asphalt,int(i/9)%2==0?1.f:.90f));
+        paint(-Track::halfWidth,Track::halfWidth,asphalt);
         const auto kerb=int(i/5)%2?kerbWhite:kerbRed;
         paint(-Track::halfWidth-Track::kerb,-Track::halfWidth,kerb);
         paint(Track::halfWidth,Track::halfWidth+Track::kerb,kerb);
-        if (i%18<9) paint(-2,2,shaded(WHITE,1-0.55f*night));
+        if (i%18<9) paint(-2,2,shaded(WHITE,1-0.55f*night),.35);
 
         if (track.isPitIndex(i) && track.isPitIndex(j)) {
             paint(Track::halfWidth+Track::kerb+5,
                   Track::halfWidth+Track::kerb+Track::pitWidth-5,
                   shaded({110,111,119,255},1-.3f*rain-.55f*night));
             paint(Track::halfWidth+Track::kerb+5,
-                  Track::halfWidth+Track::kerb+7,YELLOW);
+                  Track::halfWidth+Track::kerb+7,YELLOW,.35);
         }
         // Earth ramps, retaining abutments and structural deck.
         // On the low approaches, every cross section is a CLOSED soil volume.
@@ -222,9 +222,9 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
         };
         const double depthI=deckDepth(riseI),depthJ=deckDepth(riseJ);
         if(depthI>0.0 || depthJ>0.0) {
-            const Color face=shaded({192,194,198,255},1-.34f*night);
-            const Color band=shaded({139,146,157,255},1-.38f*night);
-            const Color underside=shaded({112,123,138,255},1-.43f*night);
+            const Color face=surface(shaded({192,194,198,255},1-.34f*night),Surface::Concrete);
+            const Color band=surface(shaded({139,146,157,255},1-.38f*night),Surface::Concrete);
+            const Color underside=surface(shaded({112,123,138,255},1-.43f*night),Surface::Concrete);
             for(const int side:{-1,1}) {
                 const double edge=side*deckWidth;
                 quad(roadPoint(i,edge,-3),roadPoint(j,edge,-3),
@@ -295,9 +295,9 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
     // The crossover itself remains completely free for the lower road.
     // Unlike the former arch, nothing spans above the opening.
     if (quality>0) {
-        const Color pier=shaded({183,186,192,255},1-.36f*night);
-        const Color footing=shaded({124,130,138,255},1-.40f*night);
-        const Color cap=shaded({214,215,216,255},1-.34f*night);
+        const Color pier=surface(shaded({183,186,192,255},1-.36f*night),Surface::Concrete);
+        const Color footing=surface(shaded({124,130,138,255},1-.40f*night),Surface::Concrete);
+        const Color cap=surface(shaded({214,215,216,255},1-.34f*night),Surface::Concrete);
         // Locations on either side of the crossover, away from the lower
         // straight. Do not place any support under the crossing itself.
         for(const std::size_t i:{

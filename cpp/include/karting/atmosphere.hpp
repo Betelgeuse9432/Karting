@@ -4,6 +4,12 @@
 
 namespace karting {
 
+// Opaque surface tags travel in vertex alpha (restored to 1 by the shader).
+// Reserve only 249..254; ordinary opaque and translucent draws are unchanged.
+enum class Surface : unsigned char { Asphalt=254, Grass=253, Concrete=252,
+                                     Soil=251, Paint=250, Glass=249 };
+inline Color surface(Color c,Surface kind) { c.a=static_cast<unsigned char>(kind); return c; }
+
 // Directional forward lighting with an independent sun-space shadow pass.
 // The original forward shader remains usable if the shadow target fails.
 class Atmosphere {

@@ -2,6 +2,10 @@
 
 Ce dossier contient la version native **C++20 / raylib** de Karting, utilisée sur les branches `cpp-raylib` et `main-cpp`. Les anciens fichiers du jeu Python ont été retirés de ces deux branches ; ils restent consultables dans l'historique Git et les branches historiques.
 
+## Materiaux et fluidite de la chaussée
+
+Le shader attribue des materiaux proceduraux distincts aux surfaces : asphalte granuleux, herbe variee, beton, terre, peinture et vitrage avec reflet analytique du ciel. Le bruit fin est attenue lorsqu'il devient sous-pixel. Les marquages sont legerement releves pour limiter le z-fighting et le biais des ombres a ete augmente. Les hauteurs du pont utilisent une interpolation cubique monotone sur les sections locales, sans changer les points du circuit ni le relief naturel. La voiture et la camera utilisent une position interpolee entre deux pas physiques, sans modification de la cadence physique ou des records. Les tests de hauteur et d'interpolation sont ajoutes, le rendu et les sensations restent a verifier.
+
 ## Ombres projetees du soleil
 
 Le rendu effectue une passe orthographique depuis le soleil dans une carte de profondeur de 4096 x 4096 sur une zone de 100 m autour de la voiture. Un filtrage PCF de 25 comparaisons adoucit les bords. Les arbres, infrastructures, relief et voitures projettent leurs ombres, y compris entre les deux niveaux du pont. La camera solaire est stabilisee sur la grille des texels et les ombres disparaissent progressivement la nuit et sous la pluie. La passe conserve les niveaux de detail du rendu principal mais ne filtre pas les objets hors du champ de la camera du joueur. Le cout GPU/CPU et le rendu restent a mesurer. Si la carte d'ombres ne peut pas etre creee, l'eclairage directionnel reste disponible.

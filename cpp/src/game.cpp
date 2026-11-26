@@ -113,7 +113,8 @@ void Game::reset() {
     paused_=false;
     disabled_.clear();
     faultMessage_.clear();
-    chase_.reset(sim_.car(),sim_.profile());
+    previousCar_=renderCar_=sim_.car();
+    chase_.reset(renderCar_,sim_.profile());
     follow(0.0);
 }
 
@@ -157,7 +158,7 @@ void Game::handleRace() {
 }
 
 void Game::follow(double dt) {
-    const auto& car=sim_.car();
+    const auto& car=renderCar_;
     const auto& spec=sim_.profile();
     chase_.update(car,spec,dt,dynamicCamera_);
     const Vec2 behind{std::cos(chase_.angle),std::sin(chase_.angle)};
@@ -220,7 +221,7 @@ void Game::renderRace() {
     if(atmosphere_.beginShadow(camera_,n,r)) {
         try {
             world_.draw(sim_.track(),weather,quality_,camera_,gameTime_,true);
-            vehicle_.draw(sim_.car(),sim_.profile(),sim_.vehicleIndex(),
+            vehicle_.draw(renderCar_,sim_.profile(),sim_.vehicleIndex(),
                           sim_.colorIndex(),n>.2,true,&sim_.track());
         } catch(const std::exception& e) {
             atmosphere_.endShadow();
@@ -294,8 +295,8 @@ void Game::renderRace() {
         world_.draw(sim_.track(),weather,quality_,camera_,gameTime_);
     });
     safe("vehicle",[&]{
-        drawContactShadow(sim_.track(),sim_.car(),sim_.profile(),n,r);
-        vehicle_.draw(sim_.car(),sim_.profile(),
+        drawContactShadow(sim_.track(),renderCar_,sim_.profile(),n,r);
+        vehicle_.draw(renderCar_,sim_.profile(),
                       sim_.vehicleIndex(),sim_.colorIndex(),n>.2,
                       true,&sim_.track());
     });
@@ -402,6 +403,7 @@ int Game::run() {
                 for (int step=clock_.consume(frame);step>0;--step) {
                     const double previousRecord=sim_.race().bestLap;
                     try {
+                        previousCar_=sim_.car();
                         sim_.update(keys,FixedClock::step,mode_==DrivingMode::TimeTrial);
                     } catch(const std::exception& e) {
                         showFault("physics",e.what());
@@ -426,6 +428,7 @@ int Game::run() {
                         }
                     }
                 }
+                renderCar_=interpolateCar(previousCar_,sim_.car(),clock_.alpha());
                 follow(frame);
             }
             render();

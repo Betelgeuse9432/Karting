@@ -56,12 +56,30 @@ uniform mat4 lightVP;
 uniform vec3 shadowParams; // inverse size, strength, valid
 out vec4 finalColor;
 
+float hash3(vec3 p) {
+    p=fract(p*0.1031);
+    p+=dot(p,p.yzx+33.33);
+    return fract((p.x+p.y)*p.z);
+}
+float noise3(vec3 p) {
+    vec3 i=floor(p),f=fract(p);
+    f=f*f*(3.0-2.0*f);
+    return mix(mix(mix(hash3(i),hash3(i+vec3(1,0,0)),f.x),
+                   mix(hash3(i+vec3(0,1,0)),hash3(i+vec3(1,1,0)),f.x),f.y),
+               mix(mix(hash3(i+vec3(0,0,1)),hash3(i+vec3(1,0,1)),f.x),
+                   mix(hash3(i+vec3(0,1,1)),hash3(i+vec3(1,1,1)),f.x),f.y),f.z);
+}
+float detailNoise(vec3 p,float frequency) {
+    // Suppress subpixel detail instead of producing shimmer while driving.
+    float footprint=max(length(dFdx(p)),length(dFdy(p)))*frequency;
+    return mix(noise3(p*frequency),0.5,smoothstep(0.35,1.4,footprint));
+}
 float sunVisibility(vec3 position,float facing) {
     if(shadowParams.z<0.5) return 1.0;
     vec4 clip=lightVP*vec4(position,1.0);
     vec3 uvz=clip.xyz/clip.w*0.5+0.5;
     if(any(lessThanEqual(uvz,vec3(0.0)))||any(greaterThanEqual(uvz,vec3(1.0)))) return 1.0;
-    float bias=0.000045+0.00013*(1.0-facing);
+    float bias=0.00010+0.00030*(1.0-facing);
     float sum=0.0;
     for(int y=-2;y<=2;++y) for(int x=-2;x<=2;++x) {
         vec2 uv=uvz.xy+vec2(x,y)*shadowParams.x*1.5;
@@ -81,12 +99,55 @@ void main() {
     // Existing vertex colours already incorporate night and rain. Add
     // directional contrast, not a second full day/night multiplier.
     float strength=lighting.x*(1.0-0.75*lighting.z);
-    float visibility=sunVisibility(worldPosition,facing);
+    float visibility=sunVisibility(worldPosition+normal*0.018,facing);
+    int material=int(floor(fragColor.a*255.0+0.5));
+    bool tagged=material>=249 && material<=254;
+    if(tagged) base.a=1.0;
+    vec3 p=worldPosition;
+    float broad=noise3(p*0.55);
+    float fine=detailNoise(p,24.0);
+    float roughness=0.85;
+    float reflectance=0.0;
+    if(material==254) { // asphalt: aggregate, dark patches and rubber
+        float grit=detailNoise(p,65.0);
+        base.rgb*=0.91+0.20*broad+0.20*(fine-0.5)+0.16*(grit-0.5);
+        roughness=mix(0.82,0.25,lighting.z);
+        reflectance=mix(0.025,0.32,lighting.z);
+    } else if(material==253) {
+        float patches=noise3(p*0.18);
+        base.rgb=mix(base.rgb*vec3(0.78,0.90,0.70),
+                     base.rgb*vec3(1.12,1.04,0.76),patches);
+        base.rgb*=0.87+0.22*broad+0.30*(fine-0.5);
+    } else if(material==252) {
+        base.rgb*=0.87+0.22*broad+0.17*(fine-0.5);
+        roughness=0.73; reflectance=0.025;
+    } else if(material==251) {
+        base.rgb*=0.78+0.36*broad+0.32*(fine-0.5);
+        roughness=0.95;
+    } else if(material==250) {
+        roughness=0.19; reflectance=0.32;
+    } else if(material==249) {
+        roughness=0.10; reflectance=0.58;
+    }
     float shade=mix(1.0,0.60+0.54*facing*visibility,strength);
     shade*=mix(0.76,1.0,visibility);
     vec3 warm=mix(vec3(1.0),vec3(1.13,0.97,0.79),lighting.y*facing*visibility);
     vec3 cool=mix(vec3(1.0),vec3(0.84,0.91,1.08),lighting.y*(1.0-facing)*0.5);
     vec3 lit=base.rgb*shade*warm*cool;
+    if(reflectance>0.0) {
+        vec3 view=normalize(eyePosition-p);
+        vec3 halfVector=normalize(view+sunDirection);
+        float ndv=max(dot(normal,view),0.0);
+        float fresnel=0.04+0.96*pow(1.0-ndv,5.0);
+        float specular=pow(max(dot(normal,halfVector),0.0),
+                           mix(100.0,5.0,roughness));
+        vec3 reflected=reflect(-view,normal);
+        // Analytic sky reflection, not a scene reflection or mirror.
+        vec3 sky=mix(horizonColor,vec3(0.30,0.53,0.80)*(0.18+0.82*lighting.x),
+                     clamp(reflected.y,0.0,1.0));
+        lit=mix(lit,sky,reflectance*(0.20+0.80*fresnel));
+        lit+=vec3(1.0,0.92,0.79)*specular*reflectance*strength*visibility;
+    }
     float distanceToEye=length(worldPosition-eyePosition);
     float haze=smoothstep(fogRange.x,fogRange.y,distanceToEye);
     finalColor=vec4(mix(lit,horizonColor,haze),base.a);

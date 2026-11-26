@@ -127,6 +127,7 @@ private:
     int quality_ = 1;
     double gameTime_ = 0;
     ChaseCamera chase_;
+    Car previousCar_{}, renderCar_{};
     bool dynamicCamera_ = true;
     double cameraNoticeUntil_ = 0;
     std::string faultMessage_;

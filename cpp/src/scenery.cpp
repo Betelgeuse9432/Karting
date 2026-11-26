@@ -497,10 +497,10 @@ void WorldRenderer::drawTerrain(const Weather& weather,int quality,
         const float radius=Vector3Distance(a,c)*.5f+5.f;
         if(!frustum.visible(center,radius)) continue;
         const float noise=seedNoise(float(x+spacing*.5),float(z+spacing*.5));
-        const Color grass=noise>.24f?Color{99,141,66,255}:
-                          noise<-.23f?Color{63,128,60,255}:
-                                      Color{67,144,63,255};
-        const Color color=shade(grass,damp);
+        const Color grass=noise>.24f?Color{93,131,73,255}:
+                          noise<-.23f?Color{67,112,59,255}:
+                                      Color{77,125,65,255};
+        const Color color=surface(shade(grass,damp),Surface::Grass);
         rlColor4ub(color.r,color.g,color.b,color.a);
         triangle(a,b,c);
         triangle(a,c,d);

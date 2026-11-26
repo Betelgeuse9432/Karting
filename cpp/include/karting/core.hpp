@@ -72,6 +72,9 @@ struct Car {
     double wheelRotation = 0;
 };
 
+// Interpolate rendering only; simulation and records remain fixed-step.
+Car interpolateCar(const Car& previous,const Car& current,double alpha);
+
 struct TrackInfo {
     std::size_t index = 0;
     double distance = 0;
@@ -194,6 +197,7 @@ public:
     static constexpr double step = 1.0 / 60.0;
     int consume(double frameSeconds);
     void reset() { accumulated_ = 0; }
+    double alpha() const { return accumulated_/step; }
 private:
     double accumulated_ = 0;
 };
