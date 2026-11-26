@@ -37,6 +37,7 @@ public:
     void end() const;
     bool beginShadow(const Camera3D& camera,float night,float rain);
     void endShadow();
+    void clearShadow() { shadowValid_=false; }
     bool ready() const { return ready_; }
     static Vector3 sunDirection(float night);
     static Vector3 moonDirection();

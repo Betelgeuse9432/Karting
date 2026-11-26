@@ -196,15 +196,15 @@ void Game::renderMenu(double time) {
     const float t=float(time*.35);
     const float base=float(elevation({0,0})*kWorldScale);
     Camera3D preview{};
-    preview.position={4.6f*std::cos(t),base+2.35f,
-                      4.6f*std::sin(t)};
-    preview.target={0,base+.55f,0};
+    preview.position={4.8f*std::cos(t),base+1.65f,
+                      4.8f*std::sin(t)};
+    preview.target={0,base+.42f,0};
     preview.up={0,1,0};
     preview.fovy=52;
     preview.projection=CAMERA_PERSPECTIVE;
     BeginMode3D(preview);
-    DrawPlane({0,base-.04f,0},{10,10},{82,88,103,255});
-    DrawCylinder({0,base,0},1.65f,1.65f,.13f,32,
+    DrawPlane({0,base-.17f,0},{10,10},{65,71,83,255});
+    DrawCylinder({0,base-.13f,0},1.80f,1.80f,.13f,48,
                  Color{112,115,128,255});
     Car display{};
     display.position={0,0};
@@ -212,8 +212,11 @@ void Game::renderMenu(double time) {
     display.wheelRotation=time*5;
     display.wing=.1+.45*(.5+.5*std::sin(time*2));
     // Showroom turntable stays level; only the racing car follows terrain.
+    atmosphere_.clearShadow();
+    atmosphere_.begin(preview,bottom,0.f,0.f,quality_);
     vehicle_.draw(display,sim_.profile(),sim_.vehicleIndex(),
                   sim_.colorIndex(),false,false);
+    atmosphere_.end();
     EndMode3D();
     hud_.menu(sim_,time,mode_);
 }

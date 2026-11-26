@@ -261,9 +261,9 @@ void wec(Color paint,Color glass,Color /*dark*/,bool braking,bool lights) {
 void wheels(const Car& car,const VehicleProfile& p,int index) {
     const float front=index==2?gt3model::axle:float(p.frontAxle*kWorldScale);
     const float rear=index==2?-gt3model::axle:float(p.rearAxle*kWorldScale);
-    constexpr std::array<float,4> sizes{{.155f,.265f,.205f,.195f}};
+    constexpr std::array<float,4> sizes{{.155f,.265f,gt3model::wheelRadius,.195f}};
     constexpr std::array<float,4> widths{{.19f,.26f,.22f,.21f}};
-    constexpr std::array<float,4> tracks{{.45f,.65f,.60f,.58f}};
+    constexpr std::array<float,4> tracks{{.45f,.65f,gt3model::wheelCenterZ,.58f}};
     const std::size_t slot=std::size_t(std::clamp(index,0,3));
     const float r=sizes[slot],width=widths[slot];
     const float track=std::max(float(p.halfWheelTrack*kWorldScale),tracks[slot]);
@@ -272,11 +272,15 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
         rlPushMatrix();
         rlTranslatef(x,r+.015f,side*track);
         if(x==front) rlRotatef(float(-car.steering*RAD2DEG),0,1,0);
-        DrawCylinderEx({0,0,-width*.5f},{0,0,width*.5f},r,r,12,
+        DrawCylinderEx({0,0,-width*.5f},{0,0,width*.5f},r,r,index==2?20:12,
                        {27,30,36,255});
         const float z=side*(width*.5f+.008f);
-        rod({0,0,z},{0,0,z+side*.017f},
-            r*.52f,{90,96,107,255});
+        if(index==2) {
+            DrawCylinderEx({0,0,z},{0,0,z+side*.009f},r*.77f,r*.77f,20,
+                           {99,105,115,255});
+            DrawCylinderEx({0,0,z+side*.010f},{0,0,z+side*.015f},r*.65f,r*.65f,20,
+                           {37,40,47,255});
+        } else rod({0,0,z},{0,0,z+side*.017f},r*.52f,{90,96,107,255});
         rod({0,0,z+side*.020f},{0,0,z+side*.024f},
             r*.17f,{188,191,199,255});
         // GT3 gets a denser motorsport rim and a visible red brake caliper.
@@ -289,7 +293,7 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
             const float step=index==2?.62831853f:1.2566371f;
             const float a=float(car.wheelRotation)+spoke*step;
             DrawLine3D({std::cos(a)*r*.2f,std::sin(a)*r*.2f,z+side*.028f},
-                       {std::cos(a)*r*.48f,std::sin(a)*r*.48f,z+side*.028f},
+                       {std::cos(a)*r*(index==2?.67f:.48f),std::sin(a)*r*(index==2?.67f:.48f),z+side*.028f},
                        index==2?Color{201,206,211,255}:Color{180,185,193,255});
         }
         rlPopMatrix();
@@ -308,7 +312,7 @@ RoadPose roadPose(const Car& car,const VehicleProfile& profile,int index,
     float roadPitch=0.f,roadRoll=0.f;
     if (followRoad) {
         const double wheelTrack=std::max(profile.halfWheelTrack,
-                                        (index==2?.60:index==1?.65:index==3?.58:.45)
+                                        (index==2?gt3model::wheelCenterZ:index==1?.65:index==3?.58:.45)
                                             /kWorldScale);
         const auto contact=[&](double axle,double lateral) {
             const Vec2 point=car.position+forward*axle+side*lateral;
@@ -381,7 +385,8 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
                            bool followRoad,const Track* track,bool headlights) const {
     const Color paint=followRoad?surface(palette(colorIndex),Surface::Paint):palette(colorIndex);
     const Color dark{31,34,42,255};
-    const Color glassBase=night?Color{29,48,70,255}:Color{58,104,139,255};
+    const Color glassBase=index==2?(night?Color{18,25,37,255}:Color{32,43,58,255}):
+                                  (night?Color{29,48,70,255}:Color{58,104,139,255});
     const Color glass=followRoad?surface(glassBase,Surface::Glass):glassBase;
     const auto pose=roadPose(car,profile,index,followRoad,track);
     const Vector3 p=pose.origin;

@@ -4,7 +4,7 @@ Ce dossier contient la version native **C++20 / raylib** de Karting, utilisée s
 
 ## GT3 originale low-poly
 
-La GT3 est un modele original construit par un maillage indexe mis en cache : sections de carrosserie partagees, ailes sculptees, passages de roue ouverts, habitacle fastback, prises d'air, optiques et aileron. Les roues visuelles sont a +/-0.76 m pour corriger les proportions, sans modifier les essieux de la simulation. Les points de projection des phares suivent le nouveau nez. Le maillage passe encore par le batch rlgl existant pour conserver les ombres et shaders; pas encore de VBO persistant dedie. Les trois autres voitures sont inchangees. Tests geometriques dans core_tests.cpp.
+La GT3 est un modele original construit par un maillage indexe mis en cache : sections de carrosserie partagees, ailes sculptees, passages de roue ouverts, habitacle fastback, prises d'air, optiques et aileron. Les roues visuelles sont a +/-0.89 m environ pour corriger les proportions, sans modifier les essieux de la simulation. Les points de projection des phares suivent le nouveau nez. Le maillage passe encore par le batch rlgl existant pour conserver les ombres et shaders; pas encore de VBO persistant dedie. La seconde iteration allonge le profil de 17%, abaisse et assombrit l'habitacle, agrandit les roues, et ajoute un eclairage directionnel au showroom avec un socle sous les roues. Les trois autres carrosseries sont inchangees. Tests geometriques dans core_tests.cpp.
 
 ## Phares fonctionnels
 

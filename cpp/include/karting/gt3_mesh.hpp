@@ -34,18 +34,19 @@ struct Geometry {
         quad(add(a),add(b),add(c),add(d),f,outside);
     }
 };
-inline constexpr float axle=0.76f;
-inline constexpr float wheelCenterZ=0.60f;
-inline constexpr float wheelCenterY=0.22f;
-inline constexpr float wheelRadius=0.205f;
-inline constexpr float archRadius=0.265f;
-inline constexpr Point lampAnchor{1.153f,.355f,.48f};
+inline constexpr float stretch=1.17f;
+inline constexpr float axle=0.76f*stretch;
+inline constexpr float wheelCenterZ=0.65f;
+inline constexpr float wheelCenterY=0.270f;
+inline constexpr float wheelRadius=0.255f;
+inline constexpr float archRadius=0.265f*stretch;
+inline constexpr Point lampAnchor{1.164f*stretch,.344f,.48f};
 inline float archFloor(float x) {
     const float offset=std::min(std::abs(x-axle),std::abs(x+axle));
     if(offset>=archRadius) return .115f;
-    // Smooth at the lower ends and form a genuine semicircular cutout.
-    const float arc=std::sqrt(std::max(0.f,archRadius*archRadius-offset*offset));
-    return .115f+arc+(.105f)*std::clamp(arc/.09f,0.f,1.f);
+    const float circle=wheelCenterY+std::sqrt(std::max(0.f,.29f*.29f-offset*offset));
+    const float blend=std::clamp((archRadius-offset)/(archRadius-.255f),0.f,1.f);
+    return .115f+(circle-.115f)*blend;
 }
 struct Station { float x,center,shoulder,width; };
 
@@ -72,9 +73,9 @@ inline Geometry build() {
     using Ring=std::array<std::uint16_t,9>;
     std::vector<Ring> rings;
     for(const auto& s:stations) {
-        const float lower=archFloor(s.x);
-        const float belt=std::max(lower+.036f,s.shoulder-.09f);
-        const float top=s.shoulder;
+        const float lower=archFloor(s.x*stretch);
+        const float top=std::max(s.shoulder+.025f,lower+.075f);
+        const float belt=std::max(lower+.026f,top-.065f);
         rings.push_back({
             m.add({s.x,lower,-s.width*.97f}),
             m.add({s.x,belt,-s.width}),
@@ -114,12 +115,12 @@ inline Geometry build() {
     // Cabin: multi-section roof, laid-back windshield, rear fastback.
     struct Cabin { float x,baseY,baseZ,roofY,roofZ; };
     constexpr std::array<Cabin,6> cabin{{
-        {-.91f,.485f,.38f,.53f,.31f},
-        {-.63f,.50f,.42f,.775f,.30f},
-        {-.37f,.49f,.44f,.875f,.315f},
-        {-.08f,.475f,.43f,.87f,.31f},
-        { .13f,.46f,.40f,.79f,.29f},
-        { .48f,.435f,.35f,.47f,.30f}
+        {-.91f,.515f,.35f,.545f,.30f},
+        {-.63f,.525f,.39f,.675f,.265f},
+        {-.37f,.52f,.40f,.755f,.265f},
+        {-.08f,.51f,.39f,.755f,.265f},
+        { .13f,.49f,.36f,.68f,.25f},
+        { .48f,.465f,.31f,.49f,.27f}
     }};
     std::vector<std::array<std::uint16_t,5>> cab;
     for(auto s:cabin) cab.push_back({
@@ -143,11 +144,11 @@ inline Geometry build() {
     }
     // A-pillar/B-pillar graphics hug the glass rather than sitting as rods.
     for(float side:{-1.f,1.f}) {
-        m.panel({.48f,.438f,side*.352f},{.45f,.438f,side*.363f},
-                {.106f,.79f,side*.303f},{.13f,.792f,side*.293f},
+        m.panel({.48f,.467f,side*.312f},{.45f,.469f,side*.320f},
+                {.106f,.688f,side*.258f},{.13f,.682f,side*.253f},
                 Finish::Paint,{0,0,side});
-        m.panel({-.34f,.49f,side*.442f},{-.385f,.49f,side*.442f},
-                {-.39f,.876f,side*.318f},{-.345f,.876f,side*.318f},
+        m.panel({-.34f,.522f,side*.402f},{-.385f,.522f,side*.402f},
+                {-.385f,.751f,side*.268f},{-.34f,.757f,side*.268f},
                 Finish::Carbon,{0,0,side});
         // Angular front lamps sit on the nose, with a dark surround.
         m.panel({1.162f,.303f,side*.34f},{1.162f,.303f,side*.59f},
@@ -204,6 +205,11 @@ inline Geometry build() {
         m.panel({.55f,.45f,side*.15f},{.88f,.418f,side*.15f},
                 {.91f,.453f,side*.31f},{.56f,.49f,side*.31f},
                 Finish::Grille,{0,1,0});
+    // Stretch longitudinal proportions without changing the physics scale.
+    for(auto& p:m.vertices) {
+        if(p.x<-.9f && p.y>.65f) p.y=.46f+(p.y-.46f)*.78f;
+        p.x*=stretch;
+    }
     return m;
 }
 } // namespace karting::gt3model
