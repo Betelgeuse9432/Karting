@@ -54,6 +54,10 @@ uniform vec2 fogRange;
 uniform sampler2D sunShadowMap;
 uniform mat4 lightVP;
 uniform int hdrMode;
+uniform vec4 lunarLight;
+uniform int lampCount;
+uniform vec4 lampPositions[32];
+uniform vec4 lampDirections[32];
 uniform vec3 shadowParams; // inverse size, strength, valid
 out vec4 finalColor;
 
@@ -102,7 +106,7 @@ void main() {
     float strength=lighting.x*(1.0-0.75*lighting.z);
     float visibility=sunVisibility(worldPosition+normal*0.018,facing);
     int material=int(floor(fragColor.a*255.0+0.5));
-    bool tagged=material>=249 && material<=254;
+    bool tagged=material>=248 && material<=254;
     if(tagged) base.a=1.0;
     vec3 p=worldPosition;
     float broad=kartingValueNoise(p*0.55);
@@ -135,6 +139,8 @@ void main() {
     vec3 warm=mix(vec3(1.0),vec3(1.13,0.97,0.79),lighting.y*facing*visibility);
     vec3 cool=mix(vec3(1.0),vec3(0.84,0.91,1.08),lighting.y*(1.0-facing)*0.5);
     vec3 lit=base.rgb*shade*warm*cool;
+    float moonFacing=max(dot(normal,lunarLight.xyz),0.0);
+    lit*=mix(vec3(1.0),vec3(0.76,0.88,1.13)*(0.78+0.42*moonFacing),lunarLight.w);
     vec3 highEnergy=vec3(0.0);
     if(reflectance>0.0) {
         vec3 view=normalize(eyePosition-p);
@@ -151,10 +157,28 @@ void main() {
         lit+=vec3(1.0,0.92,0.79)*specular*reflectance*strength*visibility;
         highEnergy=vec3(1.0,0.82,0.59)*specular*reflectance*strength*visibility*2.2;
     }
+    // Local directional lamps: real world-space lighting on every surface.
+    // Cone + range + Lambert response, not screen-space painted circles.
+    vec3 lampEnergy=vec3(0.0);
+    for(int i=0;i<lampCount;++i) {
+        vec3 delta=lampPositions[i].xyz-p;
+        float distanceToLamp=length(delta);
+        vec3 L=delta/max(distanceToLamp,0.001);
+        float cone=smoothstep(0.52,0.85,dot(-L,lampDirections[i].xyz));
+        float falloff=pow(max(0.0,1.0-distanceToLamp/20.0),2.0);
+        float diffuse=max(dot(normal,L),0.0);
+        float energy=lampPositions[i].w*cone*falloff*diffuse*8.0/(1.0+0.05*distanceToLamp*distanceToLamp);
+        lampEnergy+=vec3(1.0,0.76,0.44)*energy*pow(max(base.rgb,vec3(0.0)),vec3(1.4));
+    }
+    if(material==248) {
+        lit=base.rgb;
+        highEnergy+=vec3(4.6,2.6,0.85)*smoothstep(0.0,0.7,lunarLight.w+0.32);
+    }
     float distanceToEye=length(worldPosition-eyePosition);
     float haze=smoothstep(fogRange.x,fogRange.y,distanceToEye);
     vec3 color=mix(lit,horizonColor,haze);
-    if(hdrMode!=0) color=pow(max(color,vec3(0.0)),vec3(2.2))+highEnergy*(1.0-haze);
+    if(hdrMode!=0) color=pow(max(color,vec3(0.0)),vec3(2.2))+(highEnergy+lampEnergy)*(1.0-haze);
+    else color+=lampEnergy*(1.0-haze);
     finalColor=vec4(color,base.a);
 }
 )GLSL";
@@ -174,6 +198,10 @@ void Atmosphere::initialize() {
     lightMatrix_=GetShaderLocation(shader_,"lightVP");
     shadowParams_=GetShaderLocation(shader_,"shadowParams");
     hdr_=GetShaderLocation(shader_,"hdrMode");
+    lunar_=GetShaderLocation(shader_,"lunarLight");
+    lampCount_=GetShaderLocation(shader_,"lampCount");
+    lampPositions_=GetShaderLocation(shader_,"lampPositions[0]");
+    lampDirections_=GetShaderLocation(shader_,"lampDirections[0]");
     if(eye_<0||sun_<0||horizon_<0||lighting_<0||fog_<0 ||
        shadowSampler_<0||lightMatrix_<0||shadowParams_<0) {
         shutdown();
@@ -206,9 +234,13 @@ Vector3 Atmosphere::sunDirection(float night) {
     return Vector3Normalize({-.68f,.78f-.65f*dusk,-.48f});
 }
 
+Vector3 Atmosphere::moonDirection() {
+    return Vector3Normalize({.65f,.58f,.48f});
+}
+
 bool Atmosphere::beginShadow(const Camera3D& camera,float night,float rain) {
     shadowValid_=false;
-    if(!ready_||!shadowReady_||night>.88f||rain>.95f) return false;
+    if(!ready_||!shadowReady_||night>.78f||rain>.95f) return false;
     const Vector3 sun=sunDirection(night);
     const Vector3 right=Vector3Normalize(Vector3CrossProduct(Vector3Scale(sun,-1),{0,1,0}));
     const Vector3 up=Vector3CrossProduct(right,Vector3Scale(sun,-1));
@@ -241,7 +273,7 @@ void Atmosphere::endShadow() {
     shadowValid_=true;
 }
 
-void Atmosphere::begin(const Camera3D& camera,Color horizon,float night,float rain,int quality,bool hdr) const {
+void Atmosphere::begin(const Camera3D& camera,Color horizon,float night,float rain,int quality,bool hdr,const StreetLights& lamps) const {
     if(!ready_) return;
     BeginShaderMode(shader_);
     const int hdrMode=hdr?1:0;
@@ -250,7 +282,16 @@ void Atmosphere::begin(const Camera3D& camera,Color horizon,float night,float ra
     const Vector3 sun=sunDirection(night);
     const Vector3 fogColor{horizon.r/255.f,horizon.g/255.f,horizon.b/255.f};
     const float warm=std::max(0.f,1.f-std::abs(night-.48f)/.48f);
-    const Vector3 light{1.f-.82f*night,warm*(1.f-rain),rain};
+    const float lunarAmount=std::clamp((night-.55f)/.45f,0.f,1.f);
+    const Vector3 light{1.f-.99f*lunarAmount,warm*(1.f-rain),rain};
+    const Vector3 moon=moonDirection();
+    const Vector4 lunar{moon.x,moon.y,moon.z,lunarAmount*(1.f-.6f*rain)};
+    SetShaderValue(shader_,lunar_,&lunar,SHADER_UNIFORM_VEC4);
+    SetShaderValue(shader_,lampCount_,&lamps.count,SHADER_UNIFORM_INT);
+    if(lamps.count>0) {
+        SetShaderValueV(shader_,lampPositions_,lamps.positions.data(),SHADER_UNIFORM_VEC4,lamps.count);
+        SetShaderValueV(shader_,lampDirections_,lamps.directions.data(),SHADER_UNIFORM_VEC4,lamps.count);
+    }
     const float end=(quality==0?63.f:quality==1?82.f:102.f)*(1.f-.36f*rain);
     const Vector2 range{end*(.34f-.15f*rain),end};
     SetShaderValue(shader_,eye_,&eye,SHADER_UNIFORM_VEC3);
@@ -259,7 +300,7 @@ void Atmosphere::begin(const Camera3D& camera,Color horizon,float night,float ra
     SetShaderValue(shader_,lighting_,&light,SHADER_UNIFORM_VEC3);
     SetShaderValue(shader_,fog_,&range,SHADER_UNIFORM_VEC2);
     const Vector3 shadow{1.f/shadowSize,
-                         (1.f-std::clamp((night-.55f)/.33f,0.f,1.f))*(1.f-rain),
+                         (1.f-std::clamp((night-.55f)/.23f,0.f,1.f))*(1.f-rain),
                          shadowValid_?1.f:0.f};
     SetShaderValue(shader_,shadowParams_,&shadow,SHADER_UNIFORM_VEC3);
     if(shadowValid_) SetShaderValueMatrix(shader_,lightMatrix_,lightVP_);

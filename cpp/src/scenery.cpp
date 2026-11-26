@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <random>
+#include <utility>
 
 namespace karting {
 namespace {
@@ -237,12 +238,12 @@ void sponsor(float night,int variant) {
 }
 
 void towerLight(float night) {
-    Color metal=shade({134,143,154,255},night);
+    Color metal=shade({134,143,154,255},1.f-.52f*night);
     beam({0,0,0},{0,5.15f,0},.065f,metal);
     beam({0,5.15f,0},{0,5.15f,.87f},.06f,metal);
-    cube(0,5.18f,.9f,.67f,.24f,.36f,
-         night>.7f?Color{255,227,153,255}:
-                    shade({208,217,220,255},night));
+    cube(0,5.18f,.9f,.67f,.24f,.36f,metal);
+    cube(0,5.045f,.9f,.56f,.025f,.28f,
+         night>.32f?surface({255,221,158,255},Surface::Lamp):Color{208,217,220,255});
 }
 
 // Lightweight trackside landmarks: few primitives, no per-object mesh
@@ -363,8 +364,14 @@ void WorldRenderer::initialize(const Track& track) {
         const std::size_t n=track.size();
         const Vec2 before=track.center()[(i+n-3)%n];
         const Vec2 after=track.center()[(i+3)%n];
-        const float yaw=-std::atan2(float(after.y-before.y),
-                                    float(after.x-before.x))*RAD2DEG;
+        float yaw=-std::atan2(float(after.y-before.y),
+                              float(after.x-before.x))*RAD2DEG;
+        // The lamp arm extends along local +Z. Aim that axis at the actual
+        // road center, independent of the side or direction of the curve.
+        if(kind==7) {
+            const Vec2 inward=track.point(i)-p;
+            yaw=std::atan2(float(inward.x),float(inward.y))*RAD2DEG;
+        }
         const Vector3 ground{float(p.x*kWorldScale),
                              groundY(p.x,p.y),float(p.y*kWorldScale)};
         scenery_.push_back({p,size,yaw,kind,color,ground});
@@ -506,6 +513,34 @@ void WorldRenderer::drawTerrain(const Weather& weather,int quality,
         triangle(a,c,d);
     }
     rlEnd();
+}
+
+StreetLights WorldRenderer::streetLights(Vector3 eye,float night) const {
+    StreetLights lights;
+    const float activation=std::clamp((night-.32f)/.36f,0.f,1.f);
+    if(activation<=0.f) return lights;
+    std::vector<std::pair<float,const SceneryProp*>> nearby;
+    for(const auto& obj:scenery_) {
+        if(obj.kind!=7) continue;
+        const float dx=obj.groundPosition.x-eye.x,dz=obj.groundPosition.z-eye.z;
+        const float d2=dx*dx+dz*dz;
+        if(d2<75.f*75.f) nearby.emplace_back(d2,&obj);
+    }
+    std::sort(nearby.begin(),nearby.end(),[](const auto& a,const auto& b) {
+        return a.first<b.first;
+    });
+    for(const auto& entry:nearby) {
+        if(lights.count>=kMaxStreetLights) break;
+        const auto& obj=*entry.second;
+        const float angle=obj.yaw*DEG2RAD;
+        const float x=std::sin(angle),z=std::cos(angle);
+        const auto p=obj.groundPosition;
+        const int i=lights.count++;
+        lights.positions[i]={p.x+.9f*x,p.y+5.02f,p.z+.9f*z,activation};
+        const Vector3 dir=Vector3Normalize({x*.83f,-.70f,z*.83f});
+        lights.directions[i]={dir.x,dir.y,dir.z,0.f};
+    }
+    return lights;
 }
 
 void WorldRenderer::drawScenery(const Weather& weather,int quality,

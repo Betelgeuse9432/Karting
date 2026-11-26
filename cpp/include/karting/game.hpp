@@ -60,6 +60,7 @@ struct SceneryProp {
 class WorldRenderer {
 public:
     void initialize(const Track& track);
+    StreetLights streetLights(Vector3 eye,float night) const;
     void draw(const Track& track, const Weather& weather, int quality,
               const Camera3D& camera, double time,bool shadowPass=false) const;
 private:

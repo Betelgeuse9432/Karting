@@ -26,9 +26,9 @@ void main() {
     vec3 sky=mix(horizonColor,zenithColor,pow(elevation,0.48));
     float sunAngle=acos(clamp(dot(ray,sunDirection),-1.0,1.0));
     float night=weather.x,rain=weather.y;
-    float sunlight=(1.0-smoothstep(0.54,0.83,night))*(1.0-0.95*rain);
+    float sunlight=(1.0-smoothstep(0.55,0.78,night))*(1.0-0.95*rain);
     float dusk=smoothstep(0.10,0.55,night);
-    vec3 sunColor=mix(vec3(1.0,0.86,0.57),vec3(1.0,0.43,0.11),dusk);
+    vec3 sunColor=mix(vec3(1.0,0.86,0.57),vec3(1.0,0.30,0.065),dusk);
     // Stylized angular radius, independent of screen resolution or FOV.
     float radius=0.019+0.006*dusk;
     float aa=max(fwidth(sunAngle),0.0002);
@@ -36,7 +36,13 @@ void main() {
     float radial=clamp(sunAngle/radius,0.0,1.0);
     float limb=0.48+0.52*sqrt(max(0.0,1.0-radial*radial));
     float aureole=exp(-sunAngle/0.085)*0.65+exp(-sunAngle/0.34)*0.12;
-    sky+=sunColor*sunlight*(disk*limb*12.0+aureole);
+    sky+=sunColor*sunlight*(disk*limb*mix(12.0,3.3,dusk)+aureole*mix(1.0,0.54,dusk));
+    // A cooler moon with a small soft halo, fixed in world direction.
+    vec3 moon=normalize(vec3(0.65,0.58,0.48));
+    float ma=acos(clamp(dot(ray,moon),-1.0,1.0));
+    float moonDisk=1.0-smoothstep(0.012,0.014,ma);
+    float moonOn=smoothstep(0.57,0.94,night)*(1.0-rain);
+    sky+=vec3(0.57,0.72,1.0)*moonOn*(moonDisk*1.8+exp(-ma/0.055)*0.10);
     finalColor=vec4(sky,1.0);
 }
 )GLSL";
@@ -94,9 +100,15 @@ uniform vec2 grade;
 out vec4 finalColor;
 void main() {
     float night=grade.x,rain=grade.y;
-    vec3 c=texture(texture0,fragTexCoord).rgb+
-           texture(bloomTexture,fragTexCoord).rgb*0.24;
-    c*=mix(vec3(1.05,1.02,0.99),vec3(1.04,1.00,1.10),night);
+    // Peak at the actual dusk preset (0.55), not midway to it.
+    float dusk=smoothstep(0.0,0.55,night)*(1.0-smoothstep(0.55,1.0,night));
+    float dark=smoothstep(0.55,1.0,night);
+    float exposure=1.0+0.07*dusk+0.38*dark;
+    float bloomStrength=mix(0.24,0.13,max(dusk,dark));
+    vec3 c=texture(texture0,fragTexCoord).rgb*exposure+
+           texture(bloomTexture,fragTexCoord).rgb*bloomStrength;
+    c*=mix(vec3(1.05,1.02,0.99),vec3(1.14,1.00,0.88),dusk);
+    c*=mix(vec3(1.0),vec3(0.90,0.98,1.12),dark);
     float lum=dot(c,vec3(0.2126,0.7152,0.0722));
     c=mix(c,vec3(lum),0.13*rain);
     // Luminance-based filmic shoulder preserves the original midtones

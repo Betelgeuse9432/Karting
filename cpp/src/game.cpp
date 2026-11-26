@@ -234,10 +234,10 @@ void Game::renderRace() {
     const bool hdr=atmosphere_.ready() && post_.begin(width,height);
     const Color daylightTop{92,157,243,255};
     const Color daylightBottom{190,220,250,255};
-    const Color duskTop{85,65,129,255};
-    const Color duskBottom{242,148,92,255};
-    const Color nightTop{5,8,27,255};
-    const Color nightBottom{22,30,65,255};
+    const Color duskTop{76,84,144,255};
+    const Color duskBottom{239,133,76,255};
+    const Color nightTop{9,15,36,255};
+    const Color nightBottom{29,42,73,255};
     Color top=n<.55f?lerp(daylightTop,duskTop,n/.55f):
                        lerp(duskTop,nightTop,(n-.55f)/.45f);
     Color bottom=n<.55f?lerp(daylightBottom,duskBottom,n/.55f):
@@ -280,7 +280,7 @@ void Game::renderRace() {
                 DrawCircleV(star,1.f,Fade(WHITE,(n-.5f)*2*(1-r)));
         }
         Vector2 moon{};
-        if(skyPoint(camera_,Vector3Normalize({.65f,.58f,.48f}),width,height,moon))
+        if(!hdr && skyPoint(camera_,Atmosphere::moonDirection(),width,height,moon))
             DrawCircleV(moon,11.f*height/720.f,Fade(RAYWHITE,(n-.5f)*2*(1-r)));
     }
     drawVisibleSky(camera_,width,height,n,r,gameTime_,quality_);
@@ -296,7 +296,7 @@ void Game::renderRace() {
         }
     };
     BeginMode3D(camera_);
-    atmosphere_.begin(camera_,bottom,n,r,quality_,hdr);
+    atmosphere_.begin(camera_,bottom,n,r,quality_,hdr,world_.streetLights(camera_.position,n));
     safe("world",[&]{
         world_.draw(sim_.track(),weather,quality_,camera_,gameTime_);
     });
