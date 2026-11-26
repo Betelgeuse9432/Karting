@@ -135,7 +135,7 @@ void kart(Color paint,bool lights) {
         {179,179,174,255}); // exhaust
     box(.76f,.14f,0,.068f,.10f,.76f,rubber); // bumper
     // Small auxiliary lights on the kart's front bumper.
-    lamps(.808f,.19f,.25f,frontLight({235,240,224,255},lights),.10f);
+    lamps(.808f,.19f,.25f,frontLight({255,220,160,255},lights),.10f);
     box(-.77f,.14f,0,.068f,.10f,.73f,rubber);
 }
 
@@ -161,7 +161,7 @@ void offRoad(Color paint,Color glass,Color dark,bool braking,bool lights) {
     }
     box(1.14f,.43f,0,.16f,.19f,1.02f,dark);
     box(1.23f,.60f,0,.032f,.24f,.61f,{45,51,59,255}); // grille
-    lamps(1.22f,.69f,.36f,frontLight({228,231,190,255},lights),.17f);
+    lamps(1.22f,.69f,.36f,frontLight({255,218,155,255},lights),.17f);
     lamps(-1.13f,.70f,.36f,braking?RED:Color{139,30,32,255},.16f);
     rod({-1.16f,.87f,-.10f},{-1.28f,.87f,-.10f},
         .30f,{40,42,46,255}); // spare
@@ -177,7 +177,7 @@ void gt3(Color paint,Color glass,Color dark,bool braking,bool lights) {
     const Color carbon{24,27,33,255};
     const Color grille{12,16,20,255};
     const Color metal{126,132,140,255};
-    const Color headlight=frontLight({239,245,223,255},lights);
+    const Color headlight=frontLight({255,226,174,255},lights);
     const Color tail=braking?Color{255,46,39,255}:Color{155,27,34,255};
     const Color crease=tone(paint,.58f);
     const Color silver{180,187,196,255};
@@ -375,7 +375,7 @@ void wec(Color paint,Color glass,Color /*dark*/,bool braking,bool lights) {
     // Simple WEC Hypercar silhouette. Front is +X, rear is -X.
     const Color carbon{24,28,34,255};
     const Color glassDark=tone(glass,.72f);
-    const Color headlamp=frontLight({235,243,232,255},lights);
+    const Color headlamp=frontLight({255,228,180,255},lights);
     const Color tail=braking?Color{255,38,32,255}:Color{135,22,28,255};
 
     // One continuous, gently rounded body profile.

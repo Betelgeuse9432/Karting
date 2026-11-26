@@ -193,27 +193,28 @@ void main() {
             float width=mix(0.48,0.31,high);
             float spread=1.0-smoothstep(width*0.42,width,abs(horizontal));
             float ceiling=mix(0.035,0.14,high);
-            float cutoff=1.0-smoothstep(ceiling-0.026,ceiling+0.021,vertical);
+            float cutoff=1.0-smoothstep(ceiling-0.018,ceiling+0.014,vertical);
             float floorFade=smoothstep(-0.46,-0.11,vertical);
             float beam=spread*cutoff*floorFade*smoothstep(0.08,0.60,along);
             float fade=1.0-smoothstep(beamRange*0.66,beamRange,dist);
             float incidence=max(dot(normal,-ray),0.0);
-            float power=mix(2.7,5.2,high)*beam*fade/(1.0+0.006*dist*dist);
+            float power=mix(4.5,8.0,high)*beam*fade/(1.0+0.006*dist*dist);
             // A mild grazing term makes the road readable on long, flat
             // straights while vertical surfaces still receive true diffuse.
-            float irradiance=power*(incidence+0.13*sqrt(incidence));
-            vec3 tint=vec3(1.0,0.94,0.80);
+            float irradiance=power*(incidence+0.18*sqrt(incidence));
+            // Warm halogen-style spectrum in linear light; keep perceived luminance.
+            vec3 tint=vec3(1.16,0.84,0.43);
             lampEnergy+=tint*irradiance*headSettings.x*pow(max(base.rgb,vec3(0.0)),vec3(1.5));
             if(reflectance>0.0) {
                 vec3 halfDir=normalize(normalize(eyePosition-p)-ray);
                 float glint=pow(max(dot(normal,halfDir),0.0),mix(95.0,8.0,roughness));
-                lampEnergy+=tint*power*glint*reflectance*headSettings.x*0.36;
+                lampEnergy+=tint*power*glint*reflectance*headSettings.x*0.6;
             }
         }
     }
     if(material==247) {
         lit=base.rgb;
-        highEnergy+=vec3(2.2,2.0,1.5)*headSettings.x*(1.0+headSettings.y*0.35);
+        highEnergy+=vec3(4.75,3.4,1.65)*headSettings.x*(1.0+headSettings.y*0.6);
     }
     if(material==248) {
         lit=base.rgb;
