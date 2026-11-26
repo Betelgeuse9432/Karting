@@ -1,5 +1,6 @@
 #pragma once
 #include "karting/core.hpp"
+#include "karting/chase_camera.hpp"
 #include "karting/frustum.hpp"
 #include "raylib.h"
 #include <array>
@@ -117,8 +118,7 @@ private:
     bool paused_ = false;
     int quality_ = 1;
     double gameTime_ = 0;
-    double followAngle_ = 0;
-    double cameraHeight_ = 0;
+    ChaseCamera chase_;
     std::string faultMessage_;
     std::unordered_set<std::string> disabled_;
 };

@@ -1,4 +1,5 @@
 #include "karting/core.hpp"
+#include "karting/chase_camera.hpp"
 #include "karting/bridge_geometry.hpp"
 #include <algorithm>
 #include <cmath>
@@ -17,6 +18,49 @@ void require(bool condition, const char* message) {
 void close(double actual,double expected,double tolerance,const char* message) {
     if (std::abs(actual-expected)>tolerance)
         throw std::runtime_error(message);
+}
+
+void testChaseCamera() {
+    for(const auto& spec:profiles()) {
+        Car car{};
+        car.heading=kPi-.03;
+        car.height=100;
+        ChaseCamera camera;
+        camera.reset(car,spec);
+        close(camera.distance,spec.cameraDistance,1e-9,"Reset restores camera distance");
+        close(camera.height,car.height+spec.cameraHeight,1e-9,"Reset restores camera height");
+        close(camera.fov,64,1e-9,"Reset restores camera FOV");
+        car.heading=-kPi+.03;
+        car.speed=spec.topSpeed;
+        car.throttle=1;
+        camera.update(car,spec,1.0/60.0);
+        require(std::abs(wrapAngle(camera.angle-car.heading))<.06,
+                "Chase camera takes shortest path across angle wrap");
+        for(int i=0;i<180;++i) camera.update(car,spec,1.0/60.0);
+        require(camera.distance>spec.cameraDistance && camera.fov>77.9,
+                "Acceleration and speed widen the chase framing");
+        car.throttle=0;
+        car.brake=1;
+        for(int i=0;i<180;++i) camera.update(car,spec,1.0/60.0);
+        require(camera.distance<spec.cameraDistance && camera.height>car.height+spec.cameraHeight,
+                "Braking draws camera closer and slightly higher");
+        car.height+=200;
+        camera.update(car,spec,1.0/60.0);
+        require(std::abs(camera.height-(car.height+spec.cameraHeight*1.06))<=16.00001,
+                "Camera cannot lag far below an ascending road");
+        // The same constant target must converge equally at 30 and 120 FPS.
+        ChaseCamera a,b;
+        a.reset(car,spec);
+        b.reset(car,spec);
+        for(int i=0;i<30;++i) a.update(car,spec,1.0/30.0);
+        for(int i=0;i<120;++i) b.update(car,spec,1.0/120.0);
+        close(a.distance,b.distance,1e-8,"Camera distance smoothing is FPS independent");
+        close(a.fov,b.fov,1e-8,"Camera FOV smoothing is FPS independent");
+        close(a.lookAhead,b.lookAhead,1e-8,"Camera lookahead smoothing is FPS independent");
+        const double oldFov=a.fov;
+        a.update(car,spec,0);
+        close(a.fov,oldFov,1e-12,"Zero time does not advance camera");
+    }
 }
 
 void testCircuit() {
@@ -459,6 +503,7 @@ void testBarrier() {
 
 int main() {
     try {
+        testChaseCamera();
         testCircuit();
         testBridgeStructures();
         testProfiles();

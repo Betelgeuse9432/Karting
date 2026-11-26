@@ -92,8 +92,8 @@ void Game::reset() {
     paused_=false;
     disabled_.clear();
     faultMessage_.clear();
-    followAngle_=sim_.car().heading;
-    cameraHeight_=sim_.car().height+sim_.profile().cameraHeight;
+    chase_.reset(sim_.car(),sim_.profile());
+    follow(0.0);
 }
 
 void Game::handleMenu() {
@@ -127,23 +127,23 @@ void Game::handleRace() {
 void Game::follow(double dt) {
     const auto& car=sim_.car();
     const auto& spec=sim_.profile();
-    followAngle_+=wrapAngle(car.heading-followAngle_)*std::min(1.0,3.5*dt);
-    cameraHeight_+=(car.height+spec.cameraHeight-cameraHeight_)*
-                    std::min(1.0,4.0*dt);
-    const Vec2 behind{std::cos(followAngle_),std::sin(followAngle_)};
-    const Vec2 view=car.position-behind*spec.cameraDistance;
+    chase_.update(car,spec,dt);
+    const Vec2 behind{std::cos(chase_.angle),std::sin(chase_.angle)};
+    const Vec2 view=car.position-behind*chase_.distance;
+    const Vec2 forward{std::cos(car.heading),std::sin(car.heading)};
+    const Vec2 aim=car.position+forward*chase_.lookAhead;
+    // Never follow the upper road when driving below the bridge. Only
+    // the natural ground is a clearance constraint for the chase camera.
+    const double safeHeight=std::max(chase_.height,elevation(view)+22.0);
     camera_.position={float(view.x*kWorldScale),
-                      float(cameraHeight_*kWorldScale),
+                      float(safeHeight*kWorldScale),
                       float(view.y*kWorldScale)};
-    camera_.target={float(car.position.x*kWorldScale),
+    camera_.target={float(aim.x*kWorldScale),
                     float((car.height+30)*kWorldScale),
-                    float(car.position.y*kWorldScale)};
+                    float(aim.y*kWorldScale)};
     camera_.up={0,1,0};
     camera_.projection=CAMERA_PERSPECTIVE;
-    const float speedRatio=float(std::abs(car.speed)/spec.topSpeed);
-    // Mild peripheral expansion at speed, no camera orbit changes.
-    const float t=std::clamp(speedRatio,0.f,1.f);
-    camera_.fovy=64.f+14.f*(t*t*(3.f-2.f*t));
+    camera_.fovy=float(chase_.fov);
 }
 
 void Game::showFault(const std::string& subsystem,const std::string& message) {
