@@ -350,7 +350,7 @@ void Simulation::setBestLap(double seconds) {
     if (seconds>0 && std::isfinite(seconds)) race_.bestLap=seconds;
 }
 
-void Simulation::update(const Controls& controls,double dt) {
+void Simulation::update(const Controls& controls,double dt,bool timed) {
     if (!(dt>0 && dt<=.05 && std::isfinite(dt)))
         throw std::invalid_argument("Invalid simulation timestep");
     const auto& p=profile();
@@ -458,7 +458,7 @@ void Simulation::update(const Controls& controls,double dt) {
     car_.wheelRotation+=(car_.speed*kWorldScale*kTravelScale*dt)/.20;
     telemetry_={off,frontSlip,rearSlip,std::abs(car_.lateralSpeed)>12,
                 before.pits,grip,impact,slope};
-    race_.tick(track_,car_,off,dt);
+    if(timed) race_.tick(track_,car_,off,dt);
 
     if (!std::isfinite(car_.position.x)||!std::isfinite(car_.position.y)||
         !std::isfinite(car_.speed)||!std::isfinite(car_.heading))

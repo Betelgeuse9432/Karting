@@ -89,10 +89,13 @@ struct UiViewport {
 };
 UiViewport uiViewport();
 
+enum class DrivingMode { Scenic, TimeTrial };
+
 class HudRenderer {
 public:
     void draw(const Simulation& sim, int quality, int fps) const;
-    void menu(const Simulation& sim, double time) const;
+    void scenic(const Simulation& sim) const;
+    void menu(const Simulation& sim, double time, DrivingMode mode) const;
 };
 
 class Game {
@@ -114,6 +117,9 @@ private:
     VehicleRenderer vehicle_;
     HudRenderer hud_;
     Camera3D camera_{};
+    DrivingMode mode_ = DrivingMode::Scenic;
+    bool scenicHud_ = true;
+    double scenicNoticeUntil_ = 0;
     bool menu_ = true;
     bool paused_ = false;
     int quality_ = 1;

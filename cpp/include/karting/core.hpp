@@ -174,7 +174,7 @@ public:
     void selectVehicle(int index, int color = -1);
     void reset(bool preserveRecord = true);
     void setBestLap(double seconds);
-    void update(const Controls& controls, double dt);
+    void update(const Controls& controls, double dt, bool timed=true);
     void cycleWeather() { weather_.phase = (weather_.phase + 1) % 3; }
     void toggleRain() { weather_.raining = !weather_.raining; }
 

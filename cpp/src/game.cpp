@@ -97,6 +97,8 @@ void Game::reset() {
 }
 
 void Game::handleMenu() {
+    if(IsKeyPressed(KEY_TAB))
+        mode_=mode_==DrivingMode::Scenic?DrivingMode::TimeTrial:DrivingMode::Scenic;
     if (IsKeyPressed(KEY_LEFT)||IsKeyPressed(KEY_Q)||IsKeyPressed(KEY_A))
         sim_.selectVehicle((sim_.vehicleIndex()+3)%4);
     else if (IsKeyPressed(KEY_RIGHT)||IsKeyPressed(KEY_D))
@@ -108,6 +110,10 @@ void Game::handleMenu() {
 
     if (IsKeyPressed(KEY_ENTER)||IsKeyPressed(KEY_SPACE)) {
         menu_=false;
+        dynamicCamera_=mode_==DrivingMode::TimeTrial;
+        scenicHud_=true;
+        cameraNoticeUntil_=0;
+        scenicNoticeUntil_=gameTime_+5.0;
         reset();
     }
 }
@@ -119,6 +125,7 @@ void Game::handleRace() {
         return;
     }
     if (IsKeyPressed(KEY_R)) reset();
+    if (mode_==DrivingMode::Scenic && IsKeyPressed(KEY_H)) scenicHud_=!scenicHud_;
     if (IsKeyPressed(KEY_G)) quality_=(quality_+1)%3;
     if (IsKeyPressed(KEY_V)) {
         dynamicCamera_=!dynamicCamera_;
@@ -182,7 +189,7 @@ void Game::renderMenu(double time) {
     vehicle_.draw(display,sim_.profile(),sim_.vehicleIndex(),
                   sim_.colorIndex(),false,false);
     EndMode3D();
-    hud_.menu(sim_,time);
+    hud_.menu(sim_,time,mode_);
 }
 
 void Game::renderRace() {
@@ -255,7 +262,7 @@ void Game::renderRace() {
     const float speedRatio=float(std::clamp(
         std::abs(sim_.car().speed)/sim_.profile().topSpeed,0.0,1.0));
     const float intensity=std::clamp((speedRatio-.55f)/.45f,0.f,1.f);
-    if (dynamicCamera_ && intensity>.01f && quality_>0) {
+    if (mode_==DrivingMode::TimeTrial && dynamicCamera_ && intensity>.01f && quality_>0) {
         const int lines=quality_==1?6:10;
         for (int i=0;i<lines;++i) {
             const float phase=std::fmod(float(gameTime_)*(1.2f+speedRatio*2.8f)
@@ -270,7 +277,17 @@ void Game::renderRace() {
         }
     }
 
-    safe("hud",[&]{ hud_.draw(sim_,quality_,GetFPS()); });
+    safe("hud",[&]{
+        if(mode_==DrivingMode::TimeTrial) hud_.draw(sim_,quality_,GetFPS());
+        else if(scenicHud_) hud_.scenic(sim_);
+    });
+    if(mode_==DrivingMode::Scenic && gameTime_<scenicNoticeUntil_ && scenicHud_) {
+        const char* hint="CONDUITE LIBRE  |  H interface  N ciel  P pluie  V camera  M menu";
+        const int font=16;
+        const int w=MeasureText(hint,font);
+        DrawRectangle((width-w)/2-12,24,w+24,30,Fade(BLACK,.58f));
+        DrawText(hint,(width-w)/2,31,font,RAYWHITE);
+    }
     if(gameTime_<cameraNoticeUntil_) {
         const char* label=dynamicCamera_?"CAMERA DOUCE [V]":"CAMERA CONFORT [V]";
         const int font=20;
@@ -326,13 +343,13 @@ int Game::run() {
                 for (int step=clock_.consume(frame);step>0;--step) {
                     const double previousRecord=sim_.race().bestLap;
                     try {
-                        sim_.update(keys,FixedClock::step);
+                        sim_.update(keys,FixedClock::step,mode_==DrivingMode::TimeTrial);
                     } catch(const std::exception& e) {
                         showFault("physics",e.what());
                         paused_=true;
                         break;
                     }
-                    if (sim_.race().bestLap>0 &&
+                    if (mode_==DrivingMode::TimeTrial && sim_.race().bestLap>0 &&
                         (previousRecord<0||sim_.race().bestLap<previousRecord)) {
                         try {
                             std::ofstream out(recordFile,std::ios::trunc);

@@ -2,6 +2,10 @@
 
 Ce dossier contient la version native **C++20 / raylib** de Karting, utilisée sur les branches `cpp-raylib` et `main-cpp`. Les anciens fichiers du jeu Python ont été retirés de ces deux branches ; ils restent consultables dans l'historique Git et les branches historiques.
 
+## Mode conduite libre (premiere etape atmospherique)
+
+Le menu propose deux modes via **Tab** : conduite libre (par defaut) et contre-la-montre. La conduite libre desactive le chronometrage et les records, conserve la physique des vehicules et demarre avec la camera confort. Le compteur de vitesse minimaliste peut etre masque avec **H**. Les touches **N** (ciel), **P** (pluie), **V** (camera), **M** (menu) et **R** (reset) restent disponibles. Les effets artificiels de vitesse sont reserves au contre-la-montre. Cette etape ne contient pas encore de nouveaux paysages ni de bande sonore.
+
 ## Viaduc moderne (barrières et talus volumiques)
 
 **Le circuit conserve ses deux traits discrets sur les portions ordinaires.**

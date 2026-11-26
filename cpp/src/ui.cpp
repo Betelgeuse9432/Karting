@@ -13,11 +13,12 @@ UiViewport uiViewport() {
                   int(std::round(physicalHeight/scale))};
 }
 
-void HudRenderer::menu(const Simulation& sim,double time) const {
+void HudRenderer::menu(const Simulation& sim,double time,DrivingMode mode) const {
     const auto ui=uiViewport();
     const int w=ui.width,h=ui.height;
     BeginMode2D(ui.camera());
-    DrawText("KARTING V6  /  C++20 + raylib",w/2-280,24,34,GOLD);
+    const char* title="KARTING";
+    DrawText(title,(w-MeasureText(title,40))/2,18,40,GOLD);
     DrawText("CHOISIS TON VEHICULE",w/2-210,74,27,RAYWHITE);
     const auto& cars=profiles();
     for (int i=0;i<4;++i) {
@@ -63,10 +64,33 @@ void HudRenderer::menu(const Simulation& sim,double time) const {
         if (i==sim.colorIndex())
             DrawRectangleLines(x-4,h-111,51,43,RAYWHITE);
     }
-    DrawText("GAUCHE/DROITE voiture    HAUT/BAS couleur    ENTREE jouer",
-             w/2-336,h-55,19,LIGHTGRAY);
+    const char* modes[]={"CONDUITE LIBRE","CONTRE-LA-MONTRE"};
+    for(int i=0;i<2;++i) {
+        const bool selected=(mode==DrivingMode::Scenic?0:1)==i;
+        const int x=w/2-254+i*258;
+        DrawRectangleRounded({float(x),float(h-216),250,40},.16f,8,
+                             selected?GOLD:Color{52,59,72,255});
+        const int font=20;
+        DrawText(modes[i],x+(250-MeasureText(modes[i],font))/2,h-205,font,
+                 selected?BLACK:RAYWHITE);
+    }
+    const char* help="TAB mode   GAUCHE/DROITE voiture   HAUT/BAS couleur   ENTREE jouer";
+    DrawText(help,(w-MeasureText(help,17))/2,h-55,17,LIGHTGRAY);
     DrawText("ESC quitter",w/2-55,h-28,15,GRAY);
     (void)time;
+    EndMode2D();
+}
+
+void HudRenderer::scenic(const Simulation& sim) const {
+    const auto ui=uiViewport();
+    const int w=ui.width,h=ui.height;
+    BeginMode2D(ui.camera());
+    const int speed=int(std::abs(toKmH(sim.car().speed)));
+    const char* value=TextFormat("%d",speed);
+    const int textWidth=MeasureText(value,38);
+    DrawRectangleRounded({float(w-148),float(h-90),124,65},.24f,8,Fade(BLACK,.46f));
+    DrawText(value,w-86-textWidth/2,h-84,38,RAYWHITE);
+    DrawText("km/h",w-86-MeasureText("km/h",15)/2,h-45,15,LIGHTGRAY);
     EndMode2D();
 }
 

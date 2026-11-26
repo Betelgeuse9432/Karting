@@ -20,6 +20,26 @@ void close(double actual,double expected,double tolerance,const char* message) {
         throw std::runtime_error(message);
 }
 
+void testScenicDriving() {
+    Simulation scenic,timed;
+    scenic.setBestLap(42.0);
+    timed.setBestLap(42.0);
+    for(int i=0;i<120;++i) {
+        const Controls keys{true,false,0,false};
+        scenic.update(keys,FixedClock::step,false);
+        timed.update(keys,FixedClock::step);
+    }
+    close(scenic.race().elapsed,0.0,1e-12,"Scenic mode does not advance lap timer");
+    close(scenic.race().bestLap,42.0,1e-12,"Scenic mode preserves racing record");
+    require(scenic.race().laps==0 && scenic.race().recent.empty(),
+            "Scenic mode creates no race results");
+    require(timed.race().elapsed>1.9,"Time trial still advances timer");
+    close(length(scenic.car().position-timed.car().position),0.0,1e-9,
+          "Driving mode does not change movement");
+    close(scenic.car().speed,timed.car().speed,1e-9,
+          "Driving mode does not change speed");
+}
+
 void testChaseCamera() {
     for(const auto& spec:profiles()) {
         Car car{};
@@ -532,6 +552,7 @@ void testBarrier() {
 
 int main() {
     try {
+        testScenicDriving();
         testChaseCamera();
         testCircuit();
         testBridgeStructures();
