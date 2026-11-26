@@ -37,16 +37,16 @@ void testChaseCamera() {
         require(std::abs(wrapAngle(camera.angle-car.heading))<.06,
                 "Chase camera takes shortest path across angle wrap");
         for(int i=0;i<180;++i) camera.update(car,spec,1.0/60.0);
-        require(camera.distance>spec.cameraDistance && camera.fov>77.9,
+        require(camera.distance>spec.cameraDistance*1.18 && camera.fov>85.9,
                 "Acceleration and speed widen the chase framing");
         car.throttle=0;
         car.brake=1;
         for(int i=0;i<180;++i) camera.update(car,spec,1.0/60.0);
-        require(camera.distance<spec.cameraDistance && camera.height>car.height+spec.cameraHeight,
+        require(camera.distance<spec.cameraDistance*.77 && camera.height>car.height+spec.cameraHeight,
                 "Braking draws camera closer and slightly higher");
         car.height+=200;
         camera.update(car,spec,1.0/60.0);
-        require(std::abs(camera.height-(car.height+spec.cameraHeight*1.06))<=16.00001,
+        require(std::abs(camera.height-(car.height+spec.cameraHeight*1.17))<=16.00001,
                 "Camera cannot lag far below an ascending road");
         // The same constant target must converge equally at 30 and 120 FPS.
         ChaseCamera a,b;
@@ -57,6 +57,26 @@ void testChaseCamera() {
         close(a.distance,b.distance,1e-8,"Camera distance smoothing is FPS independent");
         close(a.fov,b.fov,1e-8,"Camera FOV smoothing is FPS independent");
         close(a.lookAhead,b.lookAhead,1e-8,"Camera lookahead smoothing is FPS independent");
+        Car corner{};
+        corner.speed=spec.topSpeed*.5;
+        corner.throttle=1;
+        corner.steering=spec.maxSteer/(1+corner.speed/spec.steerSensitivity);
+        ChaseCamera dynamic,previous,mirror;
+        dynamic.reset(corner,spec);
+        previous.reset(corner,spec);
+        mirror.reset(corner,spec);
+        for(int i=0;i<180;++i) {
+            dynamic.update(corner,spec,1.0/60);
+            previous.update(corner,spec,1.0/60,false);
+            Car opposite=corner;
+            opposite.steering=-corner.steering;
+            mirror.update(opposite,spec,1.0/60);
+        }
+        require(dynamic.fov>previous.fov+5.0 && dynamic.lookAhead>previous.lookAhead*3.0,
+                "Dynamic camera is noticeably different at half speed");
+        require(dynamic.lookAngle>.20 && mirror.lookAngle<-.20,
+                "Lookahead follows both steering directions");
+        close(dynamic.lookAngle,-mirror.lookAngle,1e-9,"Symmetric corner anticipation");
         const double oldFov=a.fov;
         a.update(car,spec,0);
         close(a.fov,oldFov,1e-12,"Zero time does not advance camera");

@@ -119,6 +119,8 @@ private:
     int quality_ = 1;
     double gameTime_ = 0;
     ChaseCamera chase_;
+    bool dynamicCamera_ = true;
+    double cameraNoticeUntil_ = 0;
     std::string faultMessage_;
     std::unordered_set<std::string> disabled_;
 };

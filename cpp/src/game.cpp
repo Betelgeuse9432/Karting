@@ -120,6 +120,10 @@ void Game::handleRace() {
     }
     if (IsKeyPressed(KEY_R)) reset();
     if (IsKeyPressed(KEY_G)) quality_=(quality_+1)%3;
+    if (IsKeyPressed(KEY_V)) {
+        dynamicCamera_=!dynamicCamera_;
+        cameraNoticeUntil_=gameTime_+2.0;
+    }
     if (IsKeyPressed(KEY_N)) sim_.cycleWeather();
     if (IsKeyPressed(KEY_P)) sim_.toggleRain();
 }
@@ -127,10 +131,11 @@ void Game::handleRace() {
 void Game::follow(double dt) {
     const auto& car=sim_.car();
     const auto& spec=sim_.profile();
-    chase_.update(car,spec,dt);
+    chase_.update(car,spec,dt,dynamicCamera_);
     const Vec2 behind{std::cos(chase_.angle),std::sin(chase_.angle)};
     const Vec2 view=car.position-behind*chase_.distance;
-    const Vec2 forward{std::cos(car.heading),std::sin(car.heading)};
+    const double aimHeading=car.heading+chase_.lookAngle;
+    const Vec2 forward{std::cos(aimHeading),std::sin(aimHeading)};
     const Vec2 aim=car.position+forward*chase_.lookAhead;
     // Never follow the upper road when driving below the bridge. Only
     // the natural ground is a clearance constraint for the chase camera.
@@ -266,6 +271,13 @@ void Game::renderRace() {
     }
 
     safe("hud",[&]{ hud_.draw(sim_,quality_,GetFPS()); });
+    if(gameTime_<cameraNoticeUntil_) {
+        const char* label=dynamicCamera_?"CAMERA DYNAMIQUE [V]":"CAMERA PRECEDENTE [V]";
+        const int font=20;
+        const int w=MeasureText(label,font);
+        DrawRectangle((width-w)/2-10,60,w+20,32,Fade(BLACK,.72f));
+        DrawText(label,(width-w)/2,66,font,RAYWHITE);
+    }
     if (paused_ || !faultMessage_.empty()) {
         const auto ui=uiViewport();
         BeginMode2D(ui.camera());
