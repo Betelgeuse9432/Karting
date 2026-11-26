@@ -38,6 +38,15 @@ bool menuKeyPressed() {
     }
     return pressed;
 }
+// raylib 6 uses a Vector2 center; raylib 5 uses separate coordinates.
+void drawSunGlow(Vector2 center,float radius,Color inner,Color outer) {
+#if RAYLIB_VERSION_MAJOR >= 6
+    DrawCircleGradient(center,radius,inner,outer);
+#else
+    DrawCircleGradient(int(center.x),int(center.y),radius,inner,outer);
+#endif
+}
+
 // Project world-space light directions into the camera's visible sky.
 bool skyPoint(const Camera3D& camera,Vector3 direction,int width,int height,Vector2& out) {
     const Vector3 forward=Vector3Normalize(Vector3Subtract(camera.target,camera.position));
@@ -54,8 +63,7 @@ bool skyPoint(const Camera3D& camera,Vector3 direction,int width,int height,Vect
 // inside the current horizontal FOV; no offscreen clouds are submitted.
 // Mountain silhouettes use world-space bearings so they react to turning.
 void drawVisibleSky(const Camera3D& camera,int width,int height,
-                    float night,float rain,double seconds,int quality,
-                    Color skyBottom) {
+                    float night,float rain,double seconds,int quality) {
     if(quality<=0 || width<=0 || height<=0) return;
     const Vector3 forward=Vector3Normalize(
         Vector3Subtract(camera.target,camera.position));
@@ -246,9 +254,9 @@ void Game::renderRace() {
             const Color glow=n>.35f?Color{255,170,92,255}:Color{255,228,158,255};
             const float scale=float(height)/720.f;
             if(quality_>0) {
-                DrawCircleGradient(int(sun.x),int(sun.y),72.f*scale,
+                drawSunGlow(sun,72.f*scale,
                                    Fade(glow,.19f*alpha),Fade(glow,0.f));
-                DrawCircleGradient(int(sun.x),int(sun.y),37.f*scale,
+                drawSunGlow(sun,37.f*scale,
                                    Fade(glow,.34f*alpha),Fade(glow,0.f));
             }
             DrawCircleV(sun,13.f*scale,Fade({255,239,205,255},alpha));
@@ -269,7 +277,7 @@ void Game::renderRace() {
         if(skyPoint(camera_,Vector3Normalize({.65f,.58f,.48f}),width,height,moon))
             DrawCircleV(moon,11.f*height/720.f,Fade(RAYWHITE,(n-.5f)*2*(1-r)));
     }
-    drawVisibleSky(camera_,width,height,n,r,gameTime_,quality_,bottom);
+    drawVisibleSky(camera_,width,height,n,r,gameTime_,quality_);
 
     // Each subsystem can fail independently without taking down the process.
     const auto safe=[&](const char* name,auto&& operation) {
