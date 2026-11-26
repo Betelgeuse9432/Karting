@@ -255,7 +255,7 @@ void Game::renderRace() {
     const float speedRatio=float(std::clamp(
         std::abs(sim_.car().speed)/sim_.profile().topSpeed,0.0,1.0));
     const float intensity=std::clamp((speedRatio-.55f)/.45f,0.f,1.f);
-    if (intensity>.01f && quality_>0) {
+    if (dynamicCamera_ && intensity>.01f && quality_>0) {
         const int lines=quality_==1?6:10;
         for (int i=0;i<lines;++i) {
             const float phase=std::fmod(float(gameTime_)*(1.2f+speedRatio*2.8f)
@@ -272,7 +272,7 @@ void Game::renderRace() {
 
     safe("hud",[&]{ hud_.draw(sim_,quality_,GetFPS()); });
     if(gameTime_<cameraNoticeUntil_) {
-        const char* label=dynamicCamera_?"CAMERA DYNAMIQUE [V]":"CAMERA PRECEDENTE [V]";
+        const char* label=dynamicCamera_?"CAMERA DOUCE [V]":"CAMERA CONFORT [V]";
         const int font=20;
         const int w=MeasureText(label,font);
         DrawRectangle((width-w)/2-10,60,w+20,32,Fade(BLACK,.72f));
