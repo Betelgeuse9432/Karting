@@ -314,21 +314,21 @@ RoadPose roadPose(const Car& car,const VehicleProfile& profile,int index,
             const Vec2 point=car.position+forward*axle+side*lateral;
             return track?track->roadHeightAt(point,car.roadIndex):elevation(point);
         };
-        const double front=(contact(profile.frontAxle,-wheelTrack)+
-                            contact(profile.frontAxle,wheelTrack))*.5;
-        const double rear=(contact(profile.rearAxle,-wheelTrack)+
-                           contact(profile.rearAxle,wheelTrack))*.5;
-        const double left=(contact(profile.frontAxle,-wheelTrack)+
-                           contact(profile.rearAxle,-wheelTrack))*.5;
-        const double right=(contact(profile.frontAxle,wheelTrack)+
-                            contact(profile.rearAxle,wheelTrack))*.5;
+        // Sample the visual wheelbase for the visual road plane only.
+        // Arcade physics continues to use the untouched profile axles.
+        const double frontAxle=index==2?gt3model::axle/kWorldScale:profile.frontAxle;
+        const double rearAxle=index==2?-gt3model::axle/kWorldScale:profile.rearAxle;
+        const double front=(contact(frontAxle,-wheelTrack)+contact(frontAxle,wheelTrack))*.5;
+        const double rear=(contact(rearAxle,-wheelTrack)+contact(rearAxle,wheelTrack))*.5;
+        const double left=(contact(frontAxle,-wheelTrack)+contact(rearAxle,-wheelTrack))*.5;
+        const double right=(contact(frontAxle,wheelTrack)+contact(rearAxle,wheelTrack))*.5;
         const double longitudinalGrade=(front-rear)/
-                              (profile.frontAxle-profile.rearAxle);
+                              (frontAxle-rearAxle);
         const double transverseGrade=(right-left)/(2*wheelTrack);
         // Intercept at the vehicle centre: avoids height drift when the
         // front/rear axle offsets are not symmetric.
         originHeight=(front+rear)*.5-
-                     longitudinalGrade*(profile.frontAxle+profile.rearAxle)*.5;
+                     longitudinalGrade*(frontAxle+rearAxle)*.5;
         roadPitch=float(std::atan(longitudinalGrade)*RAD2DEG);
         roadRoll=float(-std::atan(transverseGrade)*RAD2DEG);
     }
