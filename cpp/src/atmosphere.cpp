@@ -56,23 +56,23 @@ uniform mat4 lightVP;
 uniform vec3 shadowParams; // inverse size, strength, valid
 out vec4 finalColor;
 
-float hash3(vec3 p) {
+float kartingHash(vec3 p) {
     p=fract(p*0.1031);
     p+=dot(p,p.yzx+33.33);
     return fract((p.x+p.y)*p.z);
 }
-float noise3(vec3 p) {
+float kartingValueNoise(vec3 p) {
     vec3 i=floor(p),f=fract(p);
     f=f*f*(3.0-2.0*f);
-    return mix(mix(mix(hash3(i),hash3(i+vec3(1,0,0)),f.x),
-                   mix(hash3(i+vec3(0,1,0)),hash3(i+vec3(1,1,0)),f.x),f.y),
-               mix(mix(hash3(i+vec3(0,0,1)),hash3(i+vec3(1,0,1)),f.x),
-                   mix(hash3(i+vec3(0,1,1)),hash3(i+vec3(1,1,1)),f.x),f.y),f.z);
+    return mix(mix(mix(kartingHash(i),kartingHash(i+vec3(1,0,0)),f.x),
+                   mix(kartingHash(i+vec3(0,1,0)),kartingHash(i+vec3(1,1,0)),f.x),f.y),
+               mix(mix(kartingHash(i+vec3(0,0,1)),kartingHash(i+vec3(1,0,1)),f.x),
+                   mix(kartingHash(i+vec3(0,1,1)),kartingHash(i+vec3(1,1,1)),f.x),f.y),f.z);
 }
-float detailNoise(vec3 p,float frequency) {
+float kartingDetailNoise(vec3 p,float frequency) {
     // Suppress subpixel detail instead of producing shimmer while driving.
     float footprint=max(length(dFdx(p)),length(dFdy(p)))*frequency;
-    return mix(noise3(p*frequency),0.5,smoothstep(0.35,1.4,footprint));
+    return mix(kartingValueNoise(p*frequency),0.5,smoothstep(0.35,1.4,footprint));
 }
 float sunVisibility(vec3 position,float facing) {
     if(shadowParams.z<0.5) return 1.0;
@@ -104,17 +104,17 @@ void main() {
     bool tagged=material>=249 && material<=254;
     if(tagged) base.a=1.0;
     vec3 p=worldPosition;
-    float broad=noise3(p*0.55);
-    float fine=detailNoise(p,24.0);
+    float broad=kartingValueNoise(p*0.55);
+    float fine=kartingDetailNoise(p,24.0);
     float roughness=0.85;
     float reflectance=0.0;
     if(material==254) { // asphalt: aggregate, dark patches and rubber
-        float grit=detailNoise(p,65.0);
+        float grit=kartingDetailNoise(p,65.0);
         base.rgb*=0.91+0.20*broad+0.20*(fine-0.5)+0.16*(grit-0.5);
         roughness=mix(0.82,0.25,lighting.z);
         reflectance=mix(0.025,0.32,lighting.z);
     } else if(material==253) {
-        float patches=noise3(p*0.18);
+        float patches=kartingValueNoise(p*0.18);
         base.rgb=mix(base.rgb*vec3(0.78,0.90,0.70),
                      base.rgb*vec3(1.12,1.04,0.76),patches);
         base.rgb*=0.87+0.22*broad+0.30*(fine-0.5);
