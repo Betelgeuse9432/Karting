@@ -38,6 +38,7 @@ if(KARTING_BUILD_GAME)
     src/main.cpp
     src/game.cpp
     src/atmosphere.cpp
+    src/post_process.cpp
     src/render.cpp
     src/vehicle_models.cpp
     src/scenery.cpp

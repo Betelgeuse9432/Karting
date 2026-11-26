@@ -1,6 +1,7 @@
 #pragma once
 #include "karting/core.hpp"
 #include "karting/atmosphere.hpp"
+#include "karting/post_process.hpp"
 #include "karting/chase_camera.hpp"
 #include "karting/frustum.hpp"
 #include "raylib.h"
@@ -116,6 +117,7 @@ private:
     Effects effects_;
     WorldRenderer world_;
     Atmosphere atmosphere_;
+    PostProcess post_;
     VehicleRenderer vehicle_;
     HudRenderer hud_;
     Camera3D camera_{};

@@ -2,6 +2,10 @@
 
 Ce dossier contient la version native **C++20 / raylib** de Karting, utilisée sur les branches `cpp-raylib` et `main-cpp`. Les anciens fichiers du jeu Python ont été retirés de ces deux branches ; ils restent consultables dans l'historique Git et les branches historiques.
 
+## HDR, bloom et soleil angulaire
+
+Le circuit est rendu dans une texture RGBA16F lineaire a la resolution de la fenetre. Le ciel calcule un rayon par pixel : le disque solaire, son assombrissement au bord et son aureole sont lies a la meme direction que les ombres. Les hautes lumieres sont extraites, floutees en deux passes gaussiennes separables successives, puis combinees avec la scene. Un tone mapping a epaule douce preserve les tons moyens et comprime les hautes lumieres, avec une correction gamma finale. Le HUD et la pluie ecran restent hors du post-traitement. Le menu conserve son rendu direct. Si un shader ou un FBO flottant echoue, le rendu direct precedent reste disponible. Pas de motion blur, ni de lens flare artificiel. Le rendu reel reste a tester sur GPU.
+
 ## Materiaux et fluidite de la chaussée
 
 Le shader attribue des materiaux proceduraux distincts aux surfaces : asphalte granuleux, herbe variee, beton, terre, peinture et vitrage avec reflet analytique du ciel. Le bruit fin est attenue lorsqu'il devient sous-pixel. Les marquages sont legerement releves pour limiter le z-fighting et le biais des ombres a ete augmente. Les hauteurs du pont utilisent une interpolation cubique monotone sur les sections locales, sans changer les points du circuit ni le relief naturel. La voiture et la camera utilisent une position interpolee entre deux pas physiques, sans modification de la cadence physique ou des records. Les tests de hauteur et d'interpolation sont ajoutes, le rendu et les sensations restent a verifier.

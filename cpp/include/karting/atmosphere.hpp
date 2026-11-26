@@ -16,7 +16,7 @@ class Atmosphere {
 public:
     void initialize();
     void shutdown();
-    void begin(const Camera3D& camera,Color horizon,float night,float rain,int quality) const;
+    void begin(const Camera3D& camera,Color horizon,float night,float rain,int quality,bool hdr=false) const;
     void end() const;
     bool beginShadow(const Camera3D& camera,float night,float rain);
     void endShadow();
@@ -30,7 +30,7 @@ private:
     bool shadowReady_=false, shadowValid_=false;
     bool ready_=false;
     int eye_=-1,sun_=-1,horizon_=-1,lighting_=-1,fog_=-1;
-    int shadowSampler_=-1,lightMatrix_=-1,shadowParams_=-1;
+    int shadowSampler_=-1,lightMatrix_=-1,shadowParams_=-1,hdr_=-1;
 };
 
 void drawContactShadow(const Track& track,const Car& car,const VehicleProfile& spec,

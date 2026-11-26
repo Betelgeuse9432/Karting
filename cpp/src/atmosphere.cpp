@@ -53,6 +53,7 @@ uniform vec3 lighting; // daylight, dusk warmth, rain
 uniform vec2 fogRange;
 uniform sampler2D sunShadowMap;
 uniform mat4 lightVP;
+uniform int hdrMode;
 uniform vec3 shadowParams; // inverse size, strength, valid
 out vec4 finalColor;
 
@@ -134,6 +135,7 @@ void main() {
     vec3 warm=mix(vec3(1.0),vec3(1.13,0.97,0.79),lighting.y*facing*visibility);
     vec3 cool=mix(vec3(1.0),vec3(0.84,0.91,1.08),lighting.y*(1.0-facing)*0.5);
     vec3 lit=base.rgb*shade*warm*cool;
+    vec3 highEnergy=vec3(0.0);
     if(reflectance>0.0) {
         vec3 view=normalize(eyePosition-p);
         vec3 halfVector=normalize(view+sunDirection);
@@ -147,10 +149,13 @@ void main() {
                      clamp(reflected.y,0.0,1.0));
         lit=mix(lit,sky,reflectance*(0.20+0.80*fresnel));
         lit+=vec3(1.0,0.92,0.79)*specular*reflectance*strength*visibility;
+        highEnergy=vec3(1.0,0.82,0.59)*specular*reflectance*strength*visibility*2.2;
     }
     float distanceToEye=length(worldPosition-eyePosition);
     float haze=smoothstep(fogRange.x,fogRange.y,distanceToEye);
-    finalColor=vec4(mix(lit,horizonColor,haze),base.a);
+    vec3 color=mix(lit,horizonColor,haze);
+    if(hdrMode!=0) color=pow(max(color,vec3(0.0)),vec3(2.2))+highEnergy*(1.0-haze);
+    finalColor=vec4(color,base.a);
 }
 )GLSL";
 } // namespace
@@ -168,6 +173,7 @@ void Atmosphere::initialize() {
     shadowSampler_=GetShaderLocation(shader_,"sunShadowMap");
     lightMatrix_=GetShaderLocation(shader_,"lightVP");
     shadowParams_=GetShaderLocation(shader_,"shadowParams");
+    hdr_=GetShaderLocation(shader_,"hdrMode");
     if(eye_<0||sun_<0||horizon_<0||lighting_<0||fog_<0 ||
        shadowSampler_<0||lightMatrix_<0||shadowParams_<0) {
         shutdown();
@@ -235,9 +241,11 @@ void Atmosphere::endShadow() {
     shadowValid_=true;
 }
 
-void Atmosphere::begin(const Camera3D& camera,Color horizon,float night,float rain,int quality) const {
+void Atmosphere::begin(const Camera3D& camera,Color horizon,float night,float rain,int quality,bool hdr) const {
     if(!ready_) return;
     BeginShaderMode(shader_);
+    const int hdrMode=hdr?1:0;
+    SetShaderValue(shader_,hdr_,&hdrMode,SHADER_UNIFORM_INT);
     const Vector3 eye=camera.position;
     const Vector3 sun=sunDirection(night);
     const Vector3 fogColor{horizon.r/255.f,horizon.g/255.f,horizon.b/255.f};

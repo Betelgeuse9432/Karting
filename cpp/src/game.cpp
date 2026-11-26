@@ -231,6 +231,7 @@ void Game::renderRace() {
         }
         atmosphere_.endShadow();
     }
+    const bool hdr=atmosphere_.ready() && post_.begin(width,height);
     const Color daylightTop{92,157,243,255};
     const Color daylightBottom{190,220,250,255};
     const Color duskTop{85,65,129,255};
@@ -246,6 +247,8 @@ void Game::renderRace() {
     const Vector3 forward=Vector3Normalize(Vector3Subtract(camera_.target,camera_.position));
     const float focal=float(height)/(2.f*std::tan(camera_.fovy*DEG2RAD*.5f));
     const int horizon=std::clamp(int(height*.5f+forward.y*focal),1,std::max(1,height));
+    if(hdr) post_.sky(camera_,top,bottom,Atmosphere::sunDirection(n),n,r);
+    else {
     DrawRectangleGradientV(0,0,width,horizon,top,bottom);
     DrawRectangle(0,horizon,width,std::max(0,height-horizon),bottom);
     if(n<.8f && r<.8f) {
@@ -263,6 +266,8 @@ void Game::renderRace() {
             DrawCircleV(sun,13.f*scale,Fade({255,239,205,255},alpha));
         }
     }
+    }
+    post_.beginLinear();
     if(n>.5f && r<.6f) {
         // Stars have fixed world bearings instead of sliding with the screen.
         for(int i=0;i<90;++i) {
@@ -279,6 +284,7 @@ void Game::renderRace() {
             DrawCircleV(moon,11.f*height/720.f,Fade(RAYWHITE,(n-.5f)*2*(1-r)));
     }
     drawVisibleSky(camera_,width,height,n,r,gameTime_,quality_);
+    post_.endLinear();
 
     // Each subsystem can fail independently without taking down the process.
     const auto safe=[&](const char* name,auto&& operation) {
@@ -290,7 +296,7 @@ void Game::renderRace() {
         }
     };
     BeginMode3D(camera_);
-    atmosphere_.begin(camera_,bottom,n,r,quality_);
+    atmosphere_.begin(camera_,bottom,n,r,quality_,hdr);
     safe("world",[&]{
         world_.draw(sim_.track(),weather,quality_,camera_,gameTime_);
     });
@@ -302,8 +308,11 @@ void Game::renderRace() {
     });
     atmosphere_.end();
     // Smoke, flames and sparks remain emissive and are composited last.
+    post_.beginLinear();
     safe("effects",[&]{ effects_.draw3D(camera_); });
+    post_.endLinear();
     EndMode3D();
+    if(hdr) post_.finish(n,r);
 
     // Rain is drawn in a separate transparent screen pass.
     if (r>.03f) {
@@ -385,6 +394,7 @@ int Game::run() {
     SetTargetFPS(60);
     try {
         atmosphere_.initialize();
+        post_.initialize();
         world_.initialize(sim_.track());
         reset();
         std::ifstream input(recordFile);
@@ -434,10 +444,12 @@ int Game::run() {
             render();
         }
     } catch (...) {
+        post_.shutdown();
         atmosphere_.shutdown();
         CloseWindow();
         throw;
     }
+    post_.shutdown();
     atmosphere_.shutdown();
     CloseWindow();
     return 0;
