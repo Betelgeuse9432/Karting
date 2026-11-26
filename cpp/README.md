@@ -2,6 +2,10 @@
 
 Ce dossier contient la version native **C++20 / raylib** de Karting, utilisée sur les branches `cpp-raylib` et `main-cpp`. Les anciens fichiers du jeu Python ont été retirés de ces deux branches ; ils restent consultables dans l'historique Git et les branches historiques.
 
+## GT3 originale low-poly
+
+La GT3 est un modele original construit par un maillage indexe mis en cache : sections de carrosserie partagees, ailes sculptees, passages de roue ouverts, habitacle fastback, prises d'air, optiques et aileron. Les roues visuelles sont a +/-0.76 m pour corriger les proportions, sans modifier les essieux de la simulation. Les points de projection des phares suivent le nouveau nez. Le maillage passe encore par le batch rlgl existant pour conserver les ombres et shaders; pas encore de VBO persistant dedie. Les trois autres voitures sont inchangees. Tests geometriques dans core_tests.cpp.
+
 ## Phares fonctionnels
 
 L cycle Auto / Croisement / Route / Eteints. Le mode automatique reagit au crepuscule et a la pluie. Les deux projecteurs utilisent la pose exacte du chassis, la pente et le devers, avec des origines propres a chaque modele. Le shader applique une coupure verticale en croisement et une portee superieure en route, ainsi que des reflets speculaires sur les materiaux. Les lentilles sont emissives dans le HDR. Le kart recoit deux petits projecteurs. Pas encore d'ombres locales ni de diffusion volumetrique des faisceaux dans l'air; les portees sont artistiques et restent a verifier en jeu.

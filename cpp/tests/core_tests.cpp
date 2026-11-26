@@ -1,4 +1,5 @@
 #include "karting/core.hpp"
+#include "karting/gt3_mesh.hpp"
 #include "karting/chase_camera.hpp"
 #include "karting/bridge_geometry.hpp"
 #include <algorithm>
@@ -572,8 +573,29 @@ void testBarrier() {
     require(std::isfinite(impact.position.x),"Collision remains finite");
 }
 
+void testOriginalGT3Mesh() {
+    using namespace gt3model;
+    const auto m=build();
+    require(m.vertices.size()>200 && m.faces.size()>300,"GT3 is a detailed indexed mesh");
+    for(const auto& p:m.vertices)
+        require(std::isfinite(p.x)&&std::isfinite(p.y)&&std::isfinite(p.z),"Finite GT3 vertices");
+    for(const auto& f:m.faces) {
+        for(auto i:f.index) require(i<m.vertices.size(),"Valid GT3 face index");
+        const auto a=m.vertices[f.index[0]],b=m.vertices[f.index[1]],c=m.vertices[f.index[2]];
+        const float ux=b.x-a.x,uy=b.y-a.y,uz=b.z-a.z;
+        const float vx=c.x-a.x,vy=c.y-a.y,vz=c.z-a.z;
+        const float nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx;
+        require(nx*nx+ny*ny+nz*nz>1e-12f,"Nondegenerate GT3 face");
+    }
+    require(archFloor(axle)>wheelCenterY+wheelRadius,"Front arch clears tire");
+    require(archFloor(-axle)>wheelCenterY+wheelRadius,"Rear arch clears tire");
+    close(archFloor(0),.115,1e-6,"GT3 rocker clearance");
+    require(lampAnchor.x>axle && lampAnchor.y>wheelCenterY,"Headlamp anchor in front");
+}
+
 int main() {
     try {
+        testOriginalGT3Mesh();
         testScenicDriving();
         testChaseCamera();
         testSmoothRoadAndRenderInterpolation();

@@ -1,4 +1,5 @@
 #include "karting/game.hpp"
+#include "karting/gt3_mesh.hpp"
 #include "rlgl.h"
 #include "raymath.h"
 #include <algorithm>
@@ -169,206 +170,44 @@ void offRoad(Color paint,Color glass,Color dark,bool braking,bool lights) {
         .13f,{163,166,172,255});
 }
 
-void gt3(Color paint,Color glass,Color dark,bool braking,bool lights) {
-    // Modern GT3: broad stance, recognisable wheel haunches, low roof and
-    // separate aerodynamic details. All decoration remains procedural.
-    const Color shadow=tone(paint,.70f);
-    const Color highlight=tone(paint,1.13f);
-    const Color carbon{24,27,33,255};
-    const Color grille{12,16,20,255};
-    const Color metal{126,132,140,255};
-    const Color headlight=frontLight({255,226,174,255},lights);
-    const Color tail=braking?Color{255,46,39,255}:Color{155,27,34,255};
-    const Color crease=tone(paint,.58f);
-    const Color silver{180,187,196,255};
-
-    // Front faces +X. Keep the same footprint as the original GT3 so the
-    // existing wheels, camera and physics remain compatible.
-    // Flatten only the GT3 body (15% lower), pivoting around its floor.
-    // Wheels are drawn afterwards in their own transform, unchanged.
-    rlPushMatrix();
-    rlTranslatef(0.f,.14f,0.f);
-    rlScalef(1.f,.85f,1.f);
-    rlTranslatef(0.f,-.14f,0.f);
-    bodyShell({{-1.18f,.15f,.42f,.48f},
-               {-.95f,.15f,.52f,.57f},
-               {-.54f,.16f,.55f,.56f},
-               {-.13f,.16f,.54f,.52f},
-               { .39f,.15f,.49f,.54f},
-               { .83f,.14f,.42f,.55f},
-               {1.18f,.13f,.35f,.48f}},paint,shadow);
-    cockpit(.30f,-.81f,-.02f,-.60f,.54f,.94f,.405f,.272f,
-            glass,tone(paint,.83f));
-
-    // Define the side windows, B-pillars and roof without thick black slabs.
-    for(float side:{-1.f,1.f}) {
-        rod({-.41f,.945f,side*.277f},
-            {-.41f,.543f,side*.407f},.010f,dark);
-        rod({-.59f,.949f,side*.273f},
-            {-.03f,.949f,side*.273f},.008f,shadow);
-    }
-    box(-.32f,.951f,0,.28f,.014f,.12f,shadow);
-    // Thin race sunstrip and integrated roof rails; neither increases
-    // the height of the already lowered cockpit.
-    panel({.040f,.917f,-.262f},{.040f,.917f,.262f},
-          {-.045f,.952f,.272f},{-.045f,.952f,-.272f},carbon);
-    for(float side:{-1.f,1.f}) {
-        rod({-.53f,.947f,side*.257f},
-            {-.03f,.947f,side*.257f},.008f,highlight);
-    }
-
-    // Raised wheel-arch shoulders give the sides some shape rather than
-    // looking like one rectangular block. They do not move the wheels.
-    for(float side:{-1.f,1.f}) {
-        for(float axle:{-.40f,.40f}) {
-            panel({axle-.35f,.40f,side*.53f},
-                  {axle-.21f,.56f,side*.615f},
-                  {axle+.20f,.55f,side*.615f},
-                  {axle+.34f,.40f,side*.53f},highlight);
-            rod({axle-.15f,.562f,side*.620f},
-                {axle+.14f,.558f,side*.620f},.006f,
-                tone(paint,1.28f));
+void gt3(Color paint,Color glass,Color /*dark*/,bool braking,bool lights) {
+    // Cached indexed mesh, submitted through the existing rlgl batch.
+    // This keeps the world-space atmospheric shader, depth pass and
+    // vertex-alpha material tags compatible with all other geometry.
+    static const auto model=gt3model::build();
+    using gt3model::Finish;
+    const auto material=[&](Finish finish) -> Color {
+        switch(finish) {
+        case Finish::Paint: return paint;
+        case Finish::Accent: return tone(paint,.78f);
+        case Finish::Glass: return glass;
+        case Finish::Carbon: return {27,30,36,255};
+        case Finish::Grille: return {15,19,25,255};
+        case Finish::Headlamp: return frontLight({255,226,174,255},lights);
+        case Finish::Tail: return braking?Color{255,46,39,255}:Color{163,27,34,255};
+        case Finish::Metal: return {145,153,161,255};
         }
-        // Wheel-arch lip follows the tyre rather than being a straight box.
-        // Wheel centres and tyres themselves remain untouched.
-        for(float axle:{-.396f,.396f}) {
-            for(int segment=0;segment<9;++segment) {
-                const float a0=3.14159265f*float(segment)/9.f;
-                const float a1=3.14159265f*float(segment+1)/9.f;
-                const auto point=[&](float a) {
-                    return Vector3{axle+.234f*std::cos(a),
-                                   .222f+.234f*std::sin(a),
-                                   side*.704f};
-                };
-                rod(point(a0),point(a1),.008f,crease);
-            }
+        return paint;
+    };
+    // Reserve a full triangle at a time, preserving raylib batch limits.
+    rlSetTexture(rlGetTextureIdDefault());
+    for(const auto& face:model.faces) {
+        rlCheckRenderBatchLimit(3);
+        const auto color=material(face.finish);
+        const auto a=model.vertices[face.index[0]],b=model.vertices[face.index[1]],
+                   c=model.vertices[face.index[2]];
+        const Vector3 normal=Vector3Normalize(Vector3CrossProduct(
+            {b.x-a.x,b.y-a.y,b.z-a.z},{c.x-a.x,c.y-a.y,c.z-a.z}));
+        rlBegin(RL_TRIANGLES);
+        rlColor4ub(color.r,color.g,color.b,color.a);
+        rlNormal3f(normal.x,normal.y,normal.z);
+        rlTexCoord2f(0,0);
+        for(const auto index:face.index) {
+            const auto p=model.vertices[index];
+            rlVertex3f(p.x,p.y,p.z);
         }
-        // Carbon side skirt and front canard, with a rear brake-cooling duct.
-        box(-.04f,.17f,side*.58f,1.69f,.08f,.15f,carbon);
-        box(-.04f,.221f,side*.661f,1.32f,.012f,.018f,shadow);
-        box(-.78f,.34f,side*.59f,.24f,.08f,.020f,grille);
-        // Deep rear brake duct and the sculpted channel leading into it.
-        panel({-.88f,.29f,side*.585f},
-              {-.64f,.29f,side*.612f},
-              {-.54f,.42f,side*.604f},
-              {-.77f,.39f,side*.582f},carbon);
-        rod({-.78f,.345f,side*.619f},
-            {-.60f,.353f,side*.624f},.008f,silver);
-        // Pronounced sideblade, tapered towards the front wheel.
-        panel({-.41f,.27f,side*.598f},
-              {.60f,.27f,side*.593f},
-              {.80f,.32f,side*.549f},
-              {-.23f,.33f,side*.573f},shadow);
-        panel({.93f,.24f,side*.49f},{1.18f,.18f,side*.60f},
-              {1.08f,.22f,side*.60f},{.87f,.30f,side*.52f},carbon);
-
-        // Door outline and number panel. Deliberately logo-free.
-        DrawLine3D({-.17f,.30f,side*.563f},
-                   {-.17f,.51f,side*.563f},tone(paint,.52f));
-        DrawLine3D({.29f,.36f,side*.551f},
-                   {.29f,.49f,side*.551f},crease);
-        rod({-.15f,.47f,side*.583f},{.21f,.47f,side*.565f},
-            .006f,highlight);
-        box(-.06f,.402f,side*.578f,.27f,.17f,.018f,
-            {231,232,225,255});
-        // A small raised race number "7" rather than a generic black square.
-        rod({-.119f,.459f,side*.597f},
-            {.003f,.459f,side*.597f},.009f,grille);
-        rod({.003f,.459f,side*.597f},
-            {-.073f,.346f,side*.597f},.009f,grille);
-        box(.26f,.74f,side*.45f,.14f,.075f,.12f,dark); // mirror
-        rod({.20f,.71f,side*.39f},{.26f,.74f,side*.45f},.018f,dark);
-
-        // Low, sharp front lamp with separate white daylight signature.
-        box(1.183f,.365f,side*.395f,.020f,.082f,.205f,grille);
-        box(1.198f,.385f,side*.405f,.018f,.027f,.177f,headlight);
-        box(1.195f,.344f,side*.462f,.018f,.021f,.063f,
-            {164,198,218,255});
-        // Angular DRL signature and a tiny amber corner indicator.
-        rod({1.214f,.400f,side*.323f},
-            {1.215f,.365f,side*.484f},.009f,headlight);
-        box(1.210f,.331f,side*.476f,.014f,.014f,.032f,
-            {232,155,65,255});
-
-        // Rear light clusters are bright when the brake is applied.
-        box(-1.193f,.424f,side*.405f,.021f,.055f,.20f,grille);
-        box(-1.209f,.430f,side*.406f,.016f,.024f,.171f,tail);
+        rlEnd();
     }
-
-    // Deep front fascia: central mesh intake, two side intakes and splitter.
-    box(1.191f,.246f,0,.026f,.142f,.60f,grille);
-    for(int i=-4;i<=4;++i)
-        box(1.209f,.245f,float(i)*.058f,.012f,.113f,.012f,
-            {56,62,70,255});
-    for(int i=0;i<3;++i)
-        box(1.218f,.208f+float(i)*.036f,0.f,
-            .009f,.006f,.57f,{72,79,89,255});
-    // Central towing eye is visible but stays behind the splitter.
-    rod({1.218f,.193f,.20f},{1.230f,.193f,.20f},.026f,silver);
-    for(float side:{-1.f,1.f})
-        box(1.192f,.253f,side*.393f,.028f,.104f,.171f,carbon);
-    box(1.205f,.139f,0,.275f,.047f,1.17f,carbon);
-    box(1.285f,.154f,0,.053f,.018f,1.10f,tone(carbon,1.45f));
-
-    // Hood contours and extractor vents follow the actual bonnet slope.
-    for(float side:{-1.f,1.f}) {
-        rod({.49f,.487f,side*.40f},
-            {1.06f,.387f,side*.40f},.006f,highlight);
-        panel({.60f,.483f,side*.16f},
-              {.89f,.435f,side*.16f},
-              {.89f,.437f,side*.31f},
-              {.60f,.493f,side*.31f},grille);
-        rod({.65f,.493f,side*.24f},
-            {.85f,.456f,side*.24f},.008f,metal);
-        // Long bonnet power line follows the existing low hood.
-        rod({.32f,.508f,side*.355f},
-            {.79f,.433f,side*.385f},.008f,crease);
-    }
-    // Low front bonnet stripes to break up the flat top surface.
-    panel({.33f,.507f,-.078f},{.33f,.507f,.078f},
-          {.82f,.431f,.078f},{.82f,.431f,-.078f},
-          tone(paint,.90f));
-
-    // Vented rear deck: small surface panels, not a roof-height air scoop.
-    for(float side:{-1.f,1.f}) {
-        panel({-1.07f,.487f,side*.13f},
-              {-.87f,.538f,side*.13f},
-              {-.87f,.538f,side*.33f},
-              {-1.07f,.487f,side*.33f},grille);
-        for(int i=0;i<3;++i) {
-            const float x=-1.04f+float(i)*.066f;
-            rod({x,.50f+float(i)*.017f,side*.15f},
-                {x,.50f+float(i)*.017f,side*.31f},
-                .006f,metal);
-        }
-    }
-
-    // Rear bumper, diffuser channels and discreet dual exhausts.
-    box(-1.196f,.237f,0,.050f,.17f,1.03f,carbon);
-    box(-1.216f,.426f,0,.018f,.019f,.38f,tail);
-    // Centre rear cooling grille with three visible horizontal slats.
-    box(-1.211f,.331f,0.f,.018f,.11f,.48f,grille);
-    for(int i=0;i<3;++i)
-        box(-1.227f,.290f+float(i)*.040f,0.f,
-            .010f,.009f,.44f,{66,73,82,255});
-    box(-1.236f,.125f,0,.29f,.06f,1.13f,carbon);
-    for(float z:{-.44f,-.22f,0.f,.22f,.44f})
-        box(-1.256f,.155f,z,.245f,.100f,.025f,grille);
-    for(float side:{-1.f,1.f})
-        rod({-1.240f,.254f,side*.25f},
-            {-1.273f,.254f,side*.25f},.060f,metal);
-    // Rear bumper outline gives the chase camera a readable GT3 shape.
-    rod({-1.221f,.48f,-.465f},
-        {-1.221f,.48f,.465f},.010f,highlight);
-
-    // Twin pylons and a wide, thin GT wing with clear end plates.
-    for(float side:{-1.f,1.f})
-        rod({-1.018f,.46f,side*.34f},
-            {-1.100f,.81f,side*.36f},.024f,carbon);
-    rearWing(-1.105f,.84f,1.23f,.23f,carbon);
-    // Subtle Gurney flap, not a second tall wing.
-    box(-1.190f,.865f,0.f,.013f,.023f,1.17f,grille);
-    rlPopMatrix();
 }
 
 void wec(Color paint,Color glass,Color /*dark*/,bool braking,bool lights) {
@@ -420,8 +259,8 @@ void wec(Color paint,Color glass,Color /*dark*/,bool braking,bool lights) {
 }
 
 void wheels(const Car& car,const VehicleProfile& p,int index) {
-    const float front=float(p.frontAxle*kWorldScale);
-    const float rear=float(p.rearAxle*kWorldScale);
+    const float front=index==2?gt3model::axle:float(p.frontAxle*kWorldScale);
+    const float rear=index==2?-gt3model::axle:float(p.rearAxle*kWorldScale);
     constexpr std::array<float,4> sizes{{.155f,.265f,.205f,.195f}};
     constexpr std::array<float,4> widths{{.19f,.26f,.22f,.21f}};
     constexpr std::array<float,4> tracks{{.45f,.65f,.60f,.58f}};
@@ -522,7 +361,7 @@ Headlights VehicleRenderer::headlights(const Car& car,const VehicleProfile& prof
     // Source positions match the visible models, including their body scale.
     const std::array<Vector3,4> origins{{
         {.84f,.19f,.25f},{1.25f,.69f,.36f},
-        {1.23f,.14f+(.385f-.14f)*.85f,.405f},
+        {gt3model::lampAnchor.x+.02f,gt3model::lampAnchor.y,gt3model::lampAnchor.z},
         {1.43f*.96f,.035f+.16f*.96f,.205f}
     }};
     const auto local=origins[std::clamp(index,0,3)];
