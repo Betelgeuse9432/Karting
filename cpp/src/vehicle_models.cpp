@@ -1,5 +1,6 @@
 #include "karting/game.hpp"
 #include "rlgl.h"
+#include "raymath.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -103,7 +104,11 @@ void lamps(float x,float height,float side,Color color,float width=.14f) {
         box(x,height,z,.045f,.065f,width,color);
 }
 
-void kart(Color paint) {
+Color frontLight(Color color,bool enabled) {
+    return enabled?surface(color,Surface::Headlamp):color;
+}
+
+void kart(Color paint,bool lights) {
     const Color steel{67,72,78,255},rubber{35,37,44,255};
     bodyShell({{-.77f,.12f,.18f,.25f},
                {-.37f,.12f,.21f,.34f},
@@ -129,10 +134,12 @@ void kart(Color paint) {
     rod({-.68f,.25f,.17f},{-.94f,.35f,.21f},.034f,
         {179,179,174,255}); // exhaust
     box(.76f,.14f,0,.068f,.10f,.76f,rubber); // bumper
+    // Small auxiliary lights on the kart's front bumper.
+    lamps(.808f,.19f,.25f,frontLight({235,240,224,255},lights),.10f);
     box(-.77f,.14f,0,.068f,.10f,.73f,rubber);
 }
 
-void offRoad(Color paint,Color glass,Color dark,bool braking) {
+void offRoad(Color paint,Color glass,Color dark,bool braking,bool lights) {
     // A boxy SUV is intentional, but the front hood and rear body taper.
     bodyShell({{-1.10f,.36f,.76f,.45f},
                {-.73f,.35f,.88f,.55f},
@@ -154,7 +161,7 @@ void offRoad(Color paint,Color glass,Color dark,bool braking) {
     }
     box(1.14f,.43f,0,.16f,.19f,1.02f,dark);
     box(1.23f,.60f,0,.032f,.24f,.61f,{45,51,59,255}); // grille
-    lamps(1.22f,.69f,.36f,{228,231,190,255},.17f);
+    lamps(1.22f,.69f,.36f,frontLight({228,231,190,255},lights),.17f);
     lamps(-1.13f,.70f,.36f,braking?RED:Color{139,30,32,255},.16f);
     rod({-1.16f,.87f,-.10f},{-1.28f,.87f,-.10f},
         .30f,{40,42,46,255}); // spare
@@ -162,7 +169,7 @@ void offRoad(Color paint,Color glass,Color dark,bool braking) {
         .13f,{163,166,172,255});
 }
 
-void gt3(Color paint,Color glass,Color dark,bool braking) {
+void gt3(Color paint,Color glass,Color dark,bool braking,bool lights) {
     // Modern GT3: broad stance, recognisable wheel haunches, low roof and
     // separate aerodynamic details. All decoration remains procedural.
     const Color shadow=tone(paint,.70f);
@@ -170,7 +177,7 @@ void gt3(Color paint,Color glass,Color dark,bool braking) {
     const Color carbon{24,27,33,255};
     const Color grille{12,16,20,255};
     const Color metal{126,132,140,255};
-    const Color headlight{239,245,223,255};
+    const Color headlight=frontLight({239,245,223,255},lights);
     const Color tail=braking?Color{255,46,39,255}:Color{155,27,34,255};
     const Color crease=tone(paint,.58f);
     const Color silver{180,187,196,255};
@@ -364,11 +371,11 @@ void gt3(Color paint,Color glass,Color dark,bool braking) {
     rlPopMatrix();
 }
 
-void wec(Color paint,Color glass,Color dark,bool braking) {
+void wec(Color paint,Color glass,Color /*dark*/,bool braking,bool lights) {
     // Simple WEC Hypercar silhouette. Front is +X, rear is -X.
     const Color carbon{24,28,34,255};
     const Color glassDark=tone(glass,.72f);
-    const Color headlamp{235,243,232,255};
+    const Color headlamp=frontLight({235,243,232,255},lights);
     const Color tail=braking?Color{255,38,32,255}:Color{135,22,28,255};
 
     // One continuous, gently rounded body profile.
@@ -450,15 +457,9 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
     }
 }
 
-} // namespace
-
-void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
-                           int index,int colorIndex,bool night,
-                           bool followRoad,const Track* track) const {
-    const Color paint=followRoad?surface(palette(colorIndex),Surface::Paint):palette(colorIndex);
-    const Color dark{31,34,42,255};
-    const Color glassBase=night?Color{29,48,70,255}:Color{58,104,139,255};
-    const Color glass=followRoad?surface(glassBase,Surface::Glass):glassBase;
+struct RoadPose { Vector3 origin; float pitch,roll; };
+RoadPose roadPose(const Car& car,const VehicleProfile& profile,int index,
+                  bool followRoad,const Track* track) {
     const Vec2 forward{std::cos(car.heading),std::sin(car.heading)};
     const Vec2 side{-forward.y,forward.x};
     // Sample the four wheel contact locations. Compute the road plane in
@@ -495,6 +496,57 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
     const Vector3 p{float(car.position.x*kWorldScale),
                     float(originHeight*kWorldScale),
                     float(car.position.y*kWorldScale)};
+    return {p,roadPitch,roadRoll};
+}
+Vector3 orient(Vector3 local,const Car& car,const RoadPose& pose) {
+    // Match the actual model's matrix order: chassis pitch, chassis roll,
+    // road pitch, road roll and finally yaw.
+    local=Vector3RotateByAxisAngle(local,{0,0,1},float(car.pitch));
+    local=Vector3RotateByAxisAngle(local,{1,0,0},float(car.roll));
+    local=Vector3RotateByAxisAngle(local,{0,0,1},pose.pitch*DEG2RAD);
+    local=Vector3RotateByAxisAngle(local,{1,0,0},pose.roll*DEG2RAD);
+    return Vector3RotateByAxisAngle(local,{0,1,0},float(-car.heading));
+}
+
+} // namespace
+
+Headlights VehicleRenderer::headlights(const Car& car,const VehicleProfile& profile,int index,
+                                       const Track& track,HeadlightMode mode,float night,float rain) const {
+    Headlights lights;
+    if(mode==HeadlightMode::Off) return lights;
+    lights.high=mode==HeadlightMode::High;
+    lights.intensity=mode==HeadlightMode::Auto?
+        std::max(std::clamp((night-.23f)/.32f,0.f,1.f),rain*.85f):1.f;
+    if(lights.intensity<=.001f) return lights;
+    const auto pose=roadPose(car,profile,index,true,&track);
+    // Source positions match the visible models, including their body scale.
+    const std::array<Vector3,4> origins{{
+        {.84f,.19f,.25f},{1.25f,.69f,.36f},
+        {1.23f,.14f+(.385f-.14f)*.85f,.405f},
+        {1.43f*.96f,.035f+.16f*.96f,.205f}
+    }};
+    const auto local=origins[std::clamp(index,0,3)];
+    lights.up=Vector3Normalize(orient({0,1,0},car,pose));
+    for(int i=0;i<2;++i) {
+        const float side=i==0?-1.f:1.f;
+        const Vector3 p=Vector3Add(pose.origin,orient({local.x,local.y,local.z*side},car,pose));
+        const Vector3 direction=Vector3Normalize(orient({1.f,lights.high?-.014f:-.065f,side*.025f},car,pose));
+        lights.positions[i]={p.x,p.y,p.z,lights.intensity};
+        lights.directions[i]={direction.x,direction.y,direction.z,0.f};
+    }
+    return lights;
+}
+
+void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
+                           int index,int colorIndex,bool night,
+                           bool followRoad,const Track* track,bool headlights) const {
+    const Color paint=followRoad?surface(palette(colorIndex),Surface::Paint):palette(colorIndex);
+    const Color dark{31,34,42,255};
+    const Color glassBase=night?Color{29,48,70,255}:Color{58,104,139,255};
+    const Color glass=followRoad?surface(glassBase,Surface::Glass):glassBase;
+    const auto pose=roadPose(car,profile,index,followRoad,track);
+    const Vector3 p=pose.origin;
+    const float roadPitch=pose.pitch,roadRoll=pose.roll;
     rlPushMatrix();
     rlTranslatef(p.x,p.y,p.z);
     rlRotatef(float(-car.heading*RAD2DEG),0,1,0);
@@ -505,19 +557,19 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
     rlRotatef(float(car.roll*RAD2DEG),1,0,0);
     rlRotatef(float(car.pitch*RAD2DEG),0,0,1);
     switch(index) {
-    case 0: kart(paint);break;
-    case 1: offRoad(paint,glass,dark,car.brake>.1);break;
-    case 2: gt3(paint,glass,dark,car.brake>.1);break;
+    case 0: kart(paint,headlights);break;
+    case 1: offRoad(paint,glass,dark,car.brake>.1,headlights);break;
+    case 2: gt3(paint,glass,dark,car.brake>.1,headlights);break;
     case 3:
         // Nathan's adjusted hypercar body: wheels and driving physics
         // retain their original reference positions.
         rlPushMatrix();
         rlTranslatef(0,.035f,0);
         rlScalef(.96f,.96f,1.0f);
-        wec(paint,glass,dark,car.brake>.1);
+        wec(paint,glass,dark,car.brake>.1,headlights);
         rlPopMatrix();
         break;
-    default: gt3(paint,glass,dark,car.brake>.1);break;
+    default: gt3(paint,glass,dark,car.brake>.1,headlights);break;
     }
     rlPopMatrix();
     wheels(car,profile,index);

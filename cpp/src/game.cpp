@@ -153,6 +153,10 @@ void Game::handleRace() {
         dynamicCamera_=!dynamicCamera_;
         cameraNoticeUntil_=gameTime_+2.0;
     }
+    if (IsKeyPressed(KEY_L)) {
+        headlightMode_=static_cast<HeadlightMode>((static_cast<int>(headlightMode_)+1)%4);
+        lightNoticeUntil_=gameTime_+2.5;
+    }
     if (IsKeyPressed(KEY_N)) sim_.cycleWeather();
     if (IsKeyPressed(KEY_P)) sim_.toggleRain();
 }
@@ -295,8 +299,10 @@ void Game::renderRace() {
             showFault(name,e.what());
         }
     };
+    const auto headlights=vehicle_.headlights(renderCar_,sim_.profile(),sim_.vehicleIndex(),
+                                               sim_.track(),headlightMode_,n,r);
     BeginMode3D(camera_);
-    atmosphere_.begin(camera_,bottom,n,r,quality_,hdr,world_.streetLights(camera_.position,n));
+    atmosphere_.begin(camera_,bottom,n,r,quality_,hdr,world_.streetLights(camera_.position,n),headlights);
     safe("world",[&]{
         world_.draw(sim_.track(),weather,quality_,camera_,gameTime_);
     });
@@ -304,7 +310,7 @@ void Game::renderRace() {
         drawContactShadow(sim_.track(),renderCar_,sim_.profile(),n,r);
         vehicle_.draw(renderCar_,sim_.profile(),
                       sim_.vehicleIndex(),sim_.colorIndex(),n>.2,
-                      true,&sim_.track());
+                      true,&sim_.track(),headlights.intensity>.01f);
     });
     atmosphere_.end();
     // Smoke, flames and sparks remain emissive and are composited last.
@@ -350,11 +356,18 @@ void Game::renderRace() {
         else if(scenicHud_) hud_.scenic(sim_);
     });
     if(mode_==DrivingMode::Scenic && gameTime_<scenicNoticeUntil_ && scenicHud_) {
-        const char* hint="CONDUITE LIBRE  |  H interface  N ciel  P pluie  V camera  M menu";
+        const char* hint="CONDUITE LIBRE  |  H interface  N ciel  P pluie  L phares  V camera  M menu";
         const int font=16;
         const int w=MeasureText(hint,font);
         DrawRectangle((width-w)/2-12,24,w+24,30,Fade(BLACK,.58f));
         DrawText(hint,(width-w)/2,31,font,RAYWHITE);
+    }
+    if(gameTime_<lightNoticeUntil_) {
+        const char* labels[]={"PHARES AUTO [L]","FEUX DE CROISEMENT [L]","PLEINS PHARES [L]","PHARES ETEINTS [L]"};
+        const char* label=labels[static_cast<int>(headlightMode_)];
+        const int font=20,w=MeasureText(label,font);
+        DrawRectangle((width-w)/2-10,98,w+20,32,Fade(BLACK,.72f));
+        DrawText(label,(width-w)/2,104,font,RAYWHITE);
     }
     if(gameTime_<cameraNoticeUntil_) {
         const char* label=dynamicCamera_?"CAMERA DOUCE [V]":"CAMERA CONFORT [V]";

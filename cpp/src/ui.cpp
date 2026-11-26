@@ -179,7 +179,7 @@ void HudRenderer::draw(const Simulation& sim,int quality,int fps) const {
     }
     DrawText(TextFormat("GRIP : %d%%",int(telemetry.grip*100)),
              w/2-85,h-31,19,SKYBLUE);
-    DrawText("ESPACE drift  N ciel  P pluie  G qualite  R reset  M menu",
+    DrawText("ESPACE drift  N ciel  P pluie  L phares  G qualite  R reset  M menu",
              w/2-316,h-56,17,LIGHTGRAY);
 
     if (telemetry.wheelsOutside>0)

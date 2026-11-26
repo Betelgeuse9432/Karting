@@ -58,6 +58,10 @@ uniform vec4 lunarLight;
 uniform int lampCount;
 uniform vec4 lampPositions[32];
 uniform vec4 lampDirections[32];
+uniform vec4 headPositions[2];
+uniform vec4 headDirections[2];
+uniform vec3 headUp;
+uniform vec2 headSettings; // intensity, high beam
 uniform vec3 shadowParams; // inverse size, strength, valid
 out vec4 finalColor;
 
@@ -106,7 +110,7 @@ void main() {
     float strength=lighting.x*(1.0-0.75*lighting.z);
     float visibility=sunVisibility(worldPosition+normal*0.018,facing);
     int material=int(floor(fragColor.a*255.0+0.5));
-    bool tagged=material>=248 && material<=254;
+    bool tagged=material>=247 && material<=254;
     if(tagged) base.a=1.0;
     vec3 p=worldPosition;
     float broad=kartingValueNoise(p*0.55);
@@ -170,6 +174,47 @@ void main() {
         float energy=lampPositions[i].w*cone*falloff*diffuse*8.0/(1.0+0.05*distanceToLamp*distanceToLamp);
         lampEnergy+=vec3(1.0,0.76,0.44)*energy*pow(max(base.rgb,vec3(0.0)),vec3(1.4));
     }
+    // Two independently positioned, flattened automotive spotlights.
+    // The cutoff is evaluated in the car's own up/forward frame so it
+    // follows banking, chassis pitch, and road grade.
+    if(headSettings.x>0.001) {
+        float high=headSettings.y;
+        float beamRange=mix(42.0,75.0,high);
+        for(int i=0;i<2;++i) {
+            vec3 delta=p-headPositions[i].xyz;
+            float dist=length(delta);
+            vec3 ray=delta/max(dist,0.001);
+            vec3 forward=normalize(headDirections[i].xyz);
+            vec3 side=normalize(cross(forward,headUp));
+            vec3 up=normalize(cross(side,forward));
+            float along=dot(ray,forward);
+            float horizontal=dot(ray,side)/max(along,0.01);
+            float vertical=dot(ray,up)/max(along,0.01);
+            float width=mix(0.48,0.31,high);
+            float spread=1.0-smoothstep(width*0.42,width,abs(horizontal));
+            float ceiling=mix(0.035,0.14,high);
+            float cutoff=1.0-smoothstep(ceiling-0.018,ceiling+0.014,vertical);
+            float floorFade=smoothstep(-0.46,-0.11,vertical);
+            float beam=spread*cutoff*floorFade*smoothstep(0.08,0.60,along);
+            float fade=1.0-smoothstep(beamRange*0.66,beamRange,dist);
+            float incidence=max(dot(normal,-ray),0.0);
+            float power=mix(4.5,8.0,high)*beam*fade/(1.0+0.006*dist*dist);
+            // A mild grazing term makes the road readable on long, flat
+            // straights while vertical surfaces still receive true diffuse.
+            float irradiance=power*(incidence+0.18*sqrt(incidence));
+            vec3 tint=vec3(1.0,0.94,0.80);
+            lampEnergy+=tint*irradiance*headSettings.x*pow(max(base.rgb,vec3(0.0)),vec3(1.5));
+            if(reflectance>0.0) {
+                vec3 halfDir=normalize(normalize(eyePosition-p)-ray);
+                float glint=pow(max(dot(normal,halfDir),0.0),mix(95.0,8.0,roughness));
+                lampEnergy+=tint*power*glint*reflectance*headSettings.x*0.6;
+            }
+        }
+    }
+    if(material==247) {
+        lit=base.rgb;
+        highEnergy+=vec3(4.0,3.6,2.6)*headSettings.x*(1.0+headSettings.y*0.6);
+    }
     if(material==248) {
         lit=base.rgb;
         highEnergy+=vec3(4.6,2.6,0.85)*smoothstep(0.0,0.7,lunarLight.w+0.32);
@@ -202,6 +247,10 @@ void Atmosphere::initialize() {
     lampCount_=GetShaderLocation(shader_,"lampCount");
     lampPositions_=GetShaderLocation(shader_,"lampPositions[0]");
     lampDirections_=GetShaderLocation(shader_,"lampDirections[0]");
+    headPositions_=GetShaderLocation(shader_,"headPositions[0]");
+    headDirections_=GetShaderLocation(shader_,"headDirections[0]");
+    headUp_=GetShaderLocation(shader_,"headUp");
+    headSettings_=GetShaderLocation(shader_,"headSettings");
     if(eye_<0||sun_<0||horizon_<0||lighting_<0||fog_<0 ||
        shadowSampler_<0||lightMatrix_<0||shadowParams_<0) {
         shutdown();
@@ -273,7 +322,7 @@ void Atmosphere::endShadow() {
     shadowValid_=true;
 }
 
-void Atmosphere::begin(const Camera3D& camera,Color horizon,float night,float rain,int quality,bool hdr,const StreetLights& lamps) const {
+void Atmosphere::begin(const Camera3D& camera,Color horizon,float night,float rain,int quality,bool hdr,const StreetLights& lamps,const Headlights& headlights) const {
     if(!ready_) return;
     BeginShaderMode(shader_);
     const int hdrMode=hdr?1:0;
@@ -291,6 +340,13 @@ void Atmosphere::begin(const Camera3D& camera,Color horizon,float night,float ra
     if(lamps.count>0) {
         SetShaderValueV(shader_,lampPositions_,lamps.positions.data(),SHADER_UNIFORM_VEC4,lamps.count);
         SetShaderValueV(shader_,lampDirections_,lamps.directions.data(),SHADER_UNIFORM_VEC4,lamps.count);
+    }
+    const Vector2 headSettings{headlights.intensity,headlights.high?1.f:0.f};
+    SetShaderValue(shader_,headSettings_,&headSettings,SHADER_UNIFORM_VEC2);
+    if(headlights.intensity>0.001f) {
+        SetShaderValueV(shader_,headPositions_,headlights.positions.data(),SHADER_UNIFORM_VEC4,2);
+        SetShaderValueV(shader_,headDirections_,headlights.directions.data(),SHADER_UNIFORM_VEC4,2);
+        SetShaderValue(shader_,headUp_,&headlights.up,SHADER_UNIFORM_VEC3);
     }
     const float end=(quality==0?63.f:quality==1?82.f:102.f)*(1.f-.36f*rain);
     const Vector2 range{end*(.34f-.15f*rain),end};

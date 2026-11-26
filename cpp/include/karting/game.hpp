@@ -75,7 +75,10 @@ class VehicleRenderer {
 public:
     void draw(const Car& car, const VehicleProfile& profile,
               int vehicleIndex, int colorIndex, bool night,
-              bool followRoad = true,const Track* track = nullptr) const;
+              bool followRoad = true,const Track* track = nullptr,
+              bool headlights=false) const;
+    Headlights headlights(const Car& car,const VehicleProfile& profile,int index,
+                          const Track& track,HeadlightMode mode,float night,float rain) const;
 };
 
 // Logical HUD dimensions preserve the original 1100x720 layout at any
@@ -124,6 +127,8 @@ private:
     Camera3D camera_{};
     DrivingMode mode_ = DrivingMode::Scenic;
     bool scenicHud_ = true;
+    HeadlightMode headlightMode_=HeadlightMode::Auto;
+    double lightNoticeUntil_=0;
     double scenicNoticeUntil_ = 0;
     bool menu_ = true;
     bool paused_ = false;

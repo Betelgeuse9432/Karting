@@ -2,6 +2,10 @@
 
 Ce dossier contient la version native **C++20 / raylib** de Karting, utilisée sur les branches `cpp-raylib` et `main-cpp`. Les anciens fichiers du jeu Python ont été retirés de ces deux branches ; ils restent consultables dans l'historique Git et les branches historiques.
 
+## Phares fonctionnels
+
+L cycle Auto / Croisement / Route / Eteints. Le mode automatique reagit au crepuscule et a la pluie. Les deux projecteurs utilisent la pose exacte du chassis, la pente et le devers, avec des origines propres a chaque modele. Le shader applique une coupure verticale en croisement et une portee superieure en route, ainsi que des reflets speculaires sur les materiaux. Les lentilles sont emissives dans le HDR. Le kart recoit deux petits projecteurs. Pas encore d'ombres locales ni de diffusion volumetrique des faisceaux dans l'air; les portees sont artistiques et restent a verifier en jeu.
+
 ## Crepuscule, nuit et lampadaires
 
 Les profils HDR interpolent entre jour, crepuscule et nuit, avec une exposition nocturne fixe selon le cycle (pas de mesure automatique de luminance). Le disque solaire est moins intense et plus chaud au crepuscule. La lune est calculee dans le ciel HDR et fournit un eclairage directionnel froid sans carte d'ombres lunaire. Les lampadaires sont orientes vers le centre de leur portion de route et leur face inferieure devient emissive. Jusqu'a 32 sources proches eclairent les surfaces via un cone directionnel et une attenuation de distance. Ces lampes ne projettent pas encore d'ombres individuelles. Aucun changement de physique ou de conduite.
