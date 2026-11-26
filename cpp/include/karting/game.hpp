@@ -1,5 +1,6 @@
 #pragma once
 #include "karting/core.hpp"
+#include "karting/atmosphere.hpp"
 #include "karting/chase_camera.hpp"
 #include "karting/frustum.hpp"
 #include "raylib.h"
@@ -114,6 +115,7 @@ private:
     FixedClock clock_;
     Effects effects_;
     WorldRenderer world_;
+    Atmosphere atmosphere_;
     VehicleRenderer vehicle_;
     HudRenderer hud_;
     Camera3D camera_{};

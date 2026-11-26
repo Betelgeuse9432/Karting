@@ -37,6 +37,7 @@ if(KARTING_BUILD_GAME)
   add_executable(karting_cpp
     src/main.cpp
     src/game.cpp
+    src/atmosphere.cpp
     src/render.cpp
     src/vehicle_models.cpp
     src/scenery.cpp

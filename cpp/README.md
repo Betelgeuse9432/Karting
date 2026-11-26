@@ -2,6 +2,10 @@
 
 Ce dossier contient la version native **C++20 / raylib** de Karting, utilisée sur les branches `cpp-raylib` et `main-cpp`. Les anciens fichiers du jeu Python ont été retirés de ces deux branches ; ils restent consultables dans l'historique Git et les branches historiques.
 
+## Eclairage directionnel et atmosphere
+
+Le rendu 3D utilise un shader GLSL 330 commun aux primitives du monde et aux voitures. Il calcule les normales par derivees de la position dans le monde, ajoute le contraste directionnel et les couleurs du crepuscule, et fond les objets lointains dans la couleur de l'horizon. La pluie rapproche le brouillard. Le soleil, la lune et les etoiles ont des directions fixes dans le monde. Une ombre de contact douce suit le vehicule sur sa chaussée, y compris sur le pont. Pas de shadow maps ni de textures externes dans cette premiere etape. En cas d'echec de compilation du shader, raylib conserve le rendu standard. Le rendu et les FPS restent a verifier sur le PC de jeu.
+
 ## Mode conduite libre (premiere etape atmospherique)
 
 Le menu propose deux modes via **Tab** : conduite libre (par defaut) et contre-la-montre. La conduite libre desactive le chronometrage et les records, conserve la physique des vehicules et demarre avec la camera confort. Le compteur de vitesse minimaliste peut etre masque avec **H**. Les touches **N** (ciel), **P** (pluie), **V** (camera), **M** (menu) et **R** (reset) restent disponibles. Les effets artificiels de vitesse sont reserves au contre-la-montre. Cette etape ne contient pas encore de nouveaux paysages ni de bande sonore.

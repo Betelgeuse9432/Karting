@@ -1,5 +1,6 @@
 #include "karting/game.hpp"
 #include <algorithm>
+#include "raymath.h"
 #include <cmath>
 #include <exception>
 #include <fstream>
@@ -36,6 +37,18 @@ bool menuKeyPressed() {
         if(character=='m' || character=='M') pressed=true;
     }
     return pressed;
+}
+// Project world-space light directions into the camera's visible sky.
+bool skyPoint(const Camera3D& camera,Vector3 direction,int width,int height,Vector2& out) {
+    const Vector3 forward=Vector3Normalize(Vector3Subtract(camera.target,camera.position));
+    const Vector3 right=Vector3Normalize(Vector3CrossProduct(forward,camera.up));
+    const Vector3 up=Vector3CrossProduct(right,forward);
+    const float depth=Vector3DotProduct(direction,forward);
+    if(depth<=.01f) return false;
+    const float focal=float(height)/(2.f*std::tan(camera.fovy*DEG2RAD*.5f));
+    out={width*.5f+focal*Vector3DotProduct(direction,right)/depth,
+         height*.5f-focal*Vector3DotProduct(direction,up)/depth};
+    return out.x>-100 && out.x<width+100 && out.y>-100 && out.y<height+100;
 }
 // Screen-space sky with a camera-relative azimuth. Project only directions
 // inside the current horizontal FOV; no offscreen clouds are submitted.
@@ -208,22 +221,42 @@ void Game::renderRace() {
                           lerp(duskBottom,nightBottom,(n-.55f)/.45f);
     top=lerp(top,{76,85,100,255},r*.6f);
     bottom=lerp(bottom,{108,115,130,255},r*.6f);
-    DrawRectangleGradientV(0,0,width,height,top,bottom);
-    drawVisibleSky(camera_,width,height,n,r,gameTime_,quality_,bottom);
-    if (n<.8f && r<.8f) {
-        const float x=float(width*.78);
-        const float y=92.f+120.f*n;
-        DrawCircle(int(x),int(y),28.f*(1-n*.5f),
-                   Fade(n>.4f?ORANGE:YELLOW,(1-r)*(1-n*.6f)));
-    }
-    if (n>.5f && r<.6f) {
-        for (int i=0;i<90;++i) {
-            const int x=(i*617+23)%width;
-            const int y=(i*277+17)%(height/2);
-            DrawCircle(x,y,1,Fade(WHITE,(n-.5f)*2*(1-r)));
+    const Vector3 forward=Vector3Normalize(Vector3Subtract(camera_.target,camera_.position));
+    const float focal=float(height)/(2.f*std::tan(camera_.fovy*DEG2RAD*.5f));
+    const int horizon=std::clamp(int(height*.5f+forward.y*focal),1,std::max(1,height));
+    DrawRectangleGradientV(0,0,width,horizon,top,bottom);
+    DrawRectangle(0,horizon,width,std::max(0,height-horizon),bottom);
+    if(n<.8f && r<.8f) {
+        Vector2 sun{};
+        if(skyPoint(camera_,Atmosphere::sunDirection(n),width,height,sun)) {
+            const float alpha=(1-r)*(1-n*.9f);
+            const Color glow=n>.35f?Color{255,170,92,255}:Color{255,228,158,255};
+            const float scale=float(height)/720.f;
+            if(quality_>0) {
+                DrawCircleGradient(int(sun.x),int(sun.y),72.f*scale,
+                                   Fade(glow,.19f*alpha),Fade(glow,0.f));
+                DrawCircleGradient(int(sun.x),int(sun.y),37.f*scale,
+                                   Fade(glow,.34f*alpha),Fade(glow,0.f));
+            }
+            DrawCircleV(sun,13.f*scale,Fade({255,239,205,255},alpha));
         }
-        DrawCircle(width/5,100,19,Fade(RAYWHITE,(n-.5f)*2*(1-r)));
     }
+    if(n>.5f && r<.6f) {
+        // Stars have fixed world bearings instead of sliding with the screen.
+        for(int i=0;i<90;++i) {
+            const float bearing=float(i)*2.39996323f;
+            const float y=.12f+.86f*float((i*37)%89)/89.f;
+            const float radius=std::sqrt(std::max(0.f,1.f-y*y));
+            Vector2 star{};
+            if(skyPoint(camera_,{radius*std::cos(bearing),y,radius*std::sin(bearing)},
+                        width,height,star))
+                DrawCircleV(star,1.f,Fade(WHITE,(n-.5f)*2*(1-r)));
+        }
+        Vector2 moon{};
+        if(skyPoint(camera_,Vector3Normalize({.65f,.58f,.48f}),width,height,moon))
+            DrawCircleV(moon,11.f*height/720.f,Fade(RAYWHITE,(n-.5f)*2*(1-r)));
+    }
+    drawVisibleSky(camera_,width,height,n,r,gameTime_,quality_,bottom);
 
     // Each subsystem can fail independently without taking down the process.
     const auto safe=[&](const char* name,auto&& operation) {
@@ -235,15 +268,19 @@ void Game::renderRace() {
         }
     };
     BeginMode3D(camera_);
+    atmosphere_.begin(camera_,bottom,n,r,quality_);
     safe("world",[&]{
         world_.draw(sim_.track(),weather,quality_,camera_,gameTime_);
     });
-    safe("effects",[&]{ effects_.draw3D(camera_); });
     safe("vehicle",[&]{
+        drawContactShadow(sim_.track(),sim_.car(),sim_.profile(),n,r);
         vehicle_.draw(sim_.car(),sim_.profile(),
                       sim_.vehicleIndex(),sim_.colorIndex(),n>.2,
                       true,&sim_.track());
     });
+    atmosphere_.end();
+    // Smoke, flames and sparks remain emissive and are composited last.
+    safe("effects",[&]{ effects_.draw3D(camera_); });
     EndMode3D();
 
     // Rain is drawn in a separate transparent screen pass.
@@ -325,6 +362,7 @@ int Game::run() {
     MaximizeWindow();
     SetTargetFPS(60);
     try {
+        atmosphere_.initialize();
         world_.initialize(sim_.track());
         reset();
         std::ifstream input(recordFile);
@@ -372,9 +410,11 @@ int Game::run() {
             render();
         }
     } catch (...) {
+        atmosphere_.shutdown();
         CloseWindow();
         throw;
     }
+    atmosphere_.shutdown();
     CloseWindow();
     return 0;
 }
