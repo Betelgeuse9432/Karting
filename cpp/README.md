@@ -2,9 +2,13 @@
 
 Ce dossier contient la version native **C++20 / raylib** de Karting, utilisée sur les branches `cpp-raylib` et `main-cpp`. Les anciens fichiers du jeu Python ont été retirés de ces deux branches ; ils restent consultables dans l'historique Git et les branches historiques.
 
+## Ombres projetees du soleil
+
+Le rendu effectue une passe orthographique depuis le soleil dans une carte de profondeur de 4096 x 4096 sur une zone de 100 m autour de la voiture. Un filtrage PCF de 25 comparaisons adoucit les bords. Les arbres, infrastructures, relief et voitures projettent leurs ombres, y compris entre les deux niveaux du pont. La camera solaire est stabilisee sur la grille des texels et les ombres disparaissent progressivement la nuit et sous la pluie. La passe conserve les niveaux de detail du rendu principal mais ne filtre pas les objets hors du champ de la camera du joueur. Le cout GPU/CPU et le rendu restent a mesurer. Si la carte d'ombres ne peut pas etre creee, l'eclairage directionnel reste disponible.
+
 ## Eclairage directionnel et atmosphere
 
-Le rendu 3D utilise un shader GLSL 330 commun aux primitives du monde et aux voitures. Il calcule les normales par derivees de la position dans le monde, ajoute le contraste directionnel et les couleurs du crepuscule, et fond les objets lointains dans la couleur de l'horizon. La pluie rapproche le brouillard. Le soleil, la lune et les etoiles ont des directions fixes dans le monde. Une ombre de contact douce suit le vehicule sur sa chaussée, y compris sur le pont. Pas de shadow maps ni de textures externes dans cette premiere etape. En cas d'echec de compilation du shader, raylib conserve le rendu standard. Le rendu et les FPS restent a verifier sur le PC de jeu.
+Le rendu 3D utilise un shader GLSL 330 commun aux primitives du monde et aux voitures. Il calcule les normales par derivees de la position dans le monde, ajoute le contraste directionnel et les couleurs du crepuscule, et fond les objets lointains dans la couleur de l'horizon. La pluie rapproche le brouillard. Le soleil, la lune et les etoiles ont des directions fixes dans le monde. Une ombre de contact douce suit le vehicule sur sa chaussée, y compris sur le pont. Cette premiere etape ne contenait pas encore de shadow maps ni de textures externes (voir la section ombres projetees pour la revision suivante). En cas d'echec de compilation du shader, raylib conserve le rendu standard. Le rendu et les FPS restent a verifier sur le PC de jeu.
 
 ## Mode conduite libre (premiere etape atmospherique)
 

@@ -60,7 +60,7 @@ class WorldRenderer {
 public:
     void initialize(const Track& track);
     void draw(const Track& track, const Weather& weather, int quality,
-              const Camera3D& camera, double time) const;
+              const Camera3D& camera, double time,bool shadowPass=false) const;
 private:
     void drawTerrain(const Weather& weather,int quality,
                      const ViewFrustum& frustum, Vector3 cameraPosition) const;

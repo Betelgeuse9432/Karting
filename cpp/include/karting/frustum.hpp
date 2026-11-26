@@ -13,6 +13,7 @@ struct ViewFrustum {
     Vector3 eye{},forward{},right{},up{};
     float horizontalSlope=1.f, verticalSlope=1.f;
     float farPlane=140.f;
+    bool disabled=false;
 
     explicit ViewFrustum(const Camera3D& camera,float aspect,
                          float maxDistance=140.f) {
@@ -26,6 +27,7 @@ struct ViewFrustum {
     }
 
     bool visible(Vector3 center,float radius=0.f) const {
+        if(disabled) return true;
         const Vector3 offset=Vector3Subtract(center,eye);
         const float depth=Vector3DotProduct(offset,forward);
         if(depth < -radius || depth > farPlane+radius) return false;

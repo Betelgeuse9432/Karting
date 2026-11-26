@@ -116,11 +116,14 @@ static void solidEmbankment(const Track& track,std::size_t i,std::size_t j,
 }
 
 void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
-                         const Camera3D& camera,double time) const {
+                         const Camera3D& camera,double time,bool shadowPass) const {
     const Vector3 cameraPosition=camera.position;
     const float aspect=float(GetScreenWidth())/
                        float(std::max(1,GetScreenHeight()));
-    const ViewFrustum frustum(camera,aspect,150.f);
+    ViewFrustum frustum(camera,aspect,150.f);
+    // Offscreen trees and buildings can still cast visible shadows.
+    // Retain the main camera's LOD selection but skip its angular culling.
+    frustum.disabled=shadowPass;
     const float rain=float(weather.rainLevel);
     const float night=float(weather.nightLevel);
     const auto asphalt=shaded({84,86,95,255},1-0.35f*rain-0.52f*night);
@@ -272,7 +275,7 @@ void WorldRenderer::draw(const Track& track,const Weather& weather,int quality,
                                      shaded({245,217,97,255},1-.38f*night));
                 }
             }
-        } else if(quality>0 && !solidWalls && d2<38.f*38.f) {
+        } else if(!shadowPass && quality>0 && !solidWalls && d2<38.f*38.f) {
             // Original rendering on all other roads: two delicate lines
             // on each side, not concrete barriers.
             for(int side:{-1,1}) {

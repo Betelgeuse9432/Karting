@@ -25,6 +25,21 @@ void main() {
 }
 )GLSL";
 
+// Render linear light-space depth into an RGB8 color attachment.
+constexpr const char* depthFragment=R"GLSL(#version 330
+out vec4 finalColor;
+void main() {
+    float depth=min(gl_FragCoord.z,0.999999);
+    vec3 packedDepth=fract(depth*vec3(1.0,255.0,65025.0));
+    packedDepth-=packedDepth.yzz*vec3(1.0/255.0,1.0/255.0,0.0);
+    finalColor=vec4(packedDepth,1.0);
+}
+)GLSL";
+
+constexpr int shadowSize=4096;
+constexpr int shadowSlot=10;
+constexpr float shadowWidth=100.0f;
+
 constexpr const char* fragmentSource=R"GLSL(#version 330
 in vec3 worldPosition;
 in vec2 fragTexCoord;
@@ -36,7 +51,27 @@ uniform vec3 sunDirection;
 uniform vec3 horizonColor;
 uniform vec3 lighting; // daylight, dusk warmth, rain
 uniform vec2 fogRange;
+uniform sampler2D sunShadowMap;
+uniform mat4 lightVP;
+uniform vec3 shadowParams; // inverse size, strength, valid
 out vec4 finalColor;
+
+float sunVisibility(vec3 position,float facing) {
+    if(shadowParams.z<0.5) return 1.0;
+    vec4 clip=lightVP*vec4(position,1.0);
+    vec3 uvz=clip.xyz/clip.w*0.5+0.5;
+    if(any(lessThanEqual(uvz,vec3(0.0)))||any(greaterThanEqual(uvz,vec3(1.0)))) return 1.0;
+    float bias=0.000045+0.00013*(1.0-facing);
+    float sum=0.0;
+    for(int y=-2;y<=2;++y) for(int x=-2;x<=2;++x) {
+        vec2 uv=uvz.xy+vec2(x,y)*shadowParams.x*1.5;
+        vec3 encoded=texture(sunShadowMap,uv).rgb;
+        float depth=dot(encoded,vec3(1.0,1.0/255.0,1.0/65025.0));
+        sum+=uvz.z-bias<=depth?1.0:0.0;
+    }
+    float edge=min(min(uvz.x,1.0-uvz.x),min(uvz.y,1.0-uvz.y));
+    return mix(1.0,sum/25.0,shadowParams.y*smoothstep(0.01,0.07,edge));
+}
 void main() {
     vec4 base=texture(texture0,fragTexCoord)*colDiffuse*fragColor;
     vec3 crossNormal=cross(dFdx(worldPosition),dFdy(worldPosition));
@@ -46,8 +81,10 @@ void main() {
     // Existing vertex colours already incorporate night and rain. Add
     // directional contrast, not a second full day/night multiplier.
     float strength=lighting.x*(1.0-0.75*lighting.z);
-    float shade=mix(1.0,0.74+0.40*facing,strength);
-    vec3 warm=mix(vec3(1.0),vec3(1.13,0.97,0.79),lighting.y*facing);
+    float visibility=sunVisibility(worldPosition,facing);
+    float shade=mix(1.0,0.60+0.54*facing*visibility,strength);
+    shade*=mix(0.76,1.0,visibility);
+    vec3 warm=mix(vec3(1.0),vec3(1.13,0.97,0.79),lighting.y*facing*visibility);
     vec3 cool=mix(vec3(1.0),vec3(0.84,0.91,1.08),lighting.y*(1.0-facing)*0.5);
     vec3 lit=base.rgb*shade*warm*cool;
     float distanceToEye=length(worldPosition-eyePosition);
@@ -67,10 +104,31 @@ void Atmosphere::initialize() {
     horizon_=GetShaderLocation(shader_,"horizonColor");
     lighting_=GetShaderLocation(shader_,"lighting");
     fog_=GetShaderLocation(shader_,"fogRange");
-    if(eye_<0||sun_<0||horizon_<0||lighting_<0||fog_<0) shutdown();
+    shadowSampler_=GetShaderLocation(shader_,"sunShadowMap");
+    lightMatrix_=GetShaderLocation(shader_,"lightVP");
+    shadowParams_=GetShaderLocation(shader_,"shadowParams");
+    if(eye_<0||sun_<0||horizon_<0||lighting_<0||fog_<0 ||
+       shadowSampler_<0||lightMatrix_<0||shadowParams_<0) {
+        shutdown();
+        return;
+    }
+    depthShader_=LoadShaderFromMemory(vertexSource,depthFragment);
+    if(depthShader_.id!=0 && depthShader_.id!=rlGetShaderIdDefault()) {
+        shadowMap_=LoadRenderTexture(shadowSize,shadowSize);
+        shadowReady_=shadowMap_.id!=0 && shadowMap_.texture.id!=0 && shadowMap_.depth.id!=0;
+        if(shadowReady_) {
+            SetTextureFilter(shadowMap_.texture,TEXTURE_FILTER_POINT);
+            SetTextureWrap(shadowMap_.texture,TEXTURE_WRAP_CLAMP);
+        }
+    }
 }
 
 void Atmosphere::shutdown() {
+    if(shadowMap_.id) UnloadRenderTexture(shadowMap_);
+    if(depthShader_.id && depthShader_.id!=rlGetShaderIdDefault()) UnloadShader(depthShader_);
+    shadowMap_={};
+    depthShader_={};
+    shadowReady_=shadowValid_=false;
     if(ready_) UnloadShader(shader_);
     ready_=false;
     shader_={};
@@ -79,6 +137,41 @@ void Atmosphere::shutdown() {
 Vector3 Atmosphere::sunDirection(float night) {
     const float dusk=std::clamp(night/.55f,0.f,1.f);
     return Vector3Normalize({-.68f,.78f-.65f*dusk,-.48f});
+}
+
+bool Atmosphere::beginShadow(const Camera3D& camera,float night,float rain) {
+    shadowValid_=false;
+    if(!ready_||!shadowReady_||night>.88f||rain>.95f) return false;
+    const Vector3 sun=sunDirection(night);
+    const Vector3 right=Vector3Normalize(Vector3CrossProduct(Vector3Scale(sun,-1),{0,1,0}));
+    const Vector3 up=Vector3CrossProduct(right,Vector3Scale(sun,-1));
+    Vector3 focus=camera.target;
+    // Snap the light camera to shadow texels so static shadows do not
+    // crawl across the screen as the player drives.
+    const float texel=shadowWidth/shadowSize;
+    const auto snap=[texel](float v){ return std::round(v/texel)*texel; };
+    const float x=Vector3DotProduct(focus,right),y=Vector3DotProduct(focus,up);
+    focus=Vector3Add(focus,Vector3Add(Vector3Scale(right,snap(x)-x),
+                                    Vector3Scale(up,snap(y)-y)));
+    Camera3D light{};
+    light.target=focus;
+    light.position=Vector3Add(focus,Vector3Scale(sun,150.f));
+    light.up=up;
+    light.fovy=shadowWidth;
+    light.projection=CAMERA_ORTHOGRAPHIC;
+    BeginTextureMode(shadowMap_);
+    ClearBackground(WHITE);
+    BeginMode3D(light);
+    lightVP_=MatrixMultiply(rlGetMatrixModelview(),rlGetMatrixProjection());
+    BeginShaderMode(depthShader_);
+    return true;
+}
+
+void Atmosphere::endShadow() {
+    EndShaderMode();
+    EndMode3D();
+    EndTextureMode();
+    shadowValid_=true;
 }
 
 void Atmosphere::begin(const Camera3D& camera,Color horizon,float night,float rain,int quality) const {
@@ -96,9 +189,26 @@ void Atmosphere::begin(const Camera3D& camera,Color horizon,float night,float ra
     SetShaderValue(shader_,horizon_,&fogColor,SHADER_UNIFORM_VEC3);
     SetShaderValue(shader_,lighting_,&light,SHADER_UNIFORM_VEC3);
     SetShaderValue(shader_,fog_,&range,SHADER_UNIFORM_VEC2);
+    const Vector3 shadow{1.f/shadowSize,
+                         (1.f-std::clamp((night-.55f)/.33f,0.f,1.f))*(1.f-rain),
+                         shadowValid_?1.f:0.f};
+    SetShaderValue(shader_,shadowParams_,&shadow,SHADER_UNIFORM_VEC3);
+    if(shadowValid_) SetShaderValueMatrix(shader_,lightMatrix_,lightVP_);
+    const int slot=shadowSlot;
+    SetShaderValue(shader_,shadowSampler_,&slot,SHADER_UNIFORM_INT);
+    // Bind outside raylib's transient batch texture slots so every
+    // internal batch flush samples the same completed depth map.
+    rlActiveTextureSlot(shadowSlot);
+    rlEnableTexture(shadowValid_?shadowMap_.texture.id:rlGetTextureIdDefault());
+    rlActiveTextureSlot(0);
 }
 void Atmosphere::end() const {
-    if(ready_) EndShaderMode();
+    if(ready_) {
+        EndShaderMode();
+        rlActiveTextureSlot(shadowSlot);
+        rlDisableTexture();
+        rlActiveTextureSlot(0);
+    }
 }
 
 void drawContactShadow(const Track& track,const Car& car,const VehicleProfile& spec,

@@ -209,6 +209,19 @@ void Game::renderRace() {
     const int width=GetScreenWidth(),height=GetScreenHeight();
     const auto& weather=sim_.weather();
     const float n=float(weather.nightLevel),r=float(weather.rainLevel);
+    if(atmosphere_.beginShadow(camera_,n,r)) {
+        try {
+            world_.draw(sim_.track(),weather,quality_,camera_,gameTime_,true);
+            vehicle_.draw(sim_.car(),sim_.profile(),sim_.vehicleIndex(),
+                          sim_.colorIndex(),n>.2,true,&sim_.track());
+        } catch(const std::exception& e) {
+            atmosphere_.endShadow();
+            showFault("shadow",e.what());
+            // Do not leave the framebuffer or 3D mode active on failure.
+            throw;
+        }
+        atmosphere_.endShadow();
+    }
     const Color daylightTop{92,157,243,255};
     const Color daylightBottom{190,220,250,255};
     const Color duskTop{85,65,129,255};
