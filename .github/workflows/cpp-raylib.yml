@@ -1,0 +1,39 @@
+name: C++ raylib build and tests
+
+on:
+  push:
+    branches: [cpp-raylib, main-cpp]
+  pull_request:
+    paths:
+      - "cpp/**"
+      - ".github/workflows/cpp-raylib.yml"
+  workflow_dispatch:
+
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure pure C++ tests
+        run: cmake -S cpp -B cpp/build-core -DCMAKE_BUILD_TYPE=Release -DKARTING_BUILD_GAME=OFF
+      - name: Compile C++20 core
+        run: cmake --build cpp/build-core --parallel 2
+      - name: Run tests
+        run: ctest --test-dir cpp/build-core --output-on-failure
+
+  raylib:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: System packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libx11-dev libxcursor-dev libxi-dev libxrandr-dev libxinerama-dev libgl1-mesa-dev
+      - name: Configure raylib 5.5
+        run: cmake -S cpp -B cpp/build-raylib -DCMAKE_BUILD_TYPE=Release
+      - name: Compile native 3D game and tests
+        run: cmake --build cpp/build-raylib --parallel 2
+      - name: Run tests
+        run: ctest --test-dir cpp/build-raylib --output-on-failure
