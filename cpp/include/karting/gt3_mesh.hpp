@@ -34,18 +34,19 @@ struct Geometry {
         quad(add(a),add(b),add(c),add(d),f,outside);
     }
 };
+inline constexpr float overallScale=.85f;
 inline constexpr float stretch=1.17f;
 inline constexpr float axle=0.76f*stretch;
-inline constexpr float wheelCenterZ=0.65f;
-inline constexpr float wheelCenterY=0.270f;
-inline constexpr float wheelRadius=0.255f;
+inline constexpr float wheelCenterZ=0.62f;
+inline constexpr float wheelCenterY=0.245f;
+inline constexpr float wheelRadius=0.230f;
 inline constexpr float archRadius=0.265f*stretch;
-inline constexpr Point lampAnchor{1.164f*stretch,.344f,.48f};
+inline constexpr Point lampAnchor{1.164f*stretch,.332f,.48f};
 inline float archFloor(float x) {
     const float offset=std::min(std::abs(x-axle),std::abs(x+axle));
     if(offset>=archRadius) return .115f;
-    const float circle=wheelCenterY+std::sqrt(std::max(0.f,.29f*.29f-offset*offset));
-    const float blend=std::clamp((archRadius-offset)/(archRadius-.255f),0.f,1.f);
+    const float circle=wheelCenterY+std::sqrt(std::max(0.f,.257f*.257f-offset*offset));
+    const float blend=std::clamp((archRadius-offset)/(archRadius-.244f),0.f,1.f);
     return .115f+(circle-.115f)*blend;
 }
 struct Station { float x,center,shoulder,width; };
@@ -74,18 +75,22 @@ inline Geometry build() {
     std::vector<Ring> rings;
     for(const auto& s:stations) {
         const float lower=archFloor(s.x*stretch);
-        const float top=std::max(s.shoulder+.025f,lower+.075f);
-        const float belt=std::max(lower+.026f,top-.065f);
+        // The wheel opening drives the minimum shoulder height, but no
+        // inflated fender cap is added above it. Keep the hood nearly level.
+        const float top=std::max(s.shoulder-.045f,lower+.038f);
+        const float belt=std::max(lower+.014f,top-.045f);
+        const float center=std::max(s.center,top-.067f);
+        const float width=s.width-.018f;
         rings.push_back({
-            m.add({s.x,lower,-s.width*.97f}),
-            m.add({s.x,belt,-s.width}),
-            m.add({s.x,top,-s.width*.78f}),
-            m.add({s.x,s.center+.015f,-s.width*.43f}),
-            m.add({s.x,s.center,0}),
-            m.add({s.x,s.center+.015f,s.width*.43f}),
-            m.add({s.x,top,s.width*.78f}),
-            m.add({s.x,belt,s.width}),
-            m.add({s.x,lower,s.width*.97f})
+            m.add({s.x,lower,-width*.97f}),
+            m.add({s.x,belt,-width}),
+            m.add({s.x,top,-width*.82f}),
+            m.add({s.x,center+.008f,-width*.43f}),
+            m.add({s.x,center,0}),
+            m.add({s.x,center+.008f,width*.43f}),
+            m.add({s.x,top,width*.82f}),
+            m.add({s.x,belt,width}),
+            m.add({s.x,lower,width*.97f})
         });
     }
     for(std::size_t i=1;i<rings.size();++i) {
@@ -117,8 +122,8 @@ inline Geometry build() {
     constexpr std::array<Cabin,6> cabin{{
         {-.91f,.515f,.35f,.545f,.30f},
         {-.63f,.525f,.39f,.675f,.265f},
-        {-.37f,.52f,.40f,.755f,.265f},
-        {-.08f,.51f,.39f,.755f,.265f},
+        {-.37f,.52f,.40f,.725f,.265f},
+        {-.08f,.51f,.39f,.725f,.265f},
         { .13f,.49f,.36f,.68f,.25f},
         { .48f,.465f,.31f,.49f,.27f}
     }};
@@ -148,14 +153,14 @@ inline Geometry build() {
                 {.106f,.688f,side*.258f},{.13f,.682f,side*.253f},
                 Finish::Paint,{0,0,side});
         m.panel({-.34f,.522f,side*.402f},{-.385f,.522f,side*.402f},
-                {-.385f,.751f,side*.268f},{-.34f,.757f,side*.268f},
+                {-.385f,.721f,side*.268f},{-.34f,.727f,side*.268f},
                 Finish::Carbon,{0,0,side});
         // Angular front lamps sit on the nose, with a dark surround.
         m.panel({1.162f,.303f,side*.34f},{1.162f,.303f,side*.59f},
-                {1.162f,.375f,side*.54f},{1.162f,.355f,side*.34f},
+                {1.162f,.338f,side*.54f},{1.162f,.334f,side*.34f},
                 Finish::Grille,{1,0,0});
         m.panel({1.164f,.33f,side*.36f},{1.164f,.328f,side*.565f},
-                {1.164f,.358f,side*.53f},{1.164f,.35f,side*.36f},
+                {1.164f,.337f,side*.53f},{1.164f,.336f,side*.36f},
                 Finish::Headlamp,{1,0,0});
         m.panel({-1.252f,.282f,side*.28f},{-1.252f,.282f,side*.54f},
                 {-1.252f,.322f,side*.54f},{-1.252f,.322f,side*.28f},
@@ -200,11 +205,20 @@ inline Geometry build() {
             {-1.30f,.825f,.73f},{-1.30f,.808f,.73f},Finish::Carbon,{-1,0,0});
     m.panel({-1.00f,.77f,-.73f},{-1.00f,.785f,-.73f},
             {-1.00f,.785f,.73f},{-1.00f,.77f,.73f},Finish::Carbon,{1,0,0});
-    // Two faceted hood vents follow the bonnet instead of floating above it.
-    for(float side:{-1.f,1.f})
-        m.panel({.55f,.45f,side*.15f},{.88f,.418f,side*.15f},
-                {.91f,.453f,side*.31f},{.56f,.49f,side*.31f},
+    // Recess-like cooling strips follow the exact hood triangles.
+    for(int i=14;i<19;++i) for(int j:{3,4}) {
+        const auto a=rings[i-1],b=rings[i];
+        const auto p=m.vertices[a[j]],q=m.vertices[b[j]],
+                   r=m.vertices[b[j+1]],s=m.vertices[a[j+1]];
+        const auto mix=[](Point a,Point b,float k) {
+            return Point{a.x+(b.x-a.x)*k,a.y+(b.y-a.y)*k+.002f,
+                         a.z+(b.z-a.z)*k};
+        };
+        // Narrow dark strip away from the central ridge.
+        const float lo=j==3?.12f:.61f,hi=j==3?.39f:.88f;
+        m.panel(mix(p,s,lo),mix(q,r,lo),mix(q,r,hi),mix(p,s,hi),
                 Finish::Grille,{0,1,0});
+    }
     // Stretch longitudinal proportions without changing the physics scale.
     for(auto& p:m.vertices) {
         if(p.x<-.9f && p.y>.65f) p.y=.46f+(p.y-.46f)*.78f;

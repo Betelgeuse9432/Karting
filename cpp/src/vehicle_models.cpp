@@ -258,6 +258,61 @@ void wec(Color paint,Color glass,Color /*dark*/,bool braking,bool lights) {
     rearWing(-1.25f,.50f,.98f,.14f,carbon);
 }
 
+// A real annular rim: no solid cylinder across the outer face and no
+// one-pixel lines. Tyre, bead, brake and alloy spokes have distinct depth.
+void gt3Wheel(float r,float width,float side,float spin) {
+    constexpr int segments=24;
+    const float outer=width*.5f;
+    const float rim=r*.72f;
+    const auto pt=[&](float radius,float angle,float depth) {
+        return Vector3{radius*std::cos(angle),radius*std::sin(angle),side*depth};
+    };
+    const auto band=[&](float radiusA,float depthA,float radiusB,float depthB,Color c) {
+        for(int i=0;i<segments;++i) {
+            const float a=2.f*PI*i/segments,b=2.f*PI*(i+1)/segments;
+            panel(pt(radiusA,a,depthA),pt(radiusA,b,depthA),
+                  pt(radiusB,b,depthB),pt(radiusB,a,depthB),c);
+        }
+    };
+    // Rounded shoulders, flat tread and dark sidewalls.
+    band(r*.94f,-outer,r,-outer*.73f,{30,32,35,255});
+    band(r,-outer*.73f,r,outer*.73f,{24,26,29,255});
+    band(r,outer*.73f,r*.94f,outer,{35,37,41,255});
+    band(r*.94f,outer,rim,outer*.94f,{28,30,34,255});
+    band(rim,-outer*.94f,r*.94f,-outer,{28,30,34,255});
+    band(rim,-outer*.94f,rim,outer*.94f,{39,42,47,255});
+    // Brake disc and fixed caliper sit well behind the rotating spokes.
+    const float brakeDepth=outer*.32f;
+    DrawCylinderEx({0,0,side*(brakeDepth-.015f)},{0,0,side*brakeDepth},
+                   r*.57f,r*.57f,24,{100,105,111,255});
+    box(-r*.29f,r*.37f,side*(outer*.50f),r*.23f,r*.34f,width*.19f,
+        {178,40,32,255});
+    rlPushMatrix();
+    rlRotatef(spin*RAD2DEG,0,0,1);
+    // Alloy lip and barrel, deep enough to read as a rim.
+    band(rim,outer*.94f,r*.66f,outer*.94f,{135,143,151,255});
+    band(r*.66f,outer*.94f,r*.62f,outer*.77f,{91,99,110,255});
+    band(r*.62f,outer*.77f,r*.62f,outer*.42f,{61,67,76,255});
+    const float face=outer*.86f,back=outer*.59f;
+    // Five wide swept spokes, each with thickness and shaded bevel sides.
+    for(int i=0;i<5;++i) {
+        const float a=2.f*PI*i/5.f;
+        const auto p=pt(r*.18f,a-.24f,face),q=pt(r*.65f,a+.04f,face),
+                   u=pt(r*.65f,a+.18f,face),w=pt(r*.18f,a+.26f,face);
+        panel(p,q,u,w,{151,159,169,255});
+        const auto pb=pt(r*.18f,a-.24f,back),qb=pt(r*.65f,a+.04f,back),
+                   ub=pt(r*.65f,a+.18f,back),wb=pt(r*.18f,a+.26f,back);
+        panel(p,pb,qb,q,{75,81,91,255});
+        panel(w,u,ub,wb,{99,107,119,255});
+        panel(pb,wb,ub,qb,{82,88,96,255});
+    }
+    DrawCylinderEx({0,0,side*back},{0,0,side*(face+.008f)},
+                   r*.20f,r*.20f,16,{124,132,143,255});
+    DrawCylinderEx({0,0,side*(face+.008f)},{0,0,side*(face+.013f)},
+                   r*.10f,r*.10f,10,{180,186,192,255});
+    rlPopMatrix();
+}
+
 void wheels(const Car& car,const VehicleProfile& p,int index) {
     const float front=index==2?gt3model::axle:float(p.frontAxle*kWorldScale);
     const float rear=index==2?-gt3model::axle:float(p.rearAxle*kWorldScale);
@@ -272,29 +327,22 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
         rlPushMatrix();
         rlTranslatef(x,r+.015f,side*track);
         if(x==front) rlRotatef(float(-car.steering*RAD2DEG),0,1,0);
-        DrawCylinderEx({0,0,-width*.5f},{0,0,width*.5f},r,r,index==2?20:12,
+        if(index==2) {
+            gt3Wheel(r,width,side,float(car.wheelRotation));
+            rlPopMatrix();
+            continue;
+        }
+        DrawCylinderEx({0,0,-width*.5f},{0,0,width*.5f},r,r,12,
                        {27,30,36,255});
         const float z=side*(width*.5f+.008f);
-        if(index==2) {
-            DrawCylinderEx({0,0,z},{0,0,z+side*.009f},r*.77f,r*.77f,20,
-                           {99,105,115,255});
-            DrawCylinderEx({0,0,z+side*.010f},{0,0,z+side*.015f},r*.65f,r*.65f,20,
-                           {37,40,47,255});
-        } else rod({0,0,z},{0,0,z+side*.017f},r*.52f,{90,96,107,255});
+        rod({0,0,z},{0,0,z+side*.017f},r*.52f,{90,96,107,255});
         rod({0,0,z+side*.020f},{0,0,z+side*.024f},
             r*.17f,{188,191,199,255});
-        // GT3 gets a denser motorsport rim and a visible red brake caliper.
-        // Wheel rotation still comes from the simulation.
-        if(index==2)
-            box(-.045f,.087f,z+side*.031f,.052f,.080f,.018f,
-                {186,48,38,255});
-        const int spokes=index==2?10:5;
-        for(int spoke=0;spoke<spokes;++spoke) {
-            const float step=index==2?.62831853f:1.2566371f;
-            const float a=float(car.wheelRotation)+spoke*step;
+        for(int spoke=0;spoke<5;++spoke) {
+            const float a=float(car.wheelRotation)+spoke*1.2566371f;
             DrawLine3D({std::cos(a)*r*.2f,std::sin(a)*r*.2f,z+side*.028f},
-                       {std::cos(a)*r*(index==2?.67f:.48f),std::sin(a)*r*(index==2?.67f:.48f),z+side*.028f},
-                       index==2?Color{201,206,211,255}:Color{180,185,193,255});
+                       {std::cos(a)*r*.48f,std::sin(a)*r*.48f,z+side*.028f},
+                       {180,185,193,255});
         }
         rlPopMatrix();
     }
@@ -312,7 +360,7 @@ RoadPose roadPose(const Car& car,const VehicleProfile& profile,int index,
     float roadPitch=0.f,roadRoll=0.f;
     if (followRoad) {
         const double wheelTrack=std::max(profile.halfWheelTrack,
-                                        (index==2?gt3model::wheelCenterZ:index==1?.65:index==3?.58:.45)
+                                        (index==2?gt3model::wheelCenterZ*gt3model::overallScale:index==1?.65:index==3?.58:.45)
                                             /kWorldScale);
         const auto contact=[&](double axle,double lateral) {
             const Vec2 point=car.position+forward*axle+side*lateral;
@@ -320,8 +368,8 @@ RoadPose roadPose(const Car& car,const VehicleProfile& profile,int index,
         };
         // Sample the visual wheelbase for the visual road plane only.
         // Arcade physics continues to use the untouched profile axles.
-        const double frontAxle=index==2?gt3model::axle/kWorldScale:profile.frontAxle;
-        const double rearAxle=index==2?-gt3model::axle/kWorldScale:profile.rearAxle;
+        const double frontAxle=index==2?gt3model::axle*gt3model::overallScale/kWorldScale:profile.frontAxle;
+        const double rearAxle=index==2?-gt3model::axle*gt3model::overallScale/kWorldScale:profile.rearAxle;
         const double front=(contact(frontAxle,-wheelTrack)+contact(frontAxle,wheelTrack))*.5;
         const double rear=(contact(rearAxle,-wheelTrack)+contact(rearAxle,wheelTrack))*.5;
         const double left=(contact(frontAxle,-wheelTrack)+contact(rearAxle,-wheelTrack))*.5;
@@ -368,7 +416,8 @@ Headlights VehicleRenderer::headlights(const Car& car,const VehicleProfile& prof
         {gt3model::lampAnchor.x+.02f,gt3model::lampAnchor.y,gt3model::lampAnchor.z},
         {1.43f*.96f,.035f+.16f*.96f,.205f}
     }};
-    const auto local=origins[std::clamp(index,0,3)];
+    auto local=origins[std::clamp(index,0,3)];
+    if(index==2) local=Vector3Scale(local,gt3model::overallScale);
     lights.up=Vector3Normalize(orient({0,1,0},car,pose));
     for(int i=0;i<2;++i) {
         const float side=i==0?-1.f:1.f;
@@ -396,6 +445,7 @@ void VehicleRenderer::draw(const Car& car,const VehicleProfile& profile,
     rlRotatef(float(-car.heading*RAD2DEG),0,1,0);
     rlRotatef(roadRoll,1,0,0);
     rlRotatef(roadPitch,0,0,1);
+    if(index==2) rlScalef(gt3model::overallScale,gt3model::overallScale,gt3model::overallScale);
     // Suspension motion applies to the chassis, not the wheel contacts.
     rlPushMatrix();
     rlRotatef(float(car.roll*RAD2DEG),1,0,0);

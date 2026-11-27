@@ -591,6 +591,8 @@ void testOriginalGT3Mesh() {
     require(archFloor(-axle)>wheelCenterY+wheelRadius,"Rear arch clears tire");
     close(archFloor(0),.115,1e-6,"GT3 rocker clearance");
     require(lampAnchor.x>axle && lampAnchor.y>wheelCenterY,"Headlamp anchor in front");
+    close(overallScale,.85,1e-6,"GT3 visual scale");
+    require(wheelRadius+.015f<=wheelCenterY+.0001f,"GT3 tire contact height");
 }
 
 int main() {
