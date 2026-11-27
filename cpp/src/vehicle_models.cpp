@@ -322,13 +322,18 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
     const std::size_t slot=std::size_t(std::clamp(index,0,3));
     const float r=sizes[slot],width=widths[slot];
     const float track=std::max(float(p.halfWheelTrack*kWorldScale),tracks[slot]);
+    // Forward is local +X and the axle is +Z. At the bottom of a
+    // rolling wheel, angular motion must cancel forward translation.
+    // The simulation stores distance / 0.20m; use each visual tyre radius.
+    const float visualRadius=r*(index==2?gt3model::overallScale:1.f);
+    const float spin=float(-car.wheelRotation*.20/visualRadius);
 
     for(float x:{rear,front}) for(float side:{-1.f,1.f}) {
         rlPushMatrix();
         rlTranslatef(x,r+.015f,side*track);
         if(x==front) rlRotatef(float(-car.steering*RAD2DEG),0,1,0);
         if(index==2) {
-            gt3Wheel(r,width,side,float(car.wheelRotation));
+            gt3Wheel(r,width,side,spin);
             rlPopMatrix();
             continue;
         }
@@ -339,7 +344,7 @@ void wheels(const Car& car,const VehicleProfile& p,int index) {
         rod({0,0,z+side*.020f},{0,0,z+side*.024f},
             r*.17f,{188,191,199,255});
         for(int spoke=0;spoke<5;++spoke) {
-            const float a=float(car.wheelRotation)+spoke*1.2566371f;
+            const float a=spin+spoke*1.2566371f;
             DrawLine3D({std::cos(a)*r*.2f,std::sin(a)*r*.2f,z+side*.028f},
                        {std::cos(a)*r*.48f,std::sin(a)*r*.48f,z+side*.028f},
                        {180,185,193,255});
